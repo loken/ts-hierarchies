@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@loken/utilities':
+    specifier: 0.1.0-ci.24
+    version: 0.1.0-ci.24
   tslib:
     specifier: ^2.6.2
     version: 2.6.2
@@ -390,6 +393,13 @@ packages:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
+
+  /@loken/utilities@0.1.0-ci.24:
+    resolution: {integrity: sha512-6nTyK1buPEKa2PMkRbH75lNCluhiwS03LSmns49r5DaGx/kaXdE+h3DqG3dt36ln2w1e7szP0EoHHHzEVaPyaA==, tarball: https://npm.pkg.github.com/download/@loken/utilities/0.1.0-ci.24/19ccbfa4dddeddc93ab0581ef58539ba4985dcd6}
+    engines: {node: '>=18.15.0'}
+    dependencies:
+      tslib: 2.6.2
+    dev: false
 
   /@nodelib/fs.scandir@2.1.5:
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
