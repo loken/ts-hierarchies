@@ -1,0 +1,13 @@
+# No need for test code in the package.
+src/**/*.test.ts
+
+# No need for vscode tooling info.
+.vscode
+
+# No need for knowing what the build system did or how versioning happens.
+azure-pipelines.yml
+GitVersion.yml
+
+# No need to know how the dist content was generated.
+vite.config.ts
+dts.config.ts

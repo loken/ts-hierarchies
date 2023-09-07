@@ -1,0 +1,20 @@
+{
+	"extends": "@roenlie/tsconfig",
+	"compilerOptions": {
+		"outDir": "../dist/lib",
+		"rootDir": ".",
+		"baseUrl": ".",
+		"noEmit": false,
+		"emitDeclarationOnly": true,
+		"removeComments": false,
+		"types": []
+	},
+	"include": [
+		"./**/*.ts",
+		"./**/*.js"
+	],
+	"exclude": [
+		"./**/*.test.ts",
+		"./**/*.bench.ts",
+	]
+}

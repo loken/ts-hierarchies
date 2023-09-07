@@ -1,0 +1,15 @@
+mode: ContinuousDeployment
+commit-message-incrementing: Enabled
+assembly-informational-format: '{FullSemVer}+Sha.{Sha}'
+branches:
+  main:
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: true
+    tracks-release-branches: true
+    is-release-branch: false
+  hotfix:
+    tag: hotfix
+    prevent-increment-of-merged-branch-version: true
+    is-release-branch: true
+  feature:
+    regex: ^features?[/-]|^tasks?[/-]

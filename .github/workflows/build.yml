@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'releases?/**'
+      - 'hotfix/**'
+      - 'features?/**'
+      - 'tasks?/**'
+      - 'pr/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Required for GitVersion
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0
+        with:
+          versionSpec: '5.x'
+
+      - name: Run GitVersion
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v0
+        with:
+          useConfigFile: true
+
+      - name: Apply GitVersion
+        run: |
+          sed -i -e 's+1.0.0-es-semver-replace.0+${{ steps.gitversion.outputs.semVer }}+' package.json
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: store
+        run: |
+          echo "PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.store.outputs.PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Configure GitHub Packages
+        run: |
+          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build package
+        run: pnpm package
+
+      - name: Publish package
+        run: pnpm publish --access restricted --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup:
+    # Find and delete fully merged branches and their associated prerelease packages for commits to 'main'.
+    name: Cleanup outdated prereleases
+    if: ${{ github.ref_name == 'main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Required for "git branch -r"
+
+      - name: Identify merges
+        id: merged
+        # List remote branches that have been merged to main.
+        # Remove 'origin/' prefix.
+        # Filter out HEAD, main, release and hotfix branches.
+        # The result is that BRANCHES is a list of 'task/*' and 'feature/*' branch names that's been fully merged to 'origin/main'.
+        # Remove the 'task/' or 'feature/' prefix and store the result as TAGS.
+        run: |
+          BRANCHES=$(git branch -r --format='%(refname:short)' --merged | cut -c8- | egrep -v '^(HEAD|main|releases?\/|hotfix\/.*)' | paste -s -d ';')
+          echo "BRANCHES=$(echo $BRANCHES)" >> $GITHUB_OUTPUT
+          echo "TAGS=$(    echo $BRANCHES | tr ';' '\n' | cut -d/ -f2 | paste -s -d '|')" >> $GITHUB_OUTPUT
+
+      - name: Delete merged branches
+        if: ${{ steps.merged.outputs.BRANCHES }}
+        # Loop over the merged branches and delete each one from the origin.
+        run: |
+          echo '${{ steps.merged.outputs.BRANCHES }}' | tr ';' '\n' | xargs -r -n 1 git push --delete origin
+
+      - name: Delete merged feature packages
+        if: ${{ steps.merged.outputs.TAGS }}
+        # GitVersion uses the branch suffix for task/* and feature/* branches as the semver prerelease tag.
+        # When such a branch has been merged we don't need the prerelease pacakges anymore and delete them all.
+        uses: smartsquaregmbh/delete-old-packages@v0.7.0
+        with:
+          # Match any version with a prerelease name matching the branch TAG.
+          # Pattern: '#.#.#-TAG.#' and optionally a '+*' build info suffix.
+          version-pattern: '^\d+\.\d+\.\d+-(${{ steps.merged.outputs.TAGS }})\.\d+(\+.+)?$'
+          keep: 0
+          type: npm
+          organization: loken
+          names: hierarchies
+
+      - name: Delete merged ci packages
+        # We only want to keep a few ci-packages from main, and so we delete older ones here.
+        uses: smartsquaregmbh/delete-old-packages@v0.7.0
+        with:
+          # Match any version with a prerelease name matching main branch tag, aka. 'ci':
+          # Pattern: '#.#.#-ci.#' and optionally a '+*' build info suffix.
+          version-pattern: '^\d+\.\d+\.\d+-(ci)\.\d+(\+.+)?$'
+          keep: 7
+          type: npm
+          organization: loken
+          names: hierarchies

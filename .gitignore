@@ -1,0 +1,9 @@
+node_modules
+.DS_Store
+dist
+coverage
+types
+*.local
+*.tsbuildinfo
+yarn-error.log
+src/index.ts

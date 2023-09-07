@@ -1,0 +1,82 @@
+{
+	"name": "@loken/hierarchies",
+	"description": "Library for working with hierarchies of identifiers and identifiable objects.",
+	"version": "1.0.0-es-semver-replace.0",
+	"license": "MIT",
+	"readme": "README.md",
+	"repository": "github:loken/ts-hierarchies",
+	"bugs": "https://github.com/loken/ts-hierarchies/issues",
+	"keywords": [
+		"lib",
+		"library",
+		"utility",
+		"utilities",
+		"hierarchy",
+		"hierarchies",
+		"tree",
+		"graph",
+		"traverse",
+		"traversal"
+	],
+	"author": {
+		"name": "Gaute Løken",
+		"email": "gautelo@gmail.com",
+		"url": "http://github.com/gautelo"
+	},
+	"type": "module",
+	"main": "./dist/lib/index.js",
+	"module": "./dist/lib/index.js",
+	"types": "./dist/lib/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/lib/index.d.ts",
+			"import": "./dist/lib/index.js"
+		},
+		"./*": "./*"
+	},
+	"engines": {
+		"node": ">=18.15.0"
+	},
+	"sideEffects": false,
+	"scripts": {
+		"logon": "vsts-npm-auth -config .npmrc",
+		"typecheck": "tsc --project ./src/tsconfig.json",
+		"typecheck:diag": "pnpm rimraf dist/tstrace && pnpm tsc --project ./src/tsconfig.json --extendedDiagnostics",
+		"typecheck:trace": "pnpm rimraf dist/tstrace && pnpm tsc --project ./src/tsconfig.json --generateTrace dist/tstrace",
+		"typecheck:analyze": "analyze-trace dist/tstrace --skipMillis 100 --forceMillis 200 > dist/tstrace/analysis.log",
+		"test": "vitest",
+		"package": "rimraf dist/lib dist/*.tsbuildinfo --glob && npm run package:index && npm run package:lib && npm run package:tsc",
+		"package:lib": "vite build --config ./vite.config.ts",
+		"package:local": "pnpm pack --pack-destination ./../_packages/",
+		"package:tsc": "tsc --project ./src/tsconfig.package.json",
+		"package:index": "package-toolbox build-indexes",
+		"clean:dist": "rimraf dist *.tsbuildinfo --glob",
+		"clean:node": "rimraf node_modules",
+		"clean": "rimraf node_modules dist *.tsbuildinfo --glob",
+		"lint": "eslint . --ext .ts",
+		"lint:fix": "eslint . --ext .ts --fix",
+		"lint:dry": "eslint . --ext .ts --fix-dry-run",
+		"up": "pnpm update --latest --interactive"
+	},
+	"dependencies": {
+		"tslib": "^2.6.2"
+	},
+	"devDependencies": {
+		"@roenlie/eslint-config": "^1.2.0",
+		"@roenlie/package-toolbox": "^0.0.19",
+		"@roenlie/tsconfig": "^1.0.2",
+		"@types/node": "^20.5.7",
+		"@typescript-eslint/eslint-plugin": "^6.5.0",
+		"@typescript-eslint/parser": "^6.5.0",
+		"eslint": "^8.48.0",
+		"eslint-plugin-import": "^2.28.1",
+		"eslint-plugin-lit": "^1.9.1",
+		"eslint-plugin-simple-import-sort": "^10.0.0",
+		"globby": "^13.2.2",
+		"rimraf": "^5.0.1",
+		"tsx": "^3.12.7",
+		"typescript": "^5.2.2",
+		"vite": "^4.4.9",
+		"vitest": "^0.34.3"
+	}
+}
