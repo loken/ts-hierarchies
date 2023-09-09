@@ -93,7 +93,7 @@ export class Node<Item> {
 		else if (other.#brand === undefined)
 			return false;
 		else
-			return this.#brand.Equals(other.#brand);
+			return this.#brand === other.#brand;
 	}
 
 	/**

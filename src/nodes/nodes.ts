@@ -134,7 +134,7 @@ export class Nodes {
 
 				const nodeId: Id = nodeToId(node, identify);
 
-				for (const ancestor of node.getAncestors()) {
+				for (const ancestor of node.getAncestors({ excludeSelf: true })) {
 					const ancestorId = nodeToId(ancestor, identify);
 					map.add(ancestorId, nodeId);
 				}
@@ -168,7 +168,7 @@ export class Nodes {
 
 				const nodeId: Id = nodeToId(node, identify);
 
-				for (const ancestor of node.getAncestors()) {
+				for (const ancestor of node.getAncestors({ excludeSelf: true })) {
 					const ancestorId = nodeToId(ancestor, identify);
 					map.add(nodeId, ancestorId);
 				}
