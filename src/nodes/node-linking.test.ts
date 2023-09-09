@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 
-import { Node } from './node.js';
+import { HCNode } from './node.js';
 
 
-test('Node.attach() links both ways', () => {
-	const root = new Node('root');
-	const child = new Node('child');
+test('node.attach() links both ways', () => {
+	const root = new HCNode('root');
+	const child = new HCNode('child');
 
 	root.attach(child);
 
@@ -16,9 +16,9 @@ test('Node.attach() links both ways', () => {
 	expect(child.isRoot).to.be.false;
 });
 
-test('Node.detach() unlinks both ways', () => {
-	const root = new Node('root');
-	const child = new Node('child');
+test('node.detach() unlinks both ways', () => {
+	const root = new HCNode('root');
+	const child = new HCNode('child');
 
 	root.attach(child);
 	root.detach(child);
@@ -27,9 +27,9 @@ test('Node.detach() unlinks both ways', () => {
 	expect(child.isLinked).to.be.false;
 });
 
-test('Node.detachSelf() unlinks both ways', () => {
-	const root = new Node('root');
-	const child = new Node('child');
+test('node.detachSelf() unlinks both ways', () => {
+	const root = new HCNode('root');
+	const child = new HCNode('child');
 
 	root.attach(child);
 	child.detachSelf();
@@ -38,10 +38,10 @@ test('Node.detachSelf() unlinks both ways', () => {
 	expect(child.isLinked).to.be.false;
 });
 
-test('Node.dismantle(false) unlinks everything under the node.', () => {
-	const branchA = new Node('A').attach([ new Node('a1'), new Node('a2'), new Node('a3').attach(new Node('a31')) ]);
-	const branchB = new Node('A').attach([ new Node('b1'), new Node('b2').attach(new Node('b21')) ]);
-	const root = new Node('root').attach([ branchA, branchB ]);
+test('node.dismantle(false) unlinks everything under the node.', () => {
+	const branchA = new HCNode('A').attach([ new HCNode('a1'), new HCNode('a2'), new HCNode('a3').attach(new HCNode('a31')) ]);
+	const branchB = new HCNode('A').attach([ new HCNode('b1'), new HCNode('b2').attach(new HCNode('b21')) ]);
+	const root = new HCNode('root').attach([ branchA, branchB ]);
 
 	const descendantsOfA = branchA.getDescendants({ excludeSelf: true });
 	const other = root.getDescendants().filter(n => !n.item.startsWith('a'));
@@ -55,16 +55,16 @@ test('Node.dismantle(false) unlinks everything under the node.', () => {
 	expect(branchB.parent).toEqual(root);
 
 	// The descendants of the branch however are no longer linked.
-	expect(descendantsOfA).to.satisfy((nodes: Node<number>[]) => nodes.every(n => !n.isLinked));
+	expect(descendantsOfA).to.satisfy((nodes: HCNode<number>[]) => nodes.every(n => !n.isLinked));
 
 	// All of the other nodes are still linked in some way.
-	expect(other).to.satisfy((nodes: Node<number>[]) => nodes.every(n => n.isLinked));
+	expect(other).to.satisfy((nodes: HCNode<number>[]) => nodes.every(n => n.isLinked));
 });
 
-test('Node.dismantle(true) unlinks everything, including the ancestry and its branches.', () => {
-	const branchA = new Node('A').attach([ new Node('a1'), new Node('a2'), new Node('a3').attach(new Node('a31')) ]);
-	const branchB = new Node('A').attach([ new Node('b1'), new Node('b2').attach(new Node('b21')) ]);
-	const root = new Node('root').attach([ branchA, branchB ]);
+test('node.dismantle(true) unlinks everything, including the ancestry and its branches.', () => {
+	const branchA = new HCNode('A').attach([ new HCNode('a1'), new HCNode('a2'), new HCNode('a3').attach(new HCNode('a31')) ]);
+	const branchB = new HCNode('A').attach([ new HCNode('b1'), new HCNode('b2').attach(new HCNode('b21')) ]);
+	const root = new HCNode('root').attach([ branchA, branchB ]);
 
 	const nodes = root.getDescendants();
 
@@ -73,5 +73,5 @@ test('Node.dismantle(true) unlinks everything, including the ancestry and its br
 	// By picking a branch we assert that we dismantle children, parents and siblings.
 	branchA.dismantle(true);
 
-	expect(nodes).to.satisfy((nodes: Node<number>[]) => nodes.every(n => !n.isLinked));
+	expect(nodes).to.satisfy((nodes: HCNode<number>[]) => nodes.every(n => !n.isLinked));
 });

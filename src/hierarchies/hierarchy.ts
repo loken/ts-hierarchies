@@ -1,6 +1,6 @@
 import { type Multiple, spreadMultiple } from '@loken/utilities';
 
-import { type DeBrand, Node } from '../nodes/node.js';
+import { type DeBrand, HCNode } from '../nodes/node.js';
 import { type Identify, nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import { type TraverseSelf } from '../traversal/traverse-types.js';
@@ -19,18 +19,13 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	//#region backing fields
-	#identify: Identify<Item, Id>;
-	#roots = new Map<Id, Node<Item>>;
-	#nodes = new Map<Id, Node<Item>>();
+	#roots = new Map<Id, HCNode<Item>>;
+	#nodes = new Map<Id, HCNode<Item>>();
 	#debrand = new Map<Id, DeBrand>();
+	#identify: Identify<Item, Id>;
 	//#endregion
 
 	//#region accessors
-	/** Means of getting an ID for an `item`. */
-	public get identify() {
-		return this.#identify;
-	}
-
 	/** Get a shallow clone of the roots. */
 	public get roots() {
 		return [ ...this.#roots.values() ];
@@ -41,12 +36,17 @@ export class Hierarchy<Item, Id = Item> {
 		return [ ...this.#nodes.values() ];
 	}
 
+	/** Means of getting an ID for an `item`. */
+	public get identify() {
+		return this.#identify;
+	}
+
 	/**
 	 * Get node by `id`.
 	 * @param id The ID of the node to retrieve.
 	 * @throws The 'id' must be a hierarchy member.
 	 */
-	public getNode(id: Id): Node<Item> {
+	public getNode(id: Id): HCNode<Item> {
 		const node = this.#nodes.get(id);
 		if (node === undefined)
 			throw new Error("The 'id' must be a hierarchy member.");
@@ -59,8 +59,8 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param id The IDs of the nodes to retrieve.
 	 * @throws The 'id' must be a hierarchy member.
 	 */
-	public getNodes<const Ids extends readonly Id[]>(ids: Ids): TransformTuple<Ids, Node<Item>> {
-		return ids.map(id => this.getNode(id)) as TransformTuple<Ids, Node<Item>>;
+	public getNodes<const Ids extends readonly Id[]>(ids: Ids): TransformTuple<Ids, HCNode<Item>> {
+		return ids.map(id => this.getNode(id)) as TransformTuple<Ids, HCNode<Item>>;
 	}
 
 	/**
@@ -78,7 +78,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * Attach the provided `roots`.
 	 * @param roots Nodes to attach.
 	 */
-	public attachRoot(roots: Multiple<Node<Item>>): this {
+	public attachRoot(roots: Multiple<HCNode<Item>>): this {
 		const nodes = spreadMultiple(roots);
 
 		if (!nodes.every(n => n.isRoot))
@@ -94,7 +94,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param parentId The ID of the node to attach to.
 	 * @param children Nodes to attach.
 	 */
-	public attach(parentId: Id, children: Multiple<Node<Item>>): this {
+	public attach(parentId: Id, children: Multiple<HCNode<Item>>): this {
 		const nodes = spreadMultiple(children);
 
 		if (!this.#nodes.has(parentId))
@@ -112,7 +112,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * Detach the provided `nodes`.
 	 * @param nodes Nodes to detach.
 	 */
-	public detach(node: Multiple<Node<Item>>) {
+	public detach(node: Multiple<HCNode<Item>>) {
 		const nodes = spreadMultiple(node);
 
 		for (const node of traverseGraph({
@@ -134,7 +134,7 @@ export class Hierarchy<Item, Id = Item> {
 		return this;
 	}
 
-	#addNodes(node: Multiple<Node<Item>>, asRoot = false) {
+	#addNodes(node: Multiple<HCNode<Item>>, asRoot = false) {
 		const nodes = spreadMultiple(node);
 
 		for (const node of traverseGraph({

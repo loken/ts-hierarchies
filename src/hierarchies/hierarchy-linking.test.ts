@@ -1,20 +1,20 @@
 import { MultiMap } from '@loken/utilities';
 import { assert, expect, test } from 'vitest';
 
-import { Node } from '../nodes/node.js';
+import { HCNode } from '../nodes/node.js';
 import { nodesToIds } from '../nodes/node-conversion.js';
 import { Hierarchies } from './hierarchies.js';
 
 test('Can attach nodes from roots down', () => {
 	const hc = Hierarchies.createForIds<string>();
 
-	hc.attachRoot(new Node('A'));
-	hc.attach('A', new Node('A1'));
-	hc.attach('A', new Node('A2'));
-	hc.attach('A2', new Node('A21'));
-	hc.attachRoot(new Node('B'));
-	hc.attach('B', new Node('B1'));
-	hc.attach('B1', new Node('B11'));
+	hc.attachRoot(new HCNode('A'));
+	hc.attach('A', new HCNode('A1'));
+	hc.attach('A', new HCNode('A2'));
+	hc.attach('A2', new HCNode('A21'));
+	hc.attachRoot(new HCNode('B'));
+	hc.attach('B', new HCNode('B1'));
+	hc.attach('B1', new HCNode('B11'));
 
 	expect(hc.roots.length).toEqual(2);
 	expect(nodesToIds(hc.roots)).toEqual([ 'A', 'B' ]);
@@ -23,11 +23,11 @@ test('Can attach nodes from roots down', () => {
 test('hc.attach() to non-existent parent throws', () => {
 	const hc = Hierarchies.createForIds<string>();
 
-	assert.throws(() => hc.attach('non-existent-parent-id', new Node('Child')));
+	assert.throws(() => hc.attach('non-existent-parent-id', new HCNode('Child')));
 });
 
 test('hc.attach() to pre-built root', () => {
-	const node = new Node('A').attach([ new Node('A1'), new Node('A2') ]);
+	const node = new HCNode('A').attach([ new HCNode('A1'), new HCNode('A2') ]);
 
 	const hc = Hierarchies.createForIds<string>().attachRoot(node);
 
@@ -46,7 +46,7 @@ test('hc.attach() to multiple hierarchies throws', () => {
 	assert.throws(() => hcB.attach('B', a));
 });
 
-test('Node.detach() while in a Hierarchy throws because it is branded', () => {
+test('node.detach() while in a Hierarchy throws because it is branded', () => {
 	const hc = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
 
 	const [ a, a1 ] = hc.getNodes([ 'A', 'A1' ]);
@@ -54,7 +54,7 @@ test('Node.detach() while in a Hierarchy throws because it is branded', () => {
 	assert.throws(() => a.detach(a1));
 });
 
-test('Node.detachSelf() while in a Hierarchy throws because it is branded', () => {
+test('node.detachSelf() while in a Hierarchy throws because it is branded', () => {
 	const hc = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
 
 	const [ a1 ] = hc.getNodes([ 'A', 'A1' ]);
@@ -62,7 +62,7 @@ test('Node.detachSelf() while in a Hierarchy throws because it is branded', () =
 	assert.throws(() => a1.detachSelf());
 });
 
-test('Move a branch from one hierarchy to another using Hierarchy.detach() and Hierarchy.attachRoot()', () => {
+test('Move a branch from one hierarchy to another using hc.detach() and hc.attachRoot()', () => {
 	const hcA = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
 	const hcB = Hierarchies.createWithIds(MultiMap.parse('B'));
 

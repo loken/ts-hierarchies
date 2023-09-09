@@ -18,7 +18,7 @@ export type DeBrand = () => void;
  * By using a wrapper rather than require specific properties on the type parameter
  * we don't need to make any assumptions about the wrapped type.
  */
-export class Node<Item> {
+export class HCNode<Item> {
 
 	/** Create a node wrapping the `item`. */
 	constructor(item: Item) {
@@ -27,8 +27,8 @@ export class Node<Item> {
 
 	//#region backing fields
 	#item: Item;
-	#parent?: Node<Item>;
-	#children?: Set<Node<Item>>;
+	#parent?: HCNode<Item>;
+	#children?: Set<HCNode<Item>>;
 
 	/** The brand is used to lock the node to a specific owner. */
 	#brand?: any;
@@ -87,7 +87,7 @@ export class Node<Item> {
 	 * When the brands of two nodes are compatible, they may be linked/attached
 	 * in a parent-child relationship.
 	 */
-	public isBrandCompatible(other: Node<Item>): boolean {
+	public isBrandCompatible(other: HCNode<Item>): boolean {
 		if (this.#brand === undefined)
 			return other.#brand === undefined;
 		else if (other.#brand === undefined)
@@ -117,7 +117,7 @@ export class Node<Item> {
 	/**
 	 * Attach the provided `children`.
 	 */
-	public attach(children: Multiple<Node<Item>>): this {
+	public attach(children: Multiple<HCNode<Item>>): this {
 		const nodes = spreadMultiple(children);
 
 		if (nodes.length === 0)
@@ -129,7 +129,7 @@ export class Node<Item> {
 		if (!nodes.every(node => node.isBrandCompatible(this)))
 			throw new Error('Must all have a compatible brand.');
 
-		this.#children ??= new Set<Node<Item>>();
+		this.#children ??= new Set<HCNode<Item>>();
 
 		for (const child of nodes) {
 			this.#children.add(child);
@@ -140,7 +140,7 @@ export class Node<Item> {
 	}
 
 	/** Detach the provided `children`. */
-	public detach(children: Multiple<Node<Item>>): this {
+	public detach(children: Multiple<HCNode<Item>>): this {
 		const nodes = spreadMultiple(children);
 
 		if (nodes.length === 0)

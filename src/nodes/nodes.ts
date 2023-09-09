@@ -1,7 +1,7 @@
 import { iterateAll, iterateMultiple, mapGetLazy, MultiMap, type Multiple } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/traverse-graph.js';
-import { Node } from './node.js';
+import { HCNode } from './node.js';
 import { type Identify, nodesToIds, nodeToId } from './node-conversion.js';
 import { type Relation } from './relations.js';
 
@@ -14,12 +14,12 @@ export class Nodes {
 	 * @param childMap The map describing the relations.
 	 * @returns The root nodes.
 	 */
-	public static assembleIds<Id>(childMap: MultiMap<Id>): Node<Id>[] {
-		const nodes = new Map<Id, Node<Id>>();
-		const roots = new Map<Id, Node<Id>>();
+	public static assembleIds<Id>(childMap: MultiMap<Id>): HCNode<Id>[] {
+		const nodes = new Map<Id, HCNode<Id>>();
+		const roots = new Map<Id, HCNode<Id>>();
 
 		for (const parentId of childMap.keys()) {
-			const parentNode = new Node(parentId);
+			const parentNode = new HCNode(parentId);
 			roots.set(parentId, parentNode);
 			nodes.set(parentId, parentNode);
 		}
@@ -28,7 +28,7 @@ export class Nodes {
 			const parentNode = nodes.get(parentId)!;
 
 			for (const childId of childIds) {
-				const childNode = mapGetLazy(nodes, childId, () => new Node(childId));
+				const childNode = mapGetLazy(nodes, childId, () => new HCNode(childId));
 				parentNode.attach(childNode);
 				roots.delete(childId);
 			}
@@ -51,14 +51,14 @@ export class Nodes {
 		identify: Identify<Item, Id>,
 		items: Multiple<Item>,
 		childMap: MultiMap<Id>,
-	}): Node<Item>[] {
+	}): HCNode<Item>[] {
 		const { identify, items, childMap } = options;
-		const nodes = new Map<Id, Node<Item>>();
-		const roots = new Map<Id, Node<Item>>();
+		const nodes = new Map<Id, HCNode<Item>>();
+		const roots = new Map<Id, HCNode<Item>>();
 
 		for (const item of iterateMultiple(items)) {
 			const id = identify(item);
-			const node = new Node(item);
+			const node = new HCNode(item);
 
 			nodes.set(id, node);
 
@@ -89,7 +89,7 @@ export class Nodes {
 	 * @returns A parent-to-children map of IDs.
 	 */
 	public static toChildMap<Item, Id = Item>(
-		roots: Multiple<Node<Item>>,
+		roots: Multiple<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
 	): MultiMap<Id> {
 		const map = new MultiMap<Id>();
@@ -122,7 +122,7 @@ export class Nodes {
 	 * @returns A parent-to-descendant map of IDs.
 	 */
 	public static toDescendantMap<Item, Id = Item>(
-		roots: Multiple<Node<Item>>,
+		roots: Multiple<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
 	): MultiMap<Id> {
 		const map = new MultiMap<Id>();
@@ -156,7 +156,7 @@ export class Nodes {
 	 * @returns A parent-to-descendant map of IDs.
 	 */
 	public static toAncestorMap<Item, Id = Item>(
-		roots: Multiple<Node<Item>>,
+		roots: Multiple<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
 	): MultiMap<Id> {
 		const map = new MultiMap<Id>();
@@ -190,7 +190,7 @@ export class Nodes {
 	 * @returns An array of `Relation<Id>`s.
 	 */
 	public static toRelations<Item, Id = Item>(
-		roots: Multiple<Node<Item>>,
+		roots: Multiple<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
 	): Relation<Id>[] {
 		const relations: Relation<Id>[] = [];
