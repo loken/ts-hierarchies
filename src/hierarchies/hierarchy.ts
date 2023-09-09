@@ -19,7 +19,7 @@ export class Hierarchy<Item, Id = Item> {
 
 	//#region backing fields
 	#identify: Identify<Item, Id>;
-	#roots: Node<Item>[] = [];
+	#roots = new Map<Id, Node<Item>>;
 	#nodes = new Map<Id, Node<Item>>();
 	#debrand = new Map<Id, DeBrand>();
 	//#endregion
@@ -32,7 +32,7 @@ export class Hierarchy<Item, Id = Item> {
 
 	/** Get a shallow clone of the roots. */
 	public get roots() {
-		return [ ...this.#roots ];
+		return [ ...this.#roots.values() ];
 	}
 
 	/** Get a shallow clone of all nodes. */
@@ -74,9 +74,7 @@ export class Hierarchy<Item, Id = Item> {
 		if (!nodes.every(n => n.isRoot))
 			throw new Error("The 'roots' all be roots!");
 
-		this.#addNodes(nodes);
-
-		this.#roots.push(...nodes);
+		this.#addNodes(nodes, true);
 
 		return this;
 	}
@@ -89,7 +87,7 @@ export class Hierarchy<Item, Id = Item> {
 	public attach(parentId: Id, children: Multiple<Node<Item>>): this {
 		const nodes = spreadMultiple(children);
 
-		if (this.#nodes.has(parentId))
+		if (!this.#nodes.has(parentId))
 			throw new Error("The 'parentId' must be a hierarchy member.");
 
 		this.#addNodes(nodes);
@@ -100,7 +98,35 @@ export class Hierarchy<Item, Id = Item> {
 		return this;
 	}
 
-	#addNodes(nodes: Multiple<Node<Item>>) {
+	/**
+	 * Detach the provided `nodes`.
+	 * @param nodes Nodes to detach.
+	 */
+	public detach(node: Multiple<Node<Item>>) {
+		const nodes = spreadMultiple(node);
+
+		for (const node of traverseGraph({
+			roots: nodes,
+			next:  node => node.children,
+		})) {
+			const id = this.#identify(node.item);
+			this.#debrand.get(id)!();
+			this.#debrand.delete(id);
+			this.#nodes.delete(id);
+			this.#roots.delete(id);
+		}
+
+		for (const node of nodes) {
+			if (!node.isRoot)
+				node.detachSelf();
+		}
+
+		return this;
+	}
+
+	#addNodes(node: Multiple<Node<Item>>, asRoot = false) {
+		const nodes = spreadMultiple(node);
+
 		for (const node of traverseGraph({
 			roots: nodes,
 			next:  node => node.children,
@@ -109,6 +135,12 @@ export class Hierarchy<Item, Id = Item> {
 			this.#debrand.set(id, node.brand(this));
 			this.#nodes.set(id, node);
 		}
+
+		if (!asRoot)
+			return;
+
+		for (const node of nodes)
+			this.#roots.set(this.#identify(node.item), node);
 	}
 	//#endregion
 
