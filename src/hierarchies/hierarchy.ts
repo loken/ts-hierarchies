@@ -4,6 +4,7 @@ import { type DeBrand, Node } from '../nodes/node.js';
 import { type Identify, nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import { type TraverseSelf } from '../traversal/traverse-types.js';
+import type { TransformTuple } from '../utilities/tuple.types.js';
 
 
 /**
@@ -51,6 +52,15 @@ export class Hierarchy<Item, Id = Item> {
 			throw new Error("The 'id' must be a hierarchy member.");
 
 		return node;
+	}
+
+	/**
+	 * Get nodes by `ids`.
+	 * @param id The IDs of the nodes to retrieve.
+	 * @throws The 'id' must be a hierarchy member.
+	 */
+	public getNodes<const Ids extends readonly Id[]>(ids: Ids): TransformTuple<Ids, Node<Item>> {
+		return ids.map(id => this.getNode(id)) as TransformTuple<Ids, Node<Item>>;
 	}
 
 	/**
