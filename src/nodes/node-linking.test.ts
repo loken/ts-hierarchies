@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 
-import { HCNode } from './node.js';
+import { type HCNode } from './node.js';
+import { Nodes } from './nodes.js';
 
 
 test('node.attach() links both ways', () => {
-	const root = new HCNode('root');
-	const child = new HCNode('child');
+	const [ root, child ] = Nodes.create('root', 'child');
 
 	root.attach(child);
 
@@ -17,8 +17,7 @@ test('node.attach() links both ways', () => {
 });
 
 test('node.detach() unlinks both ways', () => {
-	const root = new HCNode('root');
-	const child = new HCNode('child');
+	const [ root, child ] = Nodes.create('root', 'child');
 
 	root.attach(child);
 	root.detach(child);
@@ -28,8 +27,7 @@ test('node.detach() unlinks both ways', () => {
 });
 
 test('node.detachSelf() unlinks both ways', () => {
-	const root = new HCNode('root');
-	const child = new HCNode('child');
+	const [ root, child ] = Nodes.create('root', 'child');
 
 	root.attach(child);
 	child.detachSelf();
@@ -39,9 +37,9 @@ test('node.detachSelf() unlinks both ways', () => {
 });
 
 test('node.dismantle(false) unlinks everything under the node.', () => {
-	const branchA = new HCNode('A').attach([ new HCNode('a1'), new HCNode('a2'), new HCNode('a3').attach(new HCNode('a31')) ]);
-	const branchB = new HCNode('A').attach([ new HCNode('b1'), new HCNode('b2').attach(new HCNode('b21')) ]);
-	const root = new HCNode('root').attach([ branchA, branchB ]);
+	const branchA = Nodes.create('A').attach([ Nodes.create('a1'), Nodes.create('a2'), Nodes.create('a3').attach(Nodes.create('a31')) ]);
+	const branchB = Nodes.create('A').attach([ Nodes.create('b1'), Nodes.create('b2').attach(Nodes.create('b21')) ]);
+	const root = Nodes.create('root').attach([ branchA, branchB ]);
 
 	const descendantsOfA = branchA.getDescendants({ excludeSelf: true });
 	const other = root.getDescendants().filter(n => !n.item.startsWith('a'));
@@ -62,9 +60,9 @@ test('node.dismantle(false) unlinks everything under the node.', () => {
 });
 
 test('node.dismantle(true) unlinks everything, including the ancestry and its branches.', () => {
-	const branchA = new HCNode('A').attach([ new HCNode('a1'), new HCNode('a2'), new HCNode('a3').attach(new HCNode('a31')) ]);
-	const branchB = new HCNode('A').attach([ new HCNode('b1'), new HCNode('b2').attach(new HCNode('b21')) ]);
-	const root = new HCNode('root').attach([ branchA, branchB ]);
+	const branchA = Nodes.create('A').attach([ Nodes.create('a1'), Nodes.create('a2'), Nodes.create('a3').attach(Nodes.create('a31')) ]);
+	const branchB = Nodes.create('A').attach([ Nodes.create('b1'), Nodes.create('b2').attach(Nodes.create('b21')) ]);
+	const root = Nodes.create('root').attach([ branchA, branchB ]);
 
 	const nodes = root.getDescendants();
 

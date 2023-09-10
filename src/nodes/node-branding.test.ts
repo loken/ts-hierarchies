@@ -1,11 +1,10 @@
 import { assert, test } from 'vitest';
 
-import { HCNode } from './node.js';
+import { Nodes } from './nodes.js';
 
 
 test('node.attach() unbranded node to a branded node throws', () => {
-	const a = new HCNode('A');
-	const b = new HCNode('B');
+	const [ a, b ] = Nodes.create('A', 'B');
 
 	a.brand('some-brand');
 
@@ -14,8 +13,7 @@ test('node.attach() unbranded node to a branded node throws', () => {
 });
 
 test('node.attach() nodes with different brands throws', () => {
-	const a = new HCNode('A');
-	const b = new HCNode('B');
+	const [ a, b ] = Nodes.create('A', 'B');
 
 	a.brand('some-brand');
 	b.brand('other-brand');
@@ -25,8 +23,7 @@ test('node.attach() nodes with different brands throws', () => {
 });
 
 test('node.detach() branded node throws', () => {
-	const a = new HCNode('A');
-	const b = new HCNode('B');
+	const [ a, b ] = Nodes.create('A', 'B');
 
 	a.brand('some-brand');
 	b.brand('some-brand');
@@ -37,8 +34,7 @@ test('node.detach() branded node throws', () => {
 });
 
 test('node.detach() after DeBranding a branded node works.', () => {
-	const a = new HCNode('A');
-	const b = new HCNode('B');
+	const [ a, b ] = Nodes.create('A', 'B');
 
 	a.brand('some-brand');
 	const deBrandB = b.brand('some-brand');

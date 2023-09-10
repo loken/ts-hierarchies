@@ -57,9 +57,9 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Get nodes by `ids`.
 	 * @param id The IDs of the nodes to retrieve.
-	 * @throws The 'id' must be a hierarchy member.
+	 * @throws The 'ids' must be hierarchy members.
 	 */
-	public getNodes<const Ids extends readonly Id[]>(ids: Ids): TransformTuple<Ids, HCNode<Item>> {
+	public getNodes<const Ids extends readonly Id[]>(...ids: Ids): TransformTuple<Ids, HCNode<Item>> {
 		return ids.map(id => this.getNode(id)) as TransformTuple<Ids, HCNode<Item>>;
 	}
 

@@ -1,7 +1,6 @@
 import { type MultiMapSeparators } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
-import { HCNode } from './node.js';
 import { Nodes } from './nodes.js';
 
 
@@ -10,16 +9,13 @@ const sep: MultiMapSeparators = {
 	prefix: '\n\t',
 };
 
-const root = new HCNode(0).attach([
-	new HCNode(1).attach([
-		new HCNode(11),
-		new HCNode(12).attach(new HCNode(121)),
+const root = Nodes.create(0).attach([
+	Nodes.create(1).attach([
+		Nodes.create(11),
+		Nodes.create(12).attach(Nodes.create(121)),
 	]),
-	new HCNode(2),
-	new HCNode(3).attach([
-		new HCNode(31),
-		new HCNode(32),
-	]),
+	Nodes.create(2),
+	Nodes.create(3).attach(Nodes.create(31, 32)),
 ]);
 
 

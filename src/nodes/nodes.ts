@@ -1,11 +1,26 @@
 import { iterateAll, iterateMultiple, mapGetLazy, MultiMap, type Multiple } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/traverse-graph.js';
+import type { TransformTuple } from '../utilities/tuple.types.js';
 import { HCNode } from './node.js';
 import { type Identify, nodesToIds, nodeToId } from './node-conversion.js';
 import { type Relation } from './relations.js';
 
 export class Nodes {
+
+	/**
+	 * Create one or more nodes.
+	 *
+	 * @item Required item to wrap in a node.
+	 * @items Optional additional items to wrap in nodes.
+	 * @returns One node when you pass one item and a fixed length tuple of nodes matching the provided arguments.
+	 */
+	public static create<Item, const Items extends readonly Item[]>(item: Item, ...items: Items): Items['length'] extends 0 ? HCNode<Item> : TransformTuple<[Item, ...Items], HCNode<Item>> {
+		if (items.length === 0)
+			return new HCNode(item) as any;
+		else
+			return [ new HCNode(item), ...items.map(item => new HCNode(item)) ] as any;
+	}
 
 	/**
 	 * Build nodes of IDs linked as described by the provided `childMap`.

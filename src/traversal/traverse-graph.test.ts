@@ -1,23 +1,20 @@
 import { iterateAll, MultiMap } from '@loken/utilities';
 import { describe, expect, it } from 'vitest';
 
-import { HCNode } from '../nodes/node.js';
 import { nodesToItems } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { traverseGraph } from './traverse-graph.js';
 
 
-const root = new HCNode(0).attach([
-	new HCNode(1).attach([
-		new HCNode(11),
-		new HCNode(12).attach(new HCNode(121)),
+const root = Nodes.create(0).attach([
+	Nodes.create(1).attach([
+		Nodes.create(11),
+		Nodes.create(12).attach(Nodes.create(121)),
 	]),
-	new HCNode(2),
-	new HCNode(3).attach([
-		new HCNode(31),
-		new HCNode(32),
-	]),
+	Nodes.create(2),
+	Nodes.create(3).attach(Nodes.create(31, 32)),
 ]);
+
 
 describe('traverseGraph', () => {
 	it('should yield all items in correct order when traversing breadth-first using the `next` delegate', () => {
@@ -102,10 +99,10 @@ describe('traverseGraph', () => {
 	});
 
 	it('should be able to break circular dependencies', () => {
-		const last = new HCNode(4);
-		const first = new HCNode(1).attach(
-			new HCNode(2).attach(
-				new HCNode(3).attach(last),
+		const last = Nodes.create(4);
+		const first = Nodes.create(1).attach(
+			Nodes.create(2).attach(
+				Nodes.create(3).attach(last),
 			),
 		);
 
