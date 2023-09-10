@@ -41,7 +41,7 @@ test('node.dismantle(false) unlinks everything under the node.', () => {
 	const branchB = Nodes.create('A').attach([ Nodes.create('b1'), Nodes.create('b2').attach(Nodes.create('b21')) ]);
 	const root = Nodes.create('root').attach([ branchA, branchB ]);
 
-	const descendantsOfA = branchA.getDescendants({ excludeSelf: true });
+	const descendantsOfA = branchA.getDescendants();
 	const other = root.getDescendants().filter(n => !n.item.startsWith('a'));
 
 	branchA.dismantle(false);
@@ -64,7 +64,7 @@ test('node.dismantle(true) unlinks everything, including the ancestry and its br
 	const branchB = Nodes.create('A').attach([ Nodes.create('b1'), Nodes.create('b2').attach(Nodes.create('b21')) ]);
 	const root = Nodes.create('root').attach([ branchA, branchB ]);
 
-	const nodes = root.getDescendants();
+	const nodes = root.getDescendants(true);
 
 	expect(nodes.length).to.equal(10);
 

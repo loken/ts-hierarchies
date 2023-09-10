@@ -49,11 +49,7 @@ test('Hierarchies.createWithIds(childMap)', () => {
 });
 
 test('Hierarchies.createWithItems() from items and relations', () => {
-	const hc = Hierarchies.createWithItems({
-		identify: item => item.id,
-		items:    items,
-		spec:     relations,
-	});
+	const hc = Hierarchies.createWithItems(items, item => item.id, relations);
 
 	const actual = Hierarchies.toChildMap(hc);
 
@@ -61,11 +57,7 @@ test('Hierarchies.createWithItems() from items and relations', () => {
 });
 
 test('Hierarchies.createWithItems() from items and a child-map', () => {
-	const hc = Hierarchies.createWithItems({
-		identify: item => item.id,
-		items:    items,
-		spec:     childMap,
-	});
+	const hc = Hierarchies.createWithItems(items, item => item.id, relations);
 
 	const actual = Hierarchies.toRelations(hc);
 
@@ -73,11 +65,7 @@ test('Hierarchies.createWithItems() from items and a child-map', () => {
 });
 
 test('Hierarchies.createWithIds() from item hierarchy', () => {
-	const itemHc = Hierarchies.createWithItems({
-		identify: item => item.id,
-		items:    items,
-		spec:     childMap,
-	});
+	const itemHc = Hierarchies.createWithItems(items, item => item.id, childMap);
 
 	const idHc = Hierarchies.createWithIds(itemHc);
 

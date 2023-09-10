@@ -1,4 +1,4 @@
-import { MultiMap, spreadMultiple } from '@loken/utilities';
+import { MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
 import { type Identify, type IdentifyOptional } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
@@ -35,24 +35,26 @@ export class Hierarchies {
 	}
 
 	/**
-	 * Create a hierarchy of `Id`s matching the `spec`.
+	 * Create a hierarchy of `Item`s matching the `spec`.
 	 *
-	 * @param spec Specification of how to create an `Item` hierarchy from `items`, an `identify` function and either an ID `spec` or an `identifyParent` function.
+	 * @template Item The type of item.
+	 * @template Id The type of IDs.
+	 * @param items The items to wrap in nodes.
+	 * @param identify Means of getting an ID for an item.
+	 * @param spec Specification of how to create an `Item` hierarchy from a list of relations, a multi-map of `Id`s,
+ 	 *             a hierarchy or a function which identifies the optional parent of an item.
+	 * @returns The fully linked `Hierarchy<Item, Id>`.
 	 */
-	public static createWithItems<Item, Id>(options: HierarchyItemSpec<Item, Id>): Hierarchy<Item, Id> {
-		const items = spreadMultiple(options.items);
+	public static createWithItems<Item, Id>(items: Multiple<Item>, identify: Identify<Item, Id>, spec: HierarchyItemSpec<Item, Id>): Hierarchy<Item, Id> {
+		items = spreadMultiple(items);
 
-		const childMap = options.spec
-			? Hierarchies.idSpecToChildMap(options.spec)
-			: Hierarchies.parentedItemsToChildMap(items, options.identify, options.identifyParent);
+		const childMap = typeof spec === 'function'
+			? Hierarchies.parentedItemsToChildMap(items, identify, spec)
+			: Hierarchies.idSpecToChildMap(spec);
 
-		const roots = Nodes.assembleItems({
-			identify: options.identify,
-			items:    items,
-			childMap,
-		});
+		const roots = Nodes.assembleItems(items, identify, childMap);
 
-		return new Hierarchy<Item, Id>(options.identify).attachRoot(roots);
+		return new Hierarchy<Item, Id>(identify).attachRoot(roots);
 	}
 
 

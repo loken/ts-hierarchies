@@ -2,7 +2,7 @@ import { type Multiple, spreadMultiple } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import { traverseSequence } from '../traversal/traverse-sequence.js';
-import { type TraverseGraphSelf, type TraverseSelf } from '../traversal/traverse-types.js';
+import type { TraversalType } from '../traversal/traverse-types.js';
 
 
 /**
@@ -201,7 +201,7 @@ export class HCNode<Item> {
 			parent.dismantle(true);
 		}
 
-		for (const descendant of this.traverseDescendants({ excludeSelf: true }))
+		for (const descendant of this.traverseDescendants(false))
 			descendant.detachSelf();
 
 		return this;
@@ -210,29 +210,29 @@ export class HCNode<Item> {
 
 	//#region traversal
 	/** Get ancestor nodes by traversing according to the options. */
-	public getAncestors(options?: TraverseSelf) {
-		return [ ...this.traverseAncestors(options) ];
+	public getAncestors(includeSelf = false) {
+		return [ ...this.traverseAncestors(includeSelf) ];
 	}
 
 	/** Generate a sequence of ancestor nodes by traversing according to the options. */
-	public traverseAncestors(options?: TraverseSelf) {
+	public traverseAncestors(includeSelf = false) {
 		return traverseSequence({
-			first: options?.excludeSelf ? this.#parent : this,
+			first: includeSelf ? this : this.#parent,
 			next:  node => node?.parent,
 		});
 	}
 
 	/** Get descendant nodes by traversing according to the options. */
-	public getDescendants(options?: TraverseGraphSelf) {
-		return [ ...this.traverseDescendants(options) ];
+	public getDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
+		return [ ...this.traverseDescendants(includeSelf, type) ];
 	}
 
 	/** Generate a sequence of descendant nodes by traversing according to the options. */
-	public traverseDescendants(options?: TraverseGraphSelf) {
+	public traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
 		return traverseGraph({
-			type:  options?.type,
-			roots: options?.excludeSelf ? this.children : this,
+			roots: includeSelf ? this : this.children,
 			next:  node => node.children,
+			type,
 		});
 	}
 	//#endregion

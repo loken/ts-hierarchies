@@ -27,11 +27,7 @@ test('Assemble IDs', () => {
 test('Assemble items', () => {
 	const items = splitBy('A,B,A1,A2,B1,A11,A12,B12').map(id => ({ id }));
 
-	const roots = Nodes.assembleItems({
-		identify: item => item.id,
-		childMap: MultiMap.parse(input),
-		items,
-	});
+	const roots = Nodes.assembleItems(items, item => item.id, MultiMap.parse(input));
 
 	const output = Nodes.toChildMap(roots, item => item.id).render(sep);
 

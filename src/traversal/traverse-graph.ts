@@ -1,7 +1,7 @@
 import { type Multiple } from '@loken/utilities';
 
 import { GraphSignal, type IGraphSignal } from './graph-signal.js';
-import { type TraverseGraph } from './traverse-types.js';
+import { type TraversalType } from './traverse-types.js';
 
 
 /** Describes how to get the the next nodes from a node visited while traversing a graph. */
@@ -16,9 +16,15 @@ export type SignalNodes<TNode> = (node: TNode, signal: IGraphSignal<TNode>) => v
  *
  * You must either provide a delegate using a `signal` or a delegate simply providing the `next` nodes.
  */
-export type GraphTraversal<TNode> = TraverseGraph & {
+export type GraphTraversal<TNode> = {
 	/** The roots may have parents, but they are treated as depth 0 nodes for the traversal. */
 	roots: Multiple<TNode>,
+	/**
+	 * The type of traversal.
+	 * - `breadth-first` (default): Breadth first processes each node at a given depth before it proceeds to the next depth.
+	 * - `depth-first`: Depth first traverses as deep as it can at any given time only exploring the next branch once the previous one has been fully explored.
+	 */
+	type?: TraversalType,
 	/** Should we be looking for cycles in the graph (`true`) or is it an acyclic graph/tree and we don't need to (`false` by default)? */
 	detectCycles?: boolean,
 } & ({

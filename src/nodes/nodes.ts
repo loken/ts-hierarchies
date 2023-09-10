@@ -57,17 +57,16 @@ export class Nodes {
 	 *
 	 * @template Item The type of item.
 	 * @template Id The type of IDs.
-	 * @param identify Means of getting an ID for an item.
 	 * @param items The items to wrap in nodes.
+	 * @param identify Means of getting an ID for an item.
 	 * @param childMap The map describing the relations.
 	 * @returns The root nodes.
 	 */
-	public static assembleItems<Item, Id>(options: {
-		identify: Identify<Item, Id>,
+	public static assembleItems<Item, Id>(
 		items: Multiple<Item>,
+		identify: Identify<Item, Id>,
 		childMap: MultiMap<Id>,
-	}): HCNode<Item>[] {
-		const { identify, items, childMap } = options;
+	): HCNode<Item>[] {
 		const nodes = new Map<Id, HCNode<Item>>();
 		const roots = new Map<Id, HCNode<Item>>();
 
@@ -149,7 +148,7 @@ export class Nodes {
 
 				const nodeId: Id = nodeToId(node, identify);
 
-				for (const ancestor of node.getAncestors({ excludeSelf: true })) {
+				for (const ancestor of node.getAncestors()) {
 					const ancestorId = nodeToId(ancestor, identify);
 					map.add(ancestorId, nodeId);
 				}
@@ -183,7 +182,7 @@ export class Nodes {
 
 				const nodeId: Id = nodeToId(node, identify);
 
-				for (const ancestor of node.getAncestors({ excludeSelf: true })) {
+				for (const ancestor of node.getAncestors(false)) {
 					const ancestorId = nodeToId(ancestor, identify);
 					map.add(nodeId, ancestorId);
 				}
