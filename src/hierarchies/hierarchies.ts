@@ -1,9 +1,9 @@
 import { MultiMap, spreadMultiple } from '@loken/utilities';
 
-import { type Identify } from '../nodes/node-conversion.js';
+import { type Identify, type IdentifyOptional } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { type Relation, Relations } from '../nodes/relations.js';
-import type { CreateOptions, HierarchyIdSpec, HierarchyItemSpec, ParentedOptions } from './hierarchies.types.js';
+import type { HierarchyIdSpec, HierarchyItemSpec } from './hierarchies.types.js';
 import { Hierarchy } from './hierarchy.js';
 
 
@@ -44,7 +44,7 @@ export class Hierarchies {
 
 		const childMap = options.spec
 			? Hierarchies.idSpecToChildMap(options.spec)
-			: Hierarchies.parentedItemsToChildMap(items, options);
+			: Hierarchies.parentedItemsToChildMap(items, options.identify, options.identifyParent);
 
 		const roots = Nodes.assembleItems({
 			identify: options.identify,
@@ -88,14 +88,15 @@ export class Hierarchies {
 
 	private static parentedItemsToChildMap<Item, Id>(
 		items: Item[],
-		options: CreateOptions<Item, Id> & ParentedOptions<Item, Id>,
+		identify: Identify<Item, Id>,
+		identifyParent: IdentifyOptional<Item, Id>,
 	) {
 		const map = new MultiMap<Id>();
 
 		for (const item of items) {
-			const parent = options.identifyParent(item);
+			const parent = identifyParent(item);
 			if (parent !== undefined)
-				map.add(parent, options.identify(item));
+				map.add(parent, identify(item));
 		}
 
 		return map;
