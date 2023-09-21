@@ -1,4 +1,4 @@
-import { type TryResult } from '@loken/utilities';
+import { type TryResult, tryResult } from '@loken/utilities';
 
 /**
  * Use this to signal to the traversal what's `next` and what to `skip`.
@@ -73,10 +73,10 @@ export class SequenceSignal<TEl> implements ISequenceSignal<TEl> {
 			this.#element = undefined;
 			this.#index++;
 
-			return { value: element, success: true };
+			return tryResult.succeed(element);
 		}
 		else {
-			return { success: false };
+			return tryResult.fail();
 		}
 	}
 	//#endregion

@@ -100,7 +100,7 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 		if (this.#isDepthFirst) {
 			let res = this.#branchCount.tryPeek();
 
-			while (res.success && res.value === 0) {
+			while (res[1] && res[0] === 0) {
 				this.#branchCount.pop();
 
 				res = this.#branchCount.tryPeek();
@@ -114,9 +114,9 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 	public tryGetNext(): TryResult<TNode> {
 		if (this.#visited !== undefined) {
 			let res: TryResult<TNode> = this.tryGetNextInternal();
-			while (res.success) {
-				if (!this.#visited.has(res.value)) {
-					this.#visited.add(res.value);
+			while (res[1]) {
+				if (!this.#visited.has(res[0])) {
+					this.#visited.add(res[0]);
 
 					return res;
 				}
@@ -124,7 +124,7 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 				res = this.tryGetNextInternal();
 			}
 
-			return { success: false };
+			return res;
 		}
 		else {
 			return this.tryGetNextInternal();
@@ -133,7 +133,7 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 
 	private tryGetNextInternal(): TryResult<TNode> {
 		const res = this.#nodes.tryDetach();
-		if (res.success) {
+		if (res[1]) {
 			this.#skipped = false;
 
 			if (this.#isDepthFirst) {

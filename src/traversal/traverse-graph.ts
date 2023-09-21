@@ -50,11 +50,11 @@ export function* traverseGraph<TNode>(options: GraphTraversal<TNode>) {
 
 	const signal = new GraphSignal<TNode>(options);
 	let res = signal.tryGetNext();
-	while (res.success) {
-		traverse(res.value, signal);
+	while (res[1]) {
+		traverse(res[0], signal);
 
 		if (signal.shouldYield())
-			yield res.value;
+			yield res[0];
 
 		signal.cleanup();
 
