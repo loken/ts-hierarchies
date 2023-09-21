@@ -77,10 +77,16 @@ jobs:
       - name: Build package
         run: pnpm package
 
-      - name: Publish package
-        run: pnpm publish --access restricted --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish to GH Actions
+        run: |
+          pnpm publish --access restricted --no-git-checks
+
+      - name: Publish to npmjs.org
+        if: ${{ steps.gitversion.outputs.preReleaseLabel == '' }}
+        run: |
+          git checkout .npmrc
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+          pnpm publish --access public --tag latest --no-git-checks
 
   cleanup:
     # Find and delete fully merged branches and their associated prerelease packages for commits to 'main'.
