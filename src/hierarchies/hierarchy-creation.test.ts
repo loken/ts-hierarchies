@@ -1,7 +1,7 @@
 import { MultiMap } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
-import { type Relation } from '../nodes/relations.js';
+import { type Relation } from '../utilities/relations.js';
 import { Hierarchies } from './hierarchies.js';
 
 const childMap = new MultiMap();
@@ -49,7 +49,11 @@ test('Hierarchies.createWithIds(childMap)', () => {
 });
 
 test('Hierarchies.createWithItems() from items and relations', () => {
-	const hc = Hierarchies.createWithItems(items, item => item.id, relations);
+	const hc = Hierarchies.createWithItems({
+		items,
+		identify: item => item.id,
+		spec:     relations,
+	});
 
 	const actual = hc.toChildMap();
 
@@ -57,7 +61,11 @@ test('Hierarchies.createWithItems() from items and relations', () => {
 });
 
 test('Hierarchies.createWithItems() from items and a child-map', () => {
-	const hc = Hierarchies.createWithItems(items, item => item.id, relations);
+	const hc = Hierarchies.createWithItems({
+		items,
+		identify: item => item.id,
+		spec:     relations,
+	});
 
 	const actual = hc.toRelations();
 
@@ -65,7 +73,11 @@ test('Hierarchies.createWithItems() from items and a child-map', () => {
 });
 
 test('Hierarchies.createWithIds() from item hierarchy', () => {
-	const itemHc = Hierarchies.createWithItems(items, item => item.id, childMap);
+	const itemHc = Hierarchies.createWithItems({
+		items,
+		identify: item => item.id,
+		spec:     childMap,
+	});
 
 	const idHc = Hierarchies.createWithIds(itemHc);
 

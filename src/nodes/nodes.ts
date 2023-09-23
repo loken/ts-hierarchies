@@ -1,10 +1,11 @@
 import { iterateAll, iterateMultiple, mapGetLazy, MultiMap, type Multiple } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/traverse-graph.js';
+import type { Identify } from '../utilities/identify.js';
+import type { Relation } from '../utilities/relations.js';
 import type { TransformTuple } from '../utilities/tuple.types.js';
 import { HCNode } from './node.js';
-import { type Identify, nodesToIds, nodeToId } from './node-conversion.js';
-import { type Relation } from './relations.js';
+import { nodesToIds, nodeToId } from './node-conversion.js';
 
 export class Nodes {
 

@@ -1,10 +1,11 @@
 import { MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
-import { type DeBrand, HCNode } from '../nodes/node.js';
-import { type Identify, nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
+import type { DeBrand, HCNode } from '../nodes/node.js';
+import { nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
-import type { Relation } from '../nodes/relations.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
+import type { Identify } from '../utilities/identify.js';
+import type { Relation } from '../utilities/relations.js';
 import type { TransformTuple } from '../utilities/tuple.types.js';
 
 

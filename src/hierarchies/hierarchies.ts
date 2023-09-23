@@ -1,9 +1,9 @@
-import { MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
+import { spreadMultiple } from '@loken/utilities';
 
-import { type Identify, type IdentifyOptional } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
-import { Relations } from '../nodes/relations.js';
-import type { HierarchyIdSpec, HierarchyItemSpec } from './hierarchies.types.js';
+import { ChildMap } from '../utilities/child-map.js';
+import type { Identify } from '../utilities/identify.js';
+import type { IdSpec, ItemIdOptions } from '../utilities/identity-options.js';
 import { Hierarchy } from './hierarchy.js';
 
 
@@ -27,60 +27,33 @@ export class Hierarchies {
 	 *
 	 * @param spec Specification of how to create an `Id` hierarchy from a list of relations, a multi-map of `Id`s or a hierarchy.
 	 */
-	public static createWithIds<Id>(spec: HierarchyIdSpec<Id>): Hierarchy<Id> {
-		const childMap = Hierarchies.idSpecToChildMap(spec);
+	public static createWithIds<Id>(spec: IdSpec<Id>): Hierarchy<Id> {
+		const childMap = ChildMap.fromIds(spec);
 		const roots = Nodes.assembleIds(childMap);
 
 		return Hierarchies.createForIds<Id>().attachRoot(roots);
 	}
 
 	/**
-	 * Create a hierarchy of `Item`s matching the `spec`.
+	 * Create a hierarchy of `Item`s matching details from the `options`.
 	 *
 	 * @template Item The type of item.
 	 * @template Id The type of IDs.
 	 * @param items The items to wrap in nodes.
 	 * @param identify Means of getting an ID for an item.
-	 * @param spec Specification of how to create an `Item` hierarchy from a list of relations, a multi-map of `Id`s,
- 	 *             a hierarchy or a function which identifies the optional parent of an item.
+	 * @param options Options with details on how to create an `Item` hierarchy from a list of relations, a multi-map of `Id`s,
+ 	 *                a hierarchy or functions for inferring the relations from each item.
 	 * @returns The fully linked `Hierarchy<Item, Id>`.
 	 */
-	public static createWithItems<Item, Id>(items: Multiple<Item>, identify: Identify<Item, Id>, spec: HierarchyItemSpec<Item, Id>): Hierarchy<Item, Id> {
-		items = spreadMultiple(items);
+	public static createWithItems<Item, Id>(options: ItemIdOptions<Item, Id>): Hierarchy<Item, Id> {
+		// Spread the items so that we don't get multiple iterations over an iterator.
+		options.items = spreadMultiple(options.items);
 
-		const childMap = typeof spec === 'function'
-			? Hierarchies.parentedItemsToChildMap(items, identify, spec)
-			: Hierarchies.idSpecToChildMap(spec);
+		const childMap = ChildMap.fromItems(options as ItemIdOptions<Item, Id>);
 
-		const roots = Nodes.assembleItems(items, identify, childMap);
+		const roots = Nodes.assembleItems(options.items, options.identify, childMap);
 
-		return new Hierarchy<Item, Id>(identify).attachRoot(roots);
-	}
-
-
-	private static idSpecToChildMap<Id>(spec: HierarchyIdSpec<Id>): MultiMap<Id> {
-		if (spec instanceof MultiMap)
-			return spec;
-		if (Array.isArray(spec))
-			return Relations.toChildMap(spec);
-		else
-			return spec.toChildMap();
-	}
-
-	private static parentedItemsToChildMap<Item, Id>(
-		items: Item[],
-		identify: Identify<Item, Id>,
-		identifyParent: IdentifyOptional<Item, Id>,
-	) {
-		const map = new MultiMap<Id>();
-
-		for (const item of items) {
-			const parent = identifyParent(item);
-			if (parent !== undefined)
-				map.add(parent, identify(item));
-		}
-
-		return map;
+		return new Hierarchy<Item, Id>(options.identify).attachRoot(roots);
 	}
 
 }

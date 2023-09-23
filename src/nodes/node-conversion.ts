@@ -3,13 +3,6 @@ import { iterateMultiple, type Multiple } from '@loken/utilities';
 import { HCNode } from './node.js';
 
 
-/** Means of getting an `Id` for an `Item`. */
-export type Identify<Item, Id> = (item: Item) => Id;
-
-/** Means of getting an optional `Id` for an `Item`. */
-export type IdentifyOptional<Item, Id> = (item: Item) => Id | undefined;
-
-
 /** Extract the `Item` from each of the `nodes`. */
 export const nodesToItems = <Item>(nodes: Multiple<HCNode<Item>>) => {
 	const items: Item[] = [];
