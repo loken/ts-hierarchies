@@ -1,6 +1,7 @@
 import { MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
-import type { DeBrand, HCNode } from '../nodes/node.js';
+import type { HCNode } from '../nodes/node.js';
+import type { DeBrand, NodePredicate } from '../nodes/node.types.js';
 import { nodesToIds } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
@@ -70,6 +71,52 @@ export class Hierarchy<Item, Id = Item> {
 		else
 			return [ this.getOne(id).item, ...ids.map(id => this.getOne(id).item) ] as any;
 	}
+
+	/**
+	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 */
+	public *find(search: Id[] | NodePredicate<Item>): Generator<HCNode<Item>> {
+		if (Array.isArray(search)) {
+			for (const id of search) {
+				const node = this.#nodes.get(id);
+				if (node)
+					yield node;
+			}
+		}
+		else {
+			for (const node of this.#nodes.values()) {
+				if (search(node))
+					yield node;
+			}
+		}
+	}
+
+	/**
+	 * Find nodes matching a list of `Id`s or an `Item` predicate.
+	 */
+	public *findItems(search: Id[] | NodePredicate<Item>): Generator<Item> {
+		for (const node of this.find(search))
+			yield node.item;
+	}
+
+	/**
+	 * Find `Id`s matching a list of `Id`s or an `Item` predicate.
+	 */
+	public *findIds(search: Id[] | NodePredicate<Item>): Generator<Id> {
+		if (Array.isArray(search)) {
+			for (const id of search) {
+				if (this.#nodes.has(id))
+					yield id;
+			}
+		}
+		else {
+			for (const [ id, node ] of this.#nodes) {
+				if (search(node))
+					yield id;
+			}
+		}
+	}
+
 
 	private getOne(id: Id) {
 		const node = this.#nodes.get(id);

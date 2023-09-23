@@ -3,14 +3,8 @@ import { type Multiple, spreadMultiple } from '@loken/utilities';
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import { traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
+import type { DeBrand } from './node.types.js';
 import { nodesToItems } from './node-conversion.js';
-
-
-/**
- * Delegate that can be called in order to remove the "brand" from
- * the node that returned this delegate when it was branded.
- */
-export type DeBrand = () => void;
 
 
 /**
