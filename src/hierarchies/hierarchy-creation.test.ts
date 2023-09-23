@@ -35,7 +35,7 @@ const items = [
 test('Hierarchies.createWithIds(relations)', () => {
 	const hc = Hierarchies.createWithIds(relations);
 
-	const actual = Hierarchies.toChildMap(hc);
+	const actual = hc.toChildMap();
 
 	expect(actual).toEqual(childMap);
 });
@@ -43,7 +43,7 @@ test('Hierarchies.createWithIds(relations)', () => {
 test('Hierarchies.createWithIds(childMap)', () => {
 	const hc = Hierarchies.createWithIds(childMap);
 
-	const actual = Hierarchies.toChildMap(hc);
+	const actual = hc.toChildMap();
 
 	expect(actual).toEqual(childMap);
 });
@@ -51,7 +51,7 @@ test('Hierarchies.createWithIds(childMap)', () => {
 test('Hierarchies.createWithItems() from items and relations', () => {
 	const hc = Hierarchies.createWithItems(items, item => item.id, relations);
 
-	const actual = Hierarchies.toChildMap(hc);
+	const actual = hc.toChildMap();
 
 	expect(actual).toEqual(childMap);
 });
@@ -59,7 +59,7 @@ test('Hierarchies.createWithItems() from items and relations', () => {
 test('Hierarchies.createWithItems() from items and a child-map', () => {
 	const hc = Hierarchies.createWithItems(items, item => item.id, relations);
 
-	const actual = Hierarchies.toRelations(hc);
+	const actual = hc.toRelations();
 
 	expect(actual).toEqual(relations);
 });
@@ -69,7 +69,7 @@ test('Hierarchies.createWithIds() from item hierarchy', () => {
 
 	const idHc = Hierarchies.createWithIds(itemHc);
 
-	const actual = Hierarchies.toRelations(idHc);
+	const actual = idHc.toRelations();
 
 	expect(actual).toEqual(relations);
 });

@@ -2,7 +2,7 @@ import { MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
 import { type Identify, type IdentifyOptional } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
-import { type Relation, Relations } from '../nodes/relations.js';
+import { Relations } from '../nodes/relations.js';
 import type { HierarchyIdSpec, HierarchyItemSpec } from './hierarchies.types.js';
 import { Hierarchy } from './hierarchy.js';
 
@@ -58,34 +58,13 @@ export class Hierarchies {
 	}
 
 
-	/** Create a map of ids to child-ids by traversing the `hierarchy`. */
-	public static toChildMap<Item, Id>(hierarchy: Hierarchy<Item, Id>): MultiMap<Id> {
-		return Nodes.toChildMap(hierarchy.roots, hierarchy.identify);
-	}
-
-	/** Create a map of ids to descendant-ids by traversing the `hierarchy`. */
-	public static toDescendantMap<Item, Id>(hierarchy: Hierarchy<Item, Id>): MultiMap<Id> {
-		return Nodes.toDescendantMap(hierarchy.roots, hierarchy.identify);
-	}
-
-	/** Create a map of ids to ancestor-ids by traversing the `hierarchy`. */
-	public static toAncestorMap<Item, Id>(hierarchy: Hierarchy<Item, Id>): MultiMap<Id> {
-		return Nodes.toDescendantMap(hierarchy.roots, hierarchy.identify);
-	}
-
-	/** Create a list of relations by traversing the graph of the `hierarchy`. */
-	public static toRelations<Item, Id>(hierarchy: Hierarchy<Item, Id>): Relation<Id>[] {
-		return Nodes.toRelations(hierarchy.roots, hierarchy.identify);
-	}
-
-
 	private static idSpecToChildMap<Id>(spec: HierarchyIdSpec<Id>): MultiMap<Id> {
 		if (spec instanceof MultiMap)
 			return spec;
 		if (Array.isArray(spec))
 			return Relations.toChildMap(spec);
 		else
-			return Hierarchies.toChildMap(spec);
+			return spec.toChildMap();
 	}
 
 	private static parentedItemsToChildMap<Item, Id>(

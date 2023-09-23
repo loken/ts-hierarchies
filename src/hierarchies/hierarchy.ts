@@ -1,7 +1,9 @@
-import { type Multiple, spreadMultiple } from '@loken/utilities';
+import { MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
 import { type DeBrand, HCNode } from '../nodes/node.js';
 import { type Identify, nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
+import { Nodes } from '../nodes/nodes.js';
+import type { Relation } from '../nodes/relations.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import type { TransformTuple } from '../utilities/tuple.types.js';
 
@@ -194,6 +196,28 @@ export class Hierarchy<Item, Id = Item> {
 	 */
 	public getDescendantIds(id: Id, includeSelf = false) {
 		return nodesToIds(this.getNode(id).traverseDescendants(includeSelf), this.#identify);
+	}
+	//#endregion
+
+	//#region MultiMaps
+	/** Create a map of ids to child-ids by traversing the `hierarchy`. */
+	public toChildMap(): MultiMap<Id> {
+		return Nodes.toChildMap(this.roots, this.identify);
+	}
+
+	/** Create a map of ids to descendant-ids by traversing the `hierarchy`. */
+	public toDescendantMap(): MultiMap<Id> {
+		return Nodes.toDescendantMap(this.roots, this.identify);
+	}
+
+	/** Create a map of ids to ancestor-ids by traversing the `hierarchy`. */
+	public toAncestorMap(): MultiMap<Id> {
+		return Nodes.toDescendantMap(this.roots, this.identify);
+	}
+
+	/** Create a list of relations by traversing the graph of the `hierarchy`. */
+	public toRelations(): Relation<Id>[] {
+		return Nodes.toRelations(this.roots, this.identify);
 	}
 	//#endregion
 
