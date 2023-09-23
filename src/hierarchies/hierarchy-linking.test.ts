@@ -38,7 +38,7 @@ test('hc.attach() to multiple hierarchies throws', () => {
 	const hcA = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
 	const hcB = Hierarchies.createWithIds(MultiMap.parse('B'));
 
-	const [ a, a1 ] = hcA.getNodes('A', 'A1');
+	const [ a, a1 ] = hcA.get('A', 'A1');
 
 	assert.throws(() => hcB.attachRoot(a));
 	assert.throws(() => hcB.attachRoot(a1));
@@ -49,7 +49,7 @@ test('hc.attach() to multiple hierarchies throws', () => {
 test('node.detach() while in a Hierarchy throws because it is branded', () => {
 	const hc = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
 
-	const [ a, a1 ] = hc.getNodes('A', 'A1');
+	const [ a, a1 ] = hc.get('A', 'A1');
 
 	assert.throws(() => a.detach(a1));
 });
@@ -57,7 +57,7 @@ test('node.detach() while in a Hierarchy throws because it is branded', () => {
 test('node.detachSelf() while in a Hierarchy throws because it is branded', () => {
 	const hc = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
 
-	const [ a1 ] = hc.getNodes('A', 'A1');
+	const [ a1 ] = hc.get('A', 'A1');
 
 	assert.throws(() => a1.detachSelf());
 });
@@ -66,7 +66,7 @@ test('Move a branch from one hierarchy to another using hc.detach() and hc.attac
 	const hcA = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
 	const hcB = Hierarchies.createWithIds(MultiMap.parse('B'));
 
-	const [ a1 ] = hcA.getNodes('A1');
+	const a1 = hcA.get('A1');
 
 	hcA.detach(a1);
 	hcB.attachRoot(a1);

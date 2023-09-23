@@ -44,34 +44,39 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Get node by `id`.
-	 * @param id The ID of the node to retrieve.
+	 * Get node or nodes by their `Id`.
+	 * @param id The ID of the node or first node to retrieve.
+	 * @param ids The IDs of the nodes to retrieve beyond the first.
 	 * @throws The 'id' must be a hierarchy member.
+	 * @returns A single node when you pass a single ID and an array of nodes when you pass multiple IDs.
 	 */
-	public getNode(id: Id): HCNode<Item> {
+	public get<Ids extends Id[]>(id: Id, ...ids: Ids): Ids['length'] extends 0 ? HCNode<Item> : TransformTuple<[Id, ...Ids], HCNode<Item>> {
+		if (ids.length === 0)
+			return this.getOne(id) as any;
+		else
+			return [ this.getOne(id), ...ids.map(id => this.getOne(id)) ] as any;
+	}
+
+	/**
+	 * Get item  or items by `Id`.
+	 * @param id The ID of the item or first item to retrieve.
+	 * @param ids The IDs of the items to retrieve beyond the first.
+	 * @throws The 'id' must be a hierarchy member.
+	 * @returns A single item when you pass a single ID and an array of items when you pass multiple IDs.
+	 */
+	public getItem<Ids extends Id[]>(id: Id, ...ids: Ids): Ids['length'] extends 0 ? Item : TransformTuple<[Id, ...Ids], Item> {
+		if (ids.length === 0)
+			return this.getOne(id).item as any;
+		else
+			return [ this.getOne(id).item, ...ids.map(id => this.getOne(id).item) ] as any;
+	}
+
+	private getOne(id: Id) {
 		const node = this.#nodes.get(id);
 		if (node === undefined)
 			throw new Error("The 'id' must be a hierarchy member.");
 
 		return node;
-	}
-
-	/**
-	 * Get nodes by `ids`.
-	 * @param id The IDs of the nodes to retrieve.
-	 * @throws The 'ids' must be hierarchy members.
-	 */
-	public getNodes<const Ids extends readonly Id[]>(...ids: Ids): TransformTuple<Ids, HCNode<Item>> {
-		return ids.map(id => this.getNode(id)) as TransformTuple<Ids, HCNode<Item>>;
-	}
-
-	/**
-	 * Get item by `id`.
-	 * @param id The ID of the item to retrieve.
-	 * @throws The 'id' must be a hierarchy member.
-	 */
-	public get(id: Id): Item {
-		return this.getNode(id).item;
 	}
 	//#endregion
 
@@ -161,42 +166,42 @@ export class Hierarchy<Item, Id = Item> {
 	 * Get the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
 	public getAncestors(id: Id, includeSelf = false) {
-		return this.getNode(id).getAncestors(includeSelf);
+		return this.get(id).getAncestors(includeSelf);
 	}
 
 	/**
 	 * Get the items from the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
 	public getAncestorItems(id: Id, includeSelf = false) {
-		return this.getNode(id).getAncestorItems(includeSelf);
+		return this.get(id).getAncestorItems(includeSelf);
 	}
 
 	/**
 	 * Get the IDs from the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
 	public getAncestorIds(id: Id, includeSelf = false) {
-		return nodesToIds(this.getNode(id).traverseAncestors(includeSelf), this.#identify);
+		return nodesToIds(this.get(id).traverseAncestors(includeSelf), this.#identify);
 	}
 
 	/**
 	 * Get the chain of descendant nodes starting with the node for the item matching the `id`.
 	 */
 	public getDescendants(id: Id, includeSelf = false) {
-		return this.getNode(id).getDescendants(includeSelf);
+		return this.get(id).getDescendants(includeSelf);
 	}
 
 	/**
 	 * Get the items from the chain of descendant nodes starting with the node for the item matching the `id`.
 	 */
 	public getDescendantItems(id: Id, includeSelf = false) {
-		return this.getNode(id).getDescendantItems(includeSelf);
+		return this.get(id).getDescendantItems(includeSelf);
 	}
 
 	/**
 	 * Get the IDs from the chain of descendant nodes starting with the node for the item matching the `id`.
 	 */
 	public getDescendantIds(id: Id, includeSelf = false) {
-		return nodesToIds(this.getNode(id).traverseDescendants(includeSelf), this.#identify);
+		return nodesToIds(this.get(id).traverseDescendants(includeSelf), this.#identify);
 	}
 	//#endregion
 
