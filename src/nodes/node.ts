@@ -3,6 +3,7 @@ import { type Multiple, spreadMultiple } from '@loken/utilities';
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import { traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
+import { nodesToItems } from './node-conversion.js';
 
 
 /**
@@ -32,23 +33,6 @@ export class HCNode<Item> {
 
 	/** The brand is used to lock the node to a specific owner. */
 	#brand?: any;
-	//#endregion
-
-	//#region accessors
-	/** The item is the subject/content of the node. */
-	public get item() {
-		return this.#item;
-	}
-
-	/** Link to the parent node. */
-	public get parent() {
-		return this.#parent;
-	}
-
-	/** Links to the child nodes. */
-	public get children() {
-		return this.#children ? [ ...this.#children ] : [];
-	}
 	//#endregion
 
 	//#region predicates
@@ -208,18 +192,40 @@ export class HCNode<Item> {
 	}
 	//#endregion
 
-	//#region traversal
+	//#region accessors
+	/** The item is the subject/content of the node. */
+	public get item() {
+		return this.#item;
+	}
+
+	/** Get the parent node, if any. */
+	public getParent() {
+		return this.#parent;
+	}
+
+	/** Get the parent item, if any. */
+	public getParentItem() {
+		return this.#parent?.item;
+	}
+
+	/** Get all child nodes. */
+	public getChildren() {
+		return this.#children ? [ ...this.#children ] : [];
+	}
+
+	/** Get all child items. */
+	public getChildItems() {
+		return this.#children ? nodesToItems(this.#children.values()) : [];
+	}
+
 	/** Get ancestor nodes by traversing according to the options. */
 	public getAncestors(includeSelf = false) {
 		return [ ...this.traverseAncestors(includeSelf) ];
 	}
 
-	/** Generate a sequence of ancestor nodes by traversing according to the options. */
-	public traverseAncestors(includeSelf = false) {
-		return traverseSequence({
-			first: includeSelf ? this : this.#parent,
-			next:  node => node?.parent,
-		});
+	/** Get ancestor nodes by traversing according to the options. */
+	public getAncestorItems(includeSelf = false) {
+		return nodesToItems(this.traverseAncestors(includeSelf));
 	}
 
 	/** Get descendant nodes by traversing according to the options. */
@@ -227,11 +233,26 @@ export class HCNode<Item> {
 		return [ ...this.traverseDescendants(includeSelf, type) ];
 	}
 
+	/** Get descendant nodes by traversing according to the options. */
+	public getDescendantItems(includeSelf = false, type: TraversalType = 'breadth-first') {
+		return nodesToItems(this.traverseDescendants(includeSelf, type));
+	}
+	//#endregion
+
+	//#region traversal
+	/** Generate a sequence of ancestor nodes by traversing according to the options. */
+	public traverseAncestors(includeSelf = false) {
+		return traverseSequence({
+			first: includeSelf ? this : this.#parent,
+			next:  node => node?.getParent(),
+		});
+	}
+
 	/** Generate a sequence of descendant nodes by traversing according to the options. */
 	public traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
 		return traverseGraph({
-			roots: includeSelf ? this : this.children,
-			next:  node => node.children,
+			roots: includeSelf ? this : this.getChildren(),
+			next:  node => node.getChildren(),
 			type,
 		});
 	}

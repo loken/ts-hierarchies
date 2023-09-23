@@ -23,7 +23,7 @@ describe('traverseGraph', () => {
 		const actual = traverseGraph({
 			type:  'breadth-first',
 			roots: root,
-			next:  n => n.children,
+			next:  n => n.getChildren(),
 		});
 
 		expect(nodesToItems(actual)).toEqual(expected);
@@ -35,7 +35,7 @@ describe('traverseGraph', () => {
 		const actual = traverseGraph({
 			type:  'depth-first',
 			roots: root,
-			next:  n => n.children,
+			next:  n => n.getChildren(),
 		});
 
 		expect(nodesToItems(actual)).toEqual(expected);
@@ -49,10 +49,10 @@ describe('traverseGraph', () => {
 			signal: (node, signal) => {
 				// Exclude children of 3 which is 31 and 32.
 				if (node.item !== 3)
-					signal.next(node.children);
+					signal.next(node.getChildren());
 
 				// Skip children of 1 which is 11 and 12.
-				if (node.parent?.item === 1)
+				if (node.getParent()?.item === 1)
 					signal.skip();
 			},
 		});
@@ -64,7 +64,7 @@ describe('traverseGraph', () => {
 		const actual = traverseGraph({
 			roots:  root,
 			signal: (node, signal) => {
-				signal.next(node.children);
+				signal.next(node.getChildren());
 
 				// Due to our value scheme the depth is equal to
 				// the number of digits which we can get with a bit of math.
@@ -82,7 +82,7 @@ describe('traverseGraph', () => {
 		const actual = traverseGraph({
 			roots:  root,
 			signal: (node, signal) => {
-				signal.next(node.children);
+				signal.next(node.getChildren());
 
 				// We want to stop traversal once we find the item we want
 				// and to skip every other item.
@@ -112,7 +112,7 @@ describe('traverseGraph', () => {
 		const actual = traverseGraph({
 			roots:        first,
 			detectCycles: true,
-			next:         node => node.children,
+			next:         node => node.getChildren(),
 		});
 
 		expect(nodesToItems(actual)).toEqual([ 1, 2, 3, 4 ]);
@@ -134,7 +134,7 @@ describe('traverseGraph', () => {
 			type:   'breadth-first',
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.children);
+				signal.next(node.getChildren());
 
 				expect(node.item.length - 1).toEqual(signal.depth);
 			},
@@ -158,7 +158,7 @@ describe('traverseGraph', () => {
 			type:   'depth-first',
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.children);
+				signal.next(node.getChildren());
 
 				expect(node.item.length - 1).toEqual(signal.depth);
 			},

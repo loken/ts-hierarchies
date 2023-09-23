@@ -1,7 +1,7 @@
 import { MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
 import type { DeBrand, HCNode } from '../nodes/node.js';
-import { nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
+import { nodesToIds } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import type { Identify } from '../utilities/identify.js';
@@ -119,7 +119,7 @@ export class Hierarchy<Item, Id = Item> {
 
 		for (const node of traverseGraph({
 			roots: nodes,
-			next:  node => node.children,
+			next:  node => node.getChildren(),
 		})) {
 			const id = this.#identify(node.item);
 			this.#debrand.get(id)!();
@@ -141,7 +141,7 @@ export class Hierarchy<Item, Id = Item> {
 
 		for (const node of traverseGraph({
 			roots: nodes,
-			next:  node => node.children,
+			next:  node => node.getChildren(),
 		})) {
 			const id = this.#identify(node.item);
 			this.#debrand.set(id, node.brand(this));
@@ -160,15 +160,15 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Get the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
-	public getAncestorNodes(id: Id, includeSelf = false) {
+	public getAncestors(id: Id, includeSelf = false) {
 		return this.getNode(id).getAncestors(includeSelf);
 	}
 
 	/**
 	 * Get the items from the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
-	public getAncestors(id: Id, includeSelf = false) {
-		return nodesToItems(this.getNode(id).traverseAncestors(includeSelf));
+	public getAncestorItems(id: Id, includeSelf = false) {
+		return this.getNode(id).getAncestorItems(includeSelf);
 	}
 
 	/**
@@ -181,15 +181,15 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Get the chain of descendant nodes starting with the node for the item matching the `id`.
 	 */
-	public getDescendantNodes(id: Id, includeSelf = false) {
+	public getDescendants(id: Id, includeSelf = false) {
 		return this.getNode(id).getDescendants(includeSelf);
 	}
 
 	/**
 	 * Get the items from the chain of descendant nodes starting with the node for the item matching the `id`.
 	 */
-	public getDescendants(id: Id, includeSelf = false) {
-		return nodesToItems(this.getNode(id).traverseDescendants(includeSelf));
+	public getDescendantItems(id: Id, includeSelf = false) {
+		return this.getNode(id).getDescendantItems(includeSelf);
 	}
 
 	/**

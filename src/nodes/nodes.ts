@@ -112,11 +112,11 @@ export class Nodes {
 		const traversal = traverseGraph({
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.children);
+				signal.next(node.getChildren());
 
 				if (!node.isLeaf) {
 					const nodeId: Id = nodeToId(node, identify);
-					const ids = nodesToIds(node.children, identify);
+					const ids = nodesToIds(node.getChildren(), identify);
 					map.add(nodeId, ids);
 				}
 			},
@@ -145,7 +145,7 @@ export class Nodes {
 		const traversal = traverseGraph({
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.children);
+				signal.next(node.getChildren());
 
 				const nodeId: Id = nodeToId(node, identify);
 
@@ -179,7 +179,7 @@ export class Nodes {
 		const traversal = traverseGraph({
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.children);
+				signal.next(node.getChildren());
 
 				const nodeId: Id = nodeToId(node, identify);
 
@@ -213,11 +213,11 @@ export class Nodes {
 		const traversal = traverseGraph({
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.children);
+				signal.next(node.getChildren());
 
 				if (!node.isLeaf) {
 					const nodeId: Id = nodeToId(node, identify);
-					for (const child of node.children)
+					for (const child of node.getChildren())
 						relations.push([ nodeId, nodeToId(child, identify) ]);
 				}
 			},
