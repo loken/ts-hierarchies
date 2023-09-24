@@ -244,6 +244,27 @@ export class Hierarchy<Item, Id = Item> {
 	public getDescendantIds(ids: Multiple<Id>, includeSelf = false) {
 		return nodesToIds(Nodes.traverseDescendants(this.get(...spreadMultiple(ids)), includeSelf), this.#identify);
 	}
+
+	/**
+	 * Get the chain of descendant nodes starting with the hierarchy `roots`.
+	 */
+	public getAllDescendants(includeSelf = false) {
+		return Nodes.getDescendants(this.#roots.values(), includeSelf);
+	}
+
+	/**
+	 * Get the items from the chain of descendant nodes starting with the hierarchy `roots`.
+	 */
+	public getAllDescendantItems(includeSelf = false) {
+		return Nodes.getDescendantItems(this.#roots.values(), includeSelf);
+	}
+
+	/**
+	 * Get the IDs from the chain of descendant nodes starting with the hierarchy `roots`.
+	 */
+	public getAllDescendantIds(includeSelf = false) {
+		return nodesToIds(Nodes.traverseDescendants(this.#roots.values(), includeSelf), this.#identify);
+	}
 	//#endregion
 
 	//#region MultiMaps
