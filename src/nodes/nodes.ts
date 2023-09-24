@@ -1,10 +1,11 @@
-import { iterateAll, iterateMultiple, mapArgs, mapGetLazy, MultiMap, type Multiple } from '@loken/utilities';
+import { iterateAll, iterateMultiple, mapArgs, mapGetLazy, MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/traverse-graph.js';
+import type { TraversalType } from '../traversal/traverse-types.js';
 import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
-import { nodesToIds, nodeToId } from './node-conversion.js';
+import { nodesToIds, nodesToItems, nodeToId } from './node-conversion.js';
 
 export class Nodes {
 
@@ -222,6 +223,45 @@ export class Nodes {
 		iterateAll(traversal);
 
 		return relations;
+	}
+
+
+	/** Get descendant nodes by traversing according to the options. */
+	public static getDescendants<Item>(
+		roots: Multiple<HCNode<Item>>,
+		includeSelf = false,
+		type: TraversalType = 'breadth-first',
+	) {
+		return [ ...Nodes.traverseDescendants(roots, includeSelf, type) ];
+	}
+
+	/** Get descendant nodes by traversing according to the options. */
+	public static getDescendantItems<Item>(
+		roots: Multiple<HCNode<Item>>,
+		includeSelf = false,
+		type: TraversalType = 'breadth-first',
+	) {
+		return nodesToItems(Nodes.traverseDescendants(roots, includeSelf, type));
+	}
+
+	/** Generate a sequence of descendant nodes by traversing according to the options. */
+	public static traverseDescendants<Item>(
+		roots: Multiple<HCNode<Item>>,
+		includeSelf = false,
+		type: TraversalType = 'breadth-first',
+	) {
+		const effectiveRoots = includeSelf ? roots : spreadMultiple(roots).map(root => root.getChildren()).reduce((children, rootChildren) => {
+			if (rootChildren.length)
+				children.unshift(...rootChildren);
+
+			return children;
+		});
+
+		return traverseGraph({
+			roots: effectiveRoots,
+			next:  node => node.getChildren(),
+			type,
+		});
 	}
 
 }
