@@ -225,24 +225,24 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Get the chain of descendant nodes starting with the node for the item matching the `id`.
+	 * Get the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 */
-	public getDescendants(id: Id, includeSelf = false) {
-		return this.get(id).getDescendants(includeSelf);
+	public getDescendants(ids: Multiple<Id>, includeSelf = false) {
+		return Nodes.getDescendants(this.get(...spreadMultiple(ids)), includeSelf);
 	}
 
 	/**
-	 * Get the items from the chain of descendant nodes starting with the node for the item matching the `id`.
+	 * Get the items from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 */
-	public getDescendantItems(id: Id, includeSelf = false) {
-		return this.get(id).getDescendantItems(includeSelf);
+	public getDescendantItems(ids: Multiple<Id>, includeSelf = false) {
+		return Nodes.getDescendantItems(this.get(...spreadMultiple(ids)), includeSelf);
 	}
 
 	/**
-	 * Get the IDs from the chain of descendant nodes starting with the node for the item matching the `id`.
+	 * Get the IDs from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 */
-	public getDescendantIds(id: Id, includeSelf = false) {
-		return nodesToIds(this.get(id).traverseDescendants(includeSelf), this.#identify);
+	public getDescendantIds(ids: Multiple<Id>, includeSelf = false) {
+		return nodesToIds(Nodes.traverseDescendants(this.get(...spreadMultiple(ids)), includeSelf), this.#identify);
 	}
 	//#endregion
 
