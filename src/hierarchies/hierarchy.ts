@@ -69,7 +69,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public *find(search: Id[] | NodePredicate<Item>): Generator<HCNode<Item>> {
+	public *find(search: Id[] | NodePredicate<Item>) {
 		if (Array.isArray(search)) {
 			for (const id of search) {
 				const node = this.#nodes.get(id);
@@ -88,7 +88,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find nodes matching a list of `Id`s or an `Item` predicate.
 	 */
-	public *findItems(search: Id[] | NodePredicate<Item>): Generator<Item> {
+	public *findItems(search: Id[] | NodePredicate<Item>) {
 		for (const node of this.find(search))
 			yield node.item;
 	}
@@ -96,7 +96,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find `Id`s matching a list of `Id`s or an `Item` predicate.
 	 */
-	public *findIds(search: Id[] | NodePredicate<Item>): Generator<Id> {
+	public *findIds(search: Id[] | NodePredicate<Item>) {
 		if (Array.isArray(search)) {
 			for (const id of search) {
 				if (this.#nodes.has(id))
