@@ -63,11 +63,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Configure GitHub Packages
-        run: |
-          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
-
       - name: Install dependencies
         run: pnpm install
 
@@ -79,7 +74,9 @@ jobs:
 
       - name: Publish to GH Actions
         run: |
-          pnpm publish --access restricted --no-git-checks
+          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          pnpm publish --access restricted --tag next --no-git-checks
 
       - name: Publish to npmjs.org
         if: ${{ steps.gitversion.outputs.preReleaseLabel == '' }}
