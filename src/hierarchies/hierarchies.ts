@@ -49,7 +49,7 @@ export class Hierarchies {
 		// Spread the items so that we don't get multiple iterations over an iterator.
 		options.items = spreadMultiple(options.items);
 
-		const childMap = ChildMap.fromItems(options as ItemIdOptions<Item, Id>);
+		const childMap = ChildMap.fromItems(options);
 
 		const roots = Nodes.assembleItems(options.items, options.identify, childMap);
 
