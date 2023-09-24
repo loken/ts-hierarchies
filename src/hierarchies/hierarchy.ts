@@ -1,4 +1,4 @@
-import { mapArgs, MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
+import { iterateMultiple, mapArgs, MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
 import type { HCNode } from '../nodes/node.js';
 import type { DeBrand, NodePredicate } from '../nodes/node.types.js';
@@ -43,6 +43,38 @@ export class Hierarchy<Item, Id = Item> {
 		return this.#identify;
 	}
 
+
+	/** Map the `ids` to a boolean signifying their presence. */
+	public hasMap<Ids extends Id[]>(...ids: Ids) {
+		return mapArgs(ids, id => this.#nodes.has(id), true, false);
+	}
+
+	/** Is the `id` present? */
+	public has(id: Id) {
+		return this.#nodes.has(id);
+	}
+
+	/** Is every `Id` in the `ids` present? */
+	public hasEvery(ids: Multiple<Id>) {
+		for (const id of iterateMultiple(ids)) {
+			if (!this.#nodes.has(id))
+				return false;
+		}
+
+		return true;
+	}
+
+	/** Is some `Id` in the `ids` present? */
+	public hasSome(ids: Multiple<Id>) {
+		for (const id of iterateMultiple(ids)) {
+			if (this.#nodes.has(id))
+				return true;
+		}
+
+		return false;
+	}
+
+
 	/**
 	 * Get node or nodes by their `Id`.
 	 * @param id The ID of the node or first node to retrieve.
@@ -52,7 +84,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @throws Must provide at least one argument.
 	 */
 	public get<Ids extends Id[]>(...ids: Ids) {
-		return mapArgs(ids, id => this.getOne(id), true, false);
+		return mapArgs(ids, id => this.#get(id), true, false);
 	}
 
 	/**
@@ -63,8 +95,17 @@ export class Hierarchy<Item, Id = Item> {
 	 * @returns A single item when you pass a single ID and a fixed length tuple of items when you pass multiple IDs.
 	 */
 	public getItems<Ids extends Id[]>(...ids: Ids) {
-		return mapArgs(ids, id => this.getOne(id).item, true, false);
+		return mapArgs(ids, id => this.#get(id).item, true, false);
 	}
+
+	#get(id: Id) {
+		const node = this.#nodes.get(id);
+		if (node === undefined)
+			throw new Error("The 'id' must be a hierarchy member.");
+
+		return node;
+	}
+
 
 	/**
 	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
@@ -109,15 +150,6 @@ export class Hierarchy<Item, Id = Item> {
 					yield id;
 			}
 		}
-	}
-
-
-	private getOne(id: Id) {
-		const node = this.#nodes.get(id);
-		if (node === undefined)
-			throw new Error("The 'id' must be a hierarchy member.");
-
-		return node;
 	}
 	//#endregion
 
@@ -224,6 +256,7 @@ export class Hierarchy<Item, Id = Item> {
 		return nodesToIds(this.get(id).traverseAncestors(includeSelf), this.#identify);
 	}
 
+
 	/**
 	 * Get the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 */
@@ -244,6 +277,7 @@ export class Hierarchy<Item, Id = Item> {
 	public getDescendantIds(ids: Multiple<Id>, includeSelf = false) {
 		return nodesToIds(Nodes.traverseDescendants(this.get(...spreadMultiple(ids)), includeSelf), this.#identify);
 	}
+
 
 	/**
 	 * Get the chain of descendant nodes starting with the hierarchy `roots`.
