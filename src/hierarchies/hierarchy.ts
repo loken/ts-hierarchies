@@ -1,4 +1,4 @@
-import { MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
+import { mapArgs, MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
 import type { HCNode } from '../nodes/node.js';
 import type { DeBrand, NodePredicate } from '../nodes/node.types.js';
@@ -7,7 +7,6 @@ import { Nodes } from '../nodes/nodes.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../utilities/relations.js';
-import type { TransformTuple } from '../utilities/tuple.types.js';
 
 
 /**
@@ -48,14 +47,12 @@ export class Hierarchy<Item, Id = Item> {
 	 * Get node or nodes by their `Id`.
 	 * @param id The ID of the node or first node to retrieve.
 	 * @param ids The IDs of the nodes to retrieve beyond the first.
+	 * @returns A single node when you pass a single ID and a fixed length tuple of nodes when you pass multiple IDs.
 	 * @throws The 'id' must be a hierarchy member.
-	 * @returns A single node when you pass a single ID and an array of nodes when you pass multiple IDs.
+	 * @throws Must provide at least one argument.
 	 */
-	public get<Ids extends Id[]>(id: Id, ...ids: Ids): Ids['length'] extends 0 ? HCNode<Item> : TransformTuple<[Id, ...Ids], HCNode<Item>> {
-		if (ids.length === 0)
-			return this.getOne(id) as any;
-		else
-			return [ this.getOne(id), ...ids.map(id => this.getOne(id)) ] as any;
+	public get<Ids extends Id[]>(...ids: Ids) {
+		return mapArgs(ids, id => this.getOne(id), true, false);
 	}
 
 	/**
@@ -63,13 +60,10 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param id The ID of the item or first item to retrieve.
 	 * @param ids The IDs of the items to retrieve beyond the first.
 	 * @throws The 'id' must be a hierarchy member.
-	 * @returns A single item when you pass a single ID and an array of items when you pass multiple IDs.
+	 * @returns A single item when you pass a single ID and a fixed length tuple of items when you pass multiple IDs.
 	 */
-	public getItem<Ids extends Id[]>(id: Id, ...ids: Ids): Ids['length'] extends 0 ? Item : TransformTuple<[Id, ...Ids], Item> {
-		if (ids.length === 0)
-			return this.getOne(id).item as any;
-		else
-			return [ this.getOne(id).item, ...ids.map(id => this.getOne(id).item) ] as any;
+	public getItems<Ids extends Id[]>(...ids: Ids) {
+		return mapArgs(ids, id => this.getOne(id).item, true, false);
 	}
 
 	/**

@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@loken/utilities':
-    specifier: 0.3.0
-    version: 0.3.0
+    specifier: 0.4.0
+    version: 0.4.0
   tslib:
     specifier: ^2.6.2
     version: 2.6.2
@@ -394,8 +394,8 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@loken/utilities@0.3.0:
-    resolution: {integrity: sha512-zcH0bOC9Rr4V+a1USn5H3WKxl5SIScm2jQeC5MaSy5QSXbp6+b/VhZkiHmpYM9SHfa2ApYaOOaHChTJY4UTHVg==, tarball: https://npm.pkg.github.com/download/@loken/utilities/0.3.0/ab95e4453a98449659247615787a795c7ecf8acb}
+  /@loken/utilities@0.4.0:
+    resolution: {integrity: sha512-zmAQF0DSJpIj0wYzX+Mlml6DH2wfSObYi3xCia5eoPyX6z0v6lYBdhAMQaa2DP8ROildw6yFZ6DkVvWvKaShVQ==}
     engines: {node: '>=18.15.0'}
     dependencies:
       tslib: 2.6.2
