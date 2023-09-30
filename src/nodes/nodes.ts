@@ -110,22 +110,42 @@ export class Nodes {
 		roots: Multiple<Item>,
 		children: GetChildren<Item>,
 	) {
-		const rootNodes = traverseGraph({
-			roots:  Nodes.create(...spreadMultiple(roots)) as HCNode<Item>[],
+		const nodes = new Map<Item, HCNode<Item>>();
+		const rootNodes: HCNode<Item>[] = [];
+
+		for (const item of iterateMultiple(roots))
+			nodes.set(item, new HCNode(item));
+
+		iterateAll(traverseGraph({
+			roots:  spreadMultiple(nodes.values()),
 			signal: (node, signal) => {
-				if (signal.depth > 0)
-					signal.skip();
-
 				const childItems = children(node.item);
-				if (childItems) {
-					const childNodes = childItems.map(childItem => new HCNode(childItem));
-					node.attach(childNodes);
-					signal.next(childNodes);
-				}
-			},
-		});
+				if (!childItems?.length)
+					return;
 
-		return [ ...rootNodes ];
+				const newNodes: HCNode<Item>[] = [];
+
+				for (const childItem of childItems) {
+					let childNode = nodes.get(childItem);
+					if (!childNode) {
+						childNode = new HCNode(childItem);
+						newNodes.push(childNode);
+						nodes.set(childItem, childNode);
+					}
+
+					node.attach(childNode);
+				}
+
+				signal.next(newNodes);
+			},
+		}));
+
+		for (const node of nodes.values()) {
+			if (node.isRoot)
+				rootNodes.push(node);
+		}
+
+		return rootNodes;
 	}
 
 	/**
