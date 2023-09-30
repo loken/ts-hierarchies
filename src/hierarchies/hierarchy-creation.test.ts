@@ -1,7 +1,6 @@
 import { MultiMap } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
-import { traverseGraph } from '../traversal/traverse-graph.js';
 import { type Relation } from '../utilities/relations.js';
 import { Hierarchies } from './hierarchies.js';
 
@@ -116,13 +115,8 @@ test('Hierarchies.createWithItems() from items with children', () => {
 		},
 	];
 
-	const items = traverseGraph({
-		roots: itemsWithChildren,
-		next:  item => item.children ?? [],
-	});
-
 	const hc = Hierarchies.createWithItems({
-		items,
+		items:    itemsWithChildren,
 		identify: item => item.id,
 		children: item => item.children,
 	});

@@ -1,5 +1,6 @@
 import { spreadMultiple } from '@loken/utilities';
 
+import type { HCNode } from '../nodes/node.js';
 import { Nodes } from '../nodes/nodes.js';
 import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
@@ -46,12 +47,19 @@ export class Hierarchies {
 	 * @returns The fully linked `Hierarchy<Item, Id>`.
 	 */
 	public static createWithItems<Item, Id>(options: ItemIdOptions<Item, Id>): Hierarchy<Item, Id> {
-		// Spread the items so that we don't get multiple iterations over an iterator.
-		options.items = spreadMultiple(options.items);
+		let roots: HCNode<Item>[];
 
-		const childMap = ChildMap.fromItems(options);
+		if (options.children) {
+			roots = Nodes.assembleItemsFromChildren(options.items, options.children);
+		}
+		else {
+			// Spread the items so that we don't get multiple iterations over an iterator.
+			options.items = spreadMultiple(options.items);
 
-		const roots = Nodes.assembleItems(options.items, options.identify, childMap);
+			const childMap = ChildMap.fromItems(options);
+
+			roots = Nodes.assembleItems(options.items, options.identify, childMap);
+		}
 
 		return new Hierarchy<Item, Id>(options.identify).attachRoot(roots);
 	}
