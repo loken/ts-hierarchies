@@ -58,6 +58,8 @@ export class Nodes {
 	/**
 	 * Build nodes of `items` linked as described by the provided `childMap`.
 	 *
+	 * Will exclude any `items` that are not mentioned in the `childMap`.
+	 *
 	 * @template Item The type of item.
 	 * @template Id The type of IDs.
 	 * @param items The items to wrap in nodes.
@@ -70,26 +72,30 @@ export class Nodes {
 		identify: Identify<Item, Id>,
 		childMap: MultiMap<Id>,
 	): HCNode<Item>[] {
-		const nodes = new Map<Id, HCNode<Item>>();
 		const roots: HCNode<Item>[] = [];
 
-		for (const item of iterateMultiple(items)) {
-			const id = identify(item);
-			const node = new HCNode(item);
+		const nodeMap = new Map<Id, HCNode<Item>>();
+		const itemMap = new Map<Id, Item>();
+		const getItem = (id: Id) => {
+			if (!itemMap.has(id))
+				throw new Error(`Could not find item for mapped ID: ${ id }`);
 
-			nodes.set(id, node);
-		}
+			return itemMap.get(id);
+		};
+
+		for (const item of iterateMultiple(items))
+			itemMap.set(identify(item), item);
 
 		for (const [ parentId, childIds ] of childMap.entries()) {
-			const parent = nodes.get(parentId)!;
+			const parentNode = mapGetLazy(nodeMap, parentId, () => new HCNode(getItem(parentId)));
 
 			for (const childId of childIds) {
-				const childNode = nodes.get(childId)!;
-				parent.attach(childNode);
+				const childNode = mapGetLazy(nodeMap, childId, () => new HCNode(getItem(childId)));
+				parentNode.attach(childNode);
 			}
 		}
 
-		for (const node of nodes.values()) {
+		for (const node of nodeMap.values()) {
 			if (node.isRoot)
 				roots.push(node);
 		}

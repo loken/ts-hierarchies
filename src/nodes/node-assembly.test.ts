@@ -34,3 +34,14 @@ test('Assemble items', () => {
 
 	expect(output).toEqual(input);
 });
+
+
+test('Assemble items should ignore items that are not in the relationship spec', () => {
+	const items = splitBy('A,B,C,A1,A2,B1,A11,A12,B12,IGNORED').map(id => ({ id }));
+
+	const roots = Nodes.assembleItems(items, item => item.id, MultiMap.parse(input));
+
+	const output = Nodes.toChildMap(roots, item => item.id).render(sep);
+
+	expect(output).toEqual(input);
+});
