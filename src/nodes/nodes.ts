@@ -101,16 +101,16 @@ export class Nodes {
 	 *
 	 * @template Item The type of item.
 	 * @template Id The type of IDs.
-	 * @param items The items to wrap in nodes.
+	 * @param roots The root items to wrap in nodes.
 	 * @param children The delegate for getting the child items from a parent item.
 	 * @returns The root nodes.
 	 */
-	public static assembleItemsFromChildren<Item>(
-		items: Multiple<Item>,
+	public static assembleItemsWithChildren<Item>(
+		roots: Multiple<Item>,
 		children: GetChildren<Item>,
 	) {
-		const roots = traverseGraph({
-			roots:  Nodes.create(...spreadMultiple(items)) as HCNode<Item>[],
+		const rootNodes = traverseGraph({
+			roots:  Nodes.create(...spreadMultiple(roots)) as HCNode<Item>[],
 			signal: (node, signal) => {
 				if (signal.depth > 0)
 					signal.skip();
@@ -124,7 +124,7 @@ export class Nodes {
 			},
 		});
 
-		return [ ...roots ];
+		return [ ...rootNodes ];
 	}
 
 	/**

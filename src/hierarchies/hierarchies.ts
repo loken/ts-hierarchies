@@ -50,7 +50,7 @@ export class Hierarchies {
 		let roots: HCNode<Item>[];
 
 		if (options.children) {
-			roots = Nodes.assembleItemsFromChildren(options.items, options.children);
+			roots = Nodes.assembleItemsWithChildren(options.items, options.children);
 		}
 		else {
 			// Spread the items so that we don't get multiple iterations over an iterator.
