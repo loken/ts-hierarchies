@@ -1,9 +1,10 @@
 import { iterateAll, iterateMultiple, mapArgs, mapGetLazy, MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/traverse-graph.js';
+import { traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
 import type { Identify } from '../utilities/identify.js';
-import type { GetChildren } from '../utilities/related-items.js';
+import type { GetChildren, GetParent } from '../utilities/related-items.js';
 import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
 import { nodesToIds, nodesToItems, nodeToId } from './node-conversion.js';
@@ -97,7 +98,7 @@ export class Nodes {
 	}
 
 	/**
-	 * Build nodes of `items` linked as described by the provided `children`.
+	 * Build nodes of `Item`s linked as described by the provided `roots` and `children` delegate.
 	 *
 	 * @template Item The type of item.
 	 * @template Id The type of IDs.
@@ -125,6 +126,51 @@ export class Nodes {
 		});
 
 		return [ ...rootNodes ];
+	}
+
+	/**
+	 * Build nodes of ´Item´s linked as described by the provided `leaves` and `parent` delegate.
+	 *
+	 * @template Item The type of item.
+	 * @template Id The type of IDs.
+	 * @param leaves The leaf items to wrap in nodes.
+	 * @param parent The delegate for getting the parent of an item.
+	 * @returns The root nodes.
+	 */
+	public static assembleItemsWithParents<Item>(
+		leaves: Multiple<Item>,
+		parent: GetParent<Item>,
+	) {
+		const nodes = new Map<Item, HCNode<Item>>();
+		const roots: HCNode<Item>[] = [];
+
+		for (const leaf of iterateMultiple(leaves)) {
+			const leafNode = new HCNode(leaf);
+			nodes.set(leaf, leafNode);
+
+			iterateAll(traverseSequence({
+				first:  leafNode,
+				signal: (node, signal) => {
+					const parentItem = parent(node.item);
+					if (!parentItem) {
+						roots.push(node);
+
+						return;
+					}
+
+					let parentNode = nodes.get(parentItem);
+					if (!parentNode) {
+						parentNode = new HCNode(parentItem);
+						nodes.set(parentItem, parentNode);
+						signal.next(parentNode);
+					}
+
+					parentNode.attach(node);
+				},
+			}));
+		}
+
+		return roots;
 	}
 
 	/**
