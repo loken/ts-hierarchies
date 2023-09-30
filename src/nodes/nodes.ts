@@ -97,6 +97,37 @@ export class Nodes {
 	}
 
 	/**
+	 * Build nodes of `items` linked as described by the provided `children`.
+	 *
+	 * @template Item The type of item.
+	 * @template Id The type of IDs.
+	 * @param items The items to wrap in nodes.
+	 * @param children The delegate for getting the child items from a parent item.
+	 * @returns The root nodes.
+	 */
+	public static assembleItemsFromChildren<Item>(
+		items: Multiple<Item>,
+		children: GetChildren<Item>,
+	) {
+		const roots = traverseGraph({
+			roots:  Nodes.create(...spreadMultiple(items)) as HCNode<Item>[],
+			signal: (node, signal) => {
+				if (signal.depth > 0)
+					signal.skip();
+
+				const childItems = children(node.item);
+				if (childItems) {
+					const childNodes = childItems.map(childItem => new HCNode(childItem));
+					node.attach(childNodes);
+					signal.next(childNodes);
+				}
+			},
+		});
+
+		return [ ...roots ];
+	}
+
+	/**
 	 * Create a map of ids to child-ids by traversing the graph of the `roots`.
 	 *
 	 * @template Item The type of item.
