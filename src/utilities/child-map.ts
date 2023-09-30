@@ -1,4 +1,4 @@
-import { iterateMultiple, MultiMap, type Multiple } from '@loken/utilities';
+import { iterateMultiple, MultiMap, type Multiple, ProbabilityScale, randomInt } from '@loken/utilities';
 
 import { Hierarchy } from '../hierarchies/hierarchy.js';
 import type { Identify } from './identify.js';
@@ -123,6 +123,56 @@ export class ChildMap {
 		}
 
 		return relations;
+	}
+
+	/**
+	 * Generate a child map for `count` IDs using a `create` function and randomly created structure.
+	 * @param count The number of IDs to create.
+	 * @param create The delegate responsible for creating new IDs.
+	 * @param chance Fraction chance to add move a layer deeper in the tree. (Default: 0.50)
+	 * @param decay The decay to apply to the `chance` for each layer.
+	 */
+	public static generate<Id>(options: {
+		count: number,
+		create: (options: ({
+			index: number,
+			siblings: Id[],
+			ancestry: Id[],
+		})) => Id,
+		chance?: number,
+		decay?: number,
+	}): MultiMap<Id> {
+		const { count, create } = options;
+		const childMap = new MultiMap<Id>();
+		const roots: Id[] = [];
+
+		for (let index = 0; index < count; index++) {
+			const probability = new ProbabilityScale({
+				mode:        'decay',
+				probability: options.chance ?? .50,
+				scale:       options.decay  ?? .10,
+			});
+			const ancestry: Id[] = [];
+			let siblings = roots;
+
+			while (siblings.length && probability.sample()) {
+				const branch = siblings[siblings.length === 1 ? 0 : randomInt(0, siblings.length)]!;
+				const children = childMap.get(branch);
+
+				siblings = children ? [ ...children ] : [];
+				ancestry.push(branch);
+				probability.increment();
+			}
+
+			const id = create({ index, siblings, ancestry });
+
+			if (ancestry.length === 0)
+				roots.push(id);
+			else
+				childMap.add(ancestry.at(-1)!, id);
+		}
+
+		return childMap;
 	}
 
 }
