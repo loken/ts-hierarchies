@@ -78,7 +78,7 @@ test('Hierarchies.createWithItems() from items and a child-map', () => {
 	const hc = Hierarchies.createWithItems({
 		items,
 		identify: item => item.id,
-		spec:     relations,
+		spec:     childMap,
 	});
 
 	const actual = hc.toRelations();
