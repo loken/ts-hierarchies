@@ -148,6 +148,28 @@ export class Nodes {
 		return rootNodes;
 	}
 
+	public static assembleItemsWithChildrenOld<Item>(
+		roots: Multiple<Item>,
+		children: GetChildren<Item>,
+	) {
+		const rootNodes = traverseGraph({
+			roots:  Nodes.create(...spreadMultiple(roots)) as HCNode<Item>[],
+			signal: (node, signal) => {
+				if (signal.depth > 0)
+					signal.skip();
+
+				const childItems = children(node.item);
+				if (childItems?.length) {
+					const childNodes = childItems.map(childItem => new HCNode(childItem));
+					node.attach(childNodes);
+					signal.next(childNodes);
+				}
+			},
+		});
+
+		return [ ...rootNodes ];
+	}
+
 	/**
 	 * Build nodes of ´Item´s linked as described by the provided `leaves` and `parent` delegate.
 	 *
