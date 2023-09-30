@@ -12,6 +12,7 @@ const sep: MultiMapSeparators = {
 const input = `
 A:A1,A2
 B:B1
+C
 A1:A11,A12
 B1:B12`;
 
@@ -25,7 +26,7 @@ test('Assemble IDs', () => {
 });
 
 test('Assemble items', () => {
-	const items = splitBy('A,B,A1,A2,B1,A11,A12,B12').map(id => ({ id }));
+	const items = splitBy('A,B,C,A1,A2,B1,A11,A12,B12').map(id => ({ id }));
 
 	const roots = Nodes.assembleItems(items, item => item.id, MultiMap.parse(input));
 

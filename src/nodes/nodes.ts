@@ -191,12 +191,19 @@ export class Nodes {
 		const traversal = traverseGraph({
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.getChildren());
-
 				if (!node.isLeaf) {
-					const nodeId: Id = nodeToId(node, identify);
-					const ids = nodesToIds(node.getChildren(), identify);
-					map.add(nodeId, ids);
+					const childNodes = node.getChildren();
+					const nodeId = nodeToId(node, identify);
+					const childIds = nodesToIds(childNodes, identify);
+
+					map.add(nodeId, childIds);
+
+					signal.next(childNodes);
+				}
+				else if (signal.depth === 0) {
+					const nodeId = nodeToId(node, identify);
+
+					map.getOrAdd(nodeId);
 				}
 			},
 		});
@@ -220,17 +227,32 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 	): MultiMap<Id> {
 		const map = new MultiMap<Id>();
+		const rootIds = new Set<Id>();
 
 		const traversal = traverseGraph({
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.getChildren());
+				if (!node.isLeaf)
+					signal.next(node.getChildren());
 
 				const nodeId: Id = nodeToId(node, identify);
 
-				for (const ancestor of node.getAncestors()) {
+				if (signal.depth === 0) {
+					rootIds.add(nodeId);
+
+					if (node.isLeaf)
+						map.getOrAdd(nodeId);
+
+					return;
+				}
+
+				for (const ancestor of node.traverseAncestors(false)) {
 					const ancestorId = nodeToId(ancestor, identify);
 					map.add(ancestorId, nodeId);
+
+					// We don't want to include ancestors of our roots.
+					if (rootIds.has(ancestorId))
+						break;
 				}
 			},
 		});
@@ -254,17 +276,32 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 	): MultiMap<Id> {
 		const map = new MultiMap<Id>();
+		const rootIds = new Set<Id>();
 
 		const traversal = traverseGraph({
 			roots,
 			signal: (node, signal) => {
-				signal.next(node.getChildren());
+				if (!node.isLeaf)
+					signal.next(node.getChildren());
 
 				const nodeId: Id = nodeToId(node, identify);
 
-				for (const ancestor of node.getAncestors(false)) {
+				if (signal.depth === 0) {
+					rootIds.add(nodeId);
+
+					if (node.isLeaf)
+						map.getOrAdd(nodeId);
+
+					return;
+				}
+
+				for (const ancestor of node.traverseAncestors(false)) {
 					const ancestorId = nodeToId(ancestor, identify);
 					map.add(nodeId, ancestorId);
+
+					// We don't want to include ancestors of our roots.
+					if (rootIds.has(ancestorId))
+						break;
 				}
 			},
 		});
