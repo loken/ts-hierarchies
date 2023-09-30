@@ -3,6 +3,7 @@ import { iterateAll, iterateMultiple, mapArgs, mapGetLazy, MultiMap, type Multip
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
 import type { Identify } from '../utilities/identify.js';
+import type { GetChildren } from '../utilities/related-items.js';
 import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
 import { nodesToIds, nodesToItems, nodeToId } from './node-conversion.js';
@@ -29,11 +30,10 @@ export class Nodes {
 	 */
 	public static assembleIds<Id>(childMap: MultiMap<Id>): HCNode<Id>[] {
 		const nodes = new Map<Id, HCNode<Id>>();
-		const roots = new Map<Id, HCNode<Id>>();
+		const roots: HCNode<Id>[] = [];
 
 		for (const parentId of childMap.keys()) {
 			const parentNode = new HCNode(parentId);
-			roots.set(parentId, parentNode);
 			nodes.set(parentId, parentNode);
 		}
 
@@ -43,11 +43,15 @@ export class Nodes {
 			for (const childId of childIds) {
 				const childNode = mapGetLazy(nodes, childId, () => new HCNode(childId));
 				parentNode.attach(childNode);
-				roots.delete(childId);
 			}
 		}
 
-		return [ ...roots.values() ];
+		for (const node of nodes.values()) {
+			if (node.isRoot)
+				roots.push(node);
+		}
+
+		return roots;
 	}
 
 	/**
@@ -66,16 +70,13 @@ export class Nodes {
 		childMap: MultiMap<Id>,
 	): HCNode<Item>[] {
 		const nodes = new Map<Id, HCNode<Item>>();
-		const roots = new Map<Id, HCNode<Item>>();
+		const roots: HCNode<Item>[] = [];
 
 		for (const item of iterateMultiple(items)) {
 			const id = identify(item);
 			const node = new HCNode(item);
 
 			nodes.set(id, node);
-
-			if (childMap.has(id))
-				roots.set(id, node);
 		}
 
 		for (const [ parentId, childIds ] of childMap.entries()) {
@@ -84,11 +85,15 @@ export class Nodes {
 			for (const childId of childIds) {
 				const childNode = nodes.get(childId)!;
 				parent.attach(childNode);
-				roots.delete(childId);
 			}
 		}
 
-		return [ ...roots.values() ];
+		for (const node of nodes.values()) {
+			if (node.isRoot)
+				roots.push(node);
+		}
+
+		return roots;
 	}
 
 	/**
