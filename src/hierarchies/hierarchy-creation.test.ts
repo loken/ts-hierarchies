@@ -144,13 +144,24 @@ test('Hierarchies.createWithItems() from items with parents', () => {
 		child.parent = parent;
 	}
 
-	const hc = Hierarchies.createWithItems({
+	/* Ensure we can pass it all of the items. */
+	const hcFromAll = Hierarchies.createWithItems({
 		items:    itemsWithParents.values(),
 		identify: item => item.id,
 		parent:   item => item.parent,
 	});
 
-	const actual = hc.toRelations();
+	const actualFromAll = hcFromAll.toRelations();
+	expect(actualFromAll).toEqual(relations);
 
-	expect(actual).toEqual(relations);
+
+	/* Ensure we can pass it the leaf items only. */
+	const hcFromLeaves = Hierarchies.createWithItems({
+		items:    hcFromAll.findItems(node => node.isLeaf),
+		identify: item => item.id,
+		parent:   item => item.parent,
+	});
+
+	const actualFromLeaves = hcFromLeaves.toRelations();
+	expect(actualFromLeaves).toEqual(relations);
 });

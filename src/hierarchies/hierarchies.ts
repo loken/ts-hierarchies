@@ -52,6 +52,9 @@ export class Hierarchies {
 		if (options.children) {
 			roots = Nodes.assembleItemsWithChildren(options.items, options.children);
 		}
+		else if (options.parent) {
+			roots = Nodes.assembleItemsWithParents(options.items, options.parent);
+		}
 		else {
 			// Spread the items so that we don't get multiple iterations over an iterator.
 			options.items = spreadMultiple(options.items);
