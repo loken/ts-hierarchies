@@ -186,14 +186,14 @@ export class Nodes {
 	 * @template Id The type of IDs.
 	 * @param roots The roots to use for traversal.
 	 * @param identify Means of getting an ID for an item.
-	 * @returns A parent-to-children map of IDs.
+	 * @param childMap An existing or new child-map.
+	 * @returns A parent-to-child map of IDs.
 	 */
 	public static toChildMap<Item, Id = Item>(
 		roots: Multiple<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
+		childMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		const map = new MultiMap<Id>();
-
 		const traversal = traverseGraph({
 			roots,
 			signal: (node, signal) => {
@@ -202,21 +202,21 @@ export class Nodes {
 					const nodeId = nodeToId(node, identify);
 					const childIds = nodesToIds(childNodes, identify);
 
-					map.add(nodeId, childIds);
+					childMap.add(nodeId, childIds);
 
 					signal.next(childNodes);
 				}
 				else if (signal.depth === 0) {
 					const nodeId = nodeToId(node, identify);
 
-					map.getOrAdd(nodeId);
+					childMap.getOrAdd(nodeId);
 				}
 			},
 		});
 
 		iterateAll(traversal);
 
-		return map;
+		return childMap;
 	}
 
 	/**
@@ -226,13 +226,14 @@ export class Nodes {
 	 * @template Id The type of IDs.
 	 * @param roots The roots to use for traversal.
 	 * @param identify Means of getting an ID for an item.
+	 * @param descendantMap An existing or new descendant-map.
 	 * @returns A parent-to-descendant map of IDs.
 	 */
 	public static toDescendantMap<Item, Id = Item>(
 		roots: Multiple<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
+		descendantMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		const map = new MultiMap<Id>();
 		const rootIds = new Set<Id>();
 
 		const traversal = traverseGraph({
@@ -247,14 +248,14 @@ export class Nodes {
 					rootIds.add(nodeId);
 
 					if (node.isLeaf)
-						map.getOrAdd(nodeId);
+						descendantMap.getOrAdd(nodeId);
 
 					return;
 				}
 
 				for (const ancestor of node.traverseAncestors(false)) {
 					const ancestorId = nodeToId(ancestor, identify);
-					map.add(ancestorId, nodeId);
+					descendantMap.add(ancestorId, nodeId);
 
 					// We don't want to include ancestors of our roots.
 					if (rootIds.has(ancestorId))
@@ -265,7 +266,7 @@ export class Nodes {
 
 		iterateAll(traversal);
 
-		return map;
+		return descendantMap;
 	}
 
 	/**
@@ -275,13 +276,14 @@ export class Nodes {
 	 * @template Id The type of IDs.
 	 * @param roots The roots to use for traversal.
 	 * @param identify Means of getting an ID for an item.
-	 * @returns A parent-to-descendant map of IDs.
+	 * @param ancestorMap An existing or new ancestor-map.
+	 * @returns A child-to-ancestor map of IDs.
 	 */
 	public static toAncestorMap<Item, Id = Item>(
 		roots: Multiple<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
+		ancestorMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		const map = new MultiMap<Id>();
 		const rootIds = new Set<Id>();
 
 		const traversal = traverseGraph({
@@ -296,14 +298,14 @@ export class Nodes {
 					rootIds.add(nodeId);
 
 					if (node.isLeaf)
-						map.getOrAdd(nodeId);
+						ancestorMap.getOrAdd(nodeId);
 
 					return;
 				}
 
 				for (const ancestor of node.traverseAncestors(false)) {
 					const ancestorId = nodeToId(ancestor, identify);
-					map.add(nodeId, ancestorId);
+					ancestorMap.add(nodeId, ancestorId);
 
 					// We don't want to include ancestors of our roots.
 					if (rootIds.has(ancestorId))
@@ -314,7 +316,7 @@ export class Nodes {
 
 		iterateAll(traversal);
 
-		return map;
+		return ancestorMap;
 	}
 
 	/**
