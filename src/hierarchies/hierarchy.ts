@@ -5,8 +5,10 @@ import type { DeBrand, NodePredicate } from '../nodes/node.types.js';
 import { nodesToIds } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
+import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../utilities/relations.js';
+import { Hierarchies } from './hierarchies.js';
 
 
 /** Contains the `id`, `item` and `node` for a `HCNode` in a `Hierarchy`. */
@@ -367,6 +369,103 @@ export class Hierarchy<Item, Id = Item> {
 					yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
 			}
 		}
+	}
+
+	/**
+	 * Create a new `Hierarchy` from matching items.
+	 *
+	 * @param search A list of `Id`s or a `HCNode<Item>` predicate.
+	 * @param include Optional facets to include: The nodes that are `matches`, their `ancestors` and/or their `descendants` in the result.
+	 * - When not specified you are getting all three facets as a default.
+	 * - When the options object is specified you must opt in to the facets you want and must enable at least one.
+	 * @returns A new `Hierarchy<Item, Id>` with new nodes wrapping the same `Item`s as in the searched hierarchy pruned to fit the search and `include` facets.
+	 * @throws If you provide `include` options but enable no facets.
+	 */
+	public search(
+		search: Id[] | NodePredicate<Item>,
+		include?: {matches?: boolean, ancestors?: boolean, descendants?: boolean},
+	) {
+		include ??= {
+			matches:     true,
+			ancestors:   true,
+			descendants: true,
+		};
+
+		if (!(include.matches || include.ancestors || include.descendants))
+			throw new Error("Must enable at least one facet to 'include'.");
+
+		const childMap = new MultiMap<Id>();
+		const items = new Map<Id, Item>();
+
+		for (const [ id, item, node ] of this.findEntries(search)) {
+			if (include.ancestors) {
+				const ancestorIds: Id[] = [];
+				for (const [ ancestorId, ancestorItem ] of this.traverseAncestorEntries(id, include.matches)) {
+					ancestorIds.push(ancestorId);
+
+					if (!items.has(ancestorId))
+						items.set(ancestorId, ancestorItem);
+				}
+
+				ChildMap.addAncestors(ancestorIds, childMap);
+			}
+
+			if (include.descendants) {
+				for (const [ descendantId, descendantItem, descendantNode ] of this.traverseDescendantEntries(id, include.matches)) {
+					if (!items.has(descendantId)) {
+						items.set(descendantId, descendantItem);
+
+						if (descendantNode.isLeaf)
+							childMap.getOrAdd(descendantId);
+					}
+
+					if (!descendantNode.isLeaf) {
+						for (const childNode of descendantNode.getChildren()) {
+							const childItem = childNode.item;
+							const childId = this.#identify(childItem);
+
+							childMap.add(descendantId, childId);
+							items.set(childId, childItem);
+						}
+					}
+				}
+			}
+
+			if (include.matches && !include.ancestors && !include.descendants) {
+				let addedToChildMap = false;
+				if (!node.isRoot) {
+					const parentId = this.#identify(node.getParentItem()!);
+
+					if (items.has(parentId)) {
+						childMap.add(parentId, id);
+						addedToChildMap = true;
+					}
+				}
+
+				if (!node.isLeaf) {
+					const includedChildIds = node
+						.getChildItems()
+						.map(this.#identify)
+						.filter(id => items.has(id));
+
+					if (includedChildIds.length) {
+						childMap.add(id, includedChildIds);
+						addedToChildMap = true;
+					}
+				}
+
+				if (!addedToChildMap)
+					childMap.getOrAdd(id);
+
+				items.set(id, item);
+			}
+		}
+
+		return Hierarchies.createWithItems({
+			items:    items.values(),
+			identify: this.#identify,
+			spec:     childMap,
+		});
 	}
 	//#endregion
 

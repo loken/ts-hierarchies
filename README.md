@@ -268,7 +268,7 @@ We provide some methods for traversal of a `Hierarchy` or a `Node` as a slightly
 
 These don't give you the option of breaking cycles, but they do give you the option of deciding whether to includeSelf, meaning include the node, id or ids you're starting at.
 
-These are the relevant signatures:
+These are some of the relevant signatures:
 
 ```typescript
 node.getDescendants(includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[];
@@ -276,7 +276,63 @@ node.traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-fir
 
 node.getAncestors(includeSelf = false): HCNode<Item>[];
 node.traverseAncestors(includeSelf = false): Generator<HCNode<Item>>[];
+
+hierarchy.getDescendants(ids: Multiple<Id>, includeSelf = false);
+hierarchy.getDescendantIds(ids: Multiple<Id>, includeSelf = false);
+hierarchy.getDescendantItems(ids: Multiple<Id>, includeSelf = false);
+hierarchy.getDescendantEntries(ids: Multiple<Id>, includeSelf = false);
+
+hierarchy.getAncestors(id: Id, includeSelf = false);
+hierarchy.getAncestorIds(id: Id, includeSelf = false);
+hierarchy.getAncestorItems(id: Id, includeSelf = false);
+hierarchy.getAncestorEntries(id: Id, includeSelf = false);
 ```
+
+### Search
+
+A `Hierarchy<Item, Id>` provides some `find*` generator functions for finding nodes, items or ids matching a search.
+
+We also provide a `search` member function which finds nodes and creates a new `Hierarchy<Item, Id>` with new nodes but the same items as in the original hierarchy. You can specify whether to include the node matches and/or ancestors and descendants of those matches.
+
+All of these members take a search parameter which can either be a list of IDs or a node predicate.
+
+The `get*` member functions will throw if you ask it to retrieve an ID which is not in the hierarchy. The `find*`- and `search` members will just ignore that ID and return the ones it finds.
+
+Here's what that looks like if you pass a list of IDs:
+
+```typescript
+const nodeIterator  = hierarchy.find(['A', 'B']);
+const idIterator    = hierarchy.findIds(['A', 'B']);
+const itemIterator  = hierarchy.findItems(['A', 'B']);
+const entryIterator = hierarchy.findEntries(['A', 'B']);
+
+const prunedHierarchy = hierarchy.search(['A', 'B']);
+const prunedHierarchy = hierarchy.search(['A', 'B'], {
+	matches:     true,
+	ancestors:   false,
+	descendants: false,
+});
+```
+
+Let's say your items have a description property. In that case you can search for certain matches in the description like this:
+
+```typescript
+const searchExpression = /\bword\b/i;
+const predicate = (node: HCNode<Item>) => searchExpression.test(node.item.description);
+
+const nodeIterator  = hierarchy.find(predicate);
+const idIterator    = hierarchy.findIds(predicate);
+const itemIterator  = hierarchy.findItems(predicate);
+const entryIterator = hierarchy.findEntries(predicate);
+
+const prunedHierarchy = hierarchy.search(predicate);
+const prunedHierarchy = hierarchy.search(predicate, {
+	matches:     true,
+	ancestors:   false,
+	descendants: false,
+});
+```
+
 
 ### Mapping
 
