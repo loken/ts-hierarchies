@@ -9,6 +9,10 @@ import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../utilities/relations.js';
 
 
+/** Contains the `id`, `item` and `node` for a `HCNode` in a `Hierarchy`. */
+export type HierarchyEntry<Item, Id> = [id: Id, item: Item, node: HCNode<Item>];
+
+
 /**
  * Keeps track of the a set of nodes and their roots
  * and provides structural modification.
@@ -151,6 +155,25 @@ export class Hierarchy<Item, Id = Item> {
 			}
 		}
 	}
+
+	/**
+	 * Find entries matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 */
+	public *findEntries(search: Id[] | NodePredicate<Item>) {
+		if (Array.isArray(search)) {
+			for (const id of search) {
+				const node = this.#nodes.get(id);
+				if (node)
+					yield [ id, node.item, node ] as HierarchyEntry<Item, Id>;
+			}
+		}
+		else {
+			for (const node of this.#nodes.values()) {
+				if (search(node))
+					yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+			}
+		}
+	}
 	//#endregion
 
 	//#region links
@@ -256,6 +279,21 @@ export class Hierarchy<Item, Id = Item> {
 		return nodesToIds(this.get(id).traverseAncestors(includeSelf), this.#identify);
 	}
 
+	/**
+	 * Get the entries from the chain of ancestor nodes starting with the node for the item matching the `id`.
+	 */
+	public getAncestorEntries(id: Id, includeSelf = false) {
+		return [ ...this.traverseAncestorEntries(id, includeSelf) ];
+	}
+
+	/**
+	 * Traverse the entries from the chain of ancestor nodes starting with the node for the item matching the `id`.
+	 */
+	public *traverseAncestorEntries(id: Id, includeSelf = false) {
+		for (const node of this.get(id).traverseAncestors(includeSelf))
+			yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+	}
+
 
 	/**
 	 * Get the chain of descendant nodes starting with the nodes for the items matching the `ids`.
@@ -278,6 +316,21 @@ export class Hierarchy<Item, Id = Item> {
 		return nodesToIds(Nodes.traverseDescendants(this.get(...spreadMultiple(ids)), includeSelf), this.#identify);
 	}
 
+	/**
+	 * Get the entries from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
+	 */
+	public getDescendantEntries(ids: Multiple<Id>, includeSelf = false) {
+		return [ ...this.traverseDescendantEntries(ids, includeSelf) ];
+	}
+
+	/**
+	 * Traverse the entries from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
+	 */
+	public *traverseDescendantEntries(ids: Multiple<Id>, includeSelf = false) {
+		for (const node of Nodes.traverseDescendants(this.get(...spreadMultiple(ids)), includeSelf))
+			yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+	}
+
 
 	/**
 	 * Get the chain of descendant nodes starting with the hierarchy `roots`.
@@ -298,6 +351,21 @@ export class Hierarchy<Item, Id = Item> {
 	 */
 	public getAllDescendantIds(includeSelf = false) {
 		return nodesToIds(Nodes.traverseDescendants(this.#roots.values(), includeSelf), this.#identify);
+	}
+
+	/**
+	 * Get the entries from the chain of descendant nodes starting with the hierarchy `roots`.
+	 */
+	public getAllDescendantEntries(includeSelf = false) {
+		return [ ...this.traverseAllDescendantEntries(includeSelf) ];
+	}
+
+	/**
+	 * Traverse the entries from the chain of descendant nodes starting with the hierarchy `roots`.
+	 */
+	public *traverseAllDescendantEntries(includeSelf = false) {
+		for (const node of Nodes.traverseDescendants(this.#roots.values(), includeSelf))
+			yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
 	}
 	//#endregion
 
