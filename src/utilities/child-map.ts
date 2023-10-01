@@ -125,6 +125,32 @@ export class ChildMap {
 		return relations;
 	}
 
+
+	/**
+	 * Add the `ancestors` to the `childMap`.
+	 * @param ancestors The ancestor IDs organized from a node and up through its parents.
+	 * @param childMap A child-map. Default: Empty `MultiMap`.
+	 * @returns The `childMap`.
+	 */
+	public static addAncestors<Id>(ancestors: Id[], childMap = new MultiMap<Id>()) {
+		if (ancestors.length === 0)
+			return;
+
+		if (ancestors.length === 1) {
+			childMap.getOrAdd(ancestors[0]!);
+		}
+		else {
+			ancestors.reduce((child, parent) => {
+				childMap.add(parent, child);
+
+				return parent;
+			});
+		}
+
+		return childMap;
+	}
+
+
 	/**
 	 * Generate a child map for `count` IDs using a `create` function and randomly created structure.
 	 * @param count The number of IDs to create.
