@@ -49,18 +49,71 @@ When we use a `relations` or `childMap` symbol in the following examples, you ca
 
 Sometimes the items are small, your list short and you can hold all of the items in memory at the same time. In such cases you can create a `Hierarchy<Item, Id>`, a hierarchy of items, by passing the items along with an `identify(item)`delegate and a specification of the parent-child relations.
 
-The specification can be a list of `Relation<Id>`s, an `identifyParent(item)` delegate, a `MultiMap<Id>` representing a map of item to child items or another `Hierarchy` with the same type of IDs.
+### By `IdSpec<Id>`
 
-```csharp
-// With identifyParent delegate:
-var hierarchy = Hierarchies.createWithItems(items, item => item.id, item => item.parentId);
+The specification can be a list of `Relation<Id>`s, a `MultiMap<Id>` representing a map of item to child items or another `Hierarchy` with the same type of IDs.
+
+```typescript
 // With relations:
-var hierarchy = Hierarchies.createWithItems(items, item => item.id, relations);
+const hierarchy = Hierarchies.createWithItems({
+	items,
+	identify: item => item.id,
+	spec:     relations,
+});
 // With other hierarchy:
-var hierarchy = Hierarchies.createWithItems(items, item => item.id, otherHierarchy);
+var hierarchy = Hierarchies.createWithItems({
+		items,
+		identify: item => item.id,
+		spec:     otherHierarchy,
+	});
 // With child map:
-var hierarchy = Hierarchies.createWithItems(items, item => item.id, childMap);
+var hierarchy = Hierarchies.createWithItems({
+	items,
+	identify: item => item.id,
+	spec:     childMap,
+});
 ```
+
+### By contained parent information
+
+If your `Item`s contains information about its parent, either as a reference or as a foreign key, you can create the `Hierarchy<Item, Id>` by specifying this information:
+
+```typescript
+// With a delegate retrieving a foreign key to the parent:
+var hierarchy = Hierarchies.createWithItems({
+	items,
+	identify: item => item.id,
+	parentId: item => item.parentId,
+});
+// With a delegate retrieving a the parent directly:
+var hierarchy = Hierarchies.createWithItems({
+	items,
+	identify: item => item.id,
+	parent: item => item.parent,
+});
+```
+
+### By contained child information
+
+Similarly, if you your `Item` contains information about its children, either as references or as a list of foreign keys, you can create the `Hierarchy<Item, Id>` by specifying this information:
+
+**NB!** If you provide the `children` delegate, the items should be only the roots and not all items.
+
+```typescript
+// With a delegate retrieving foreign keys to the child IDs:
+var hierarchy = Hierarchies.createWithItems({
+	items,
+	identify: item => item.id,
+	childIds: item => item.childIds,
+});
+// With a delegate retrieving a the child items directly:
+var hierarchy = Hierarchies.createWithItems({
+	items,
+	identify: item => item.id,
+	children: item => item.children,
+});
+```
+
 
 ## Hierarchy of IDs
 
@@ -76,7 +129,7 @@ If you have a one-to-many parent-to-children relationship table to work with you
 
 We can make a hierarchy of IDs similarly to how we make a hierarchy of items. The main difference is that for a hierarchy of IDs we only need to pass the specification since the item is the ID and hence the `identify` delegate is the identity function.
 
-```csharp
+```typescript
 // With relations:
 var hierarchy = Hierarchies.createWithIds(relations);
 // With other hierarchy:
