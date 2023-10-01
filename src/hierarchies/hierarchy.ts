@@ -127,7 +127,7 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Find nodes matching a list of `Id`s or an `Item` predicate.
+	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
 	public *findItems(search: Id[] | NodePredicate<Item>) {
 		for (const node of this.find(search))
@@ -135,7 +135,7 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Find `Id`s matching a list of `Id`s or an `Item` predicate.
+	 * Find `Id`s matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
 	public *findIds(search: Id[] | NodePredicate<Item>) {
 		if (Array.isArray(search)) {
@@ -304,22 +304,22 @@ export class Hierarchy<Item, Id = Item> {
 	//#region MultiMaps
 	/** Create a map of ids to child-ids by traversing the `hierarchy`. */
 	public toChildMap(): MultiMap<Id> {
-		return Nodes.toChildMap(this.roots, this.identify);
+		return Nodes.toChildMap(this.#roots.values(), this.#identify);
 	}
 
 	/** Create a map of ids to descendant-ids by traversing the `hierarchy`. */
 	public toDescendantMap(): MultiMap<Id> {
-		return Nodes.toDescendantMap(this.roots, this.identify);
+		return Nodes.toDescendantMap(this.#roots.values(), this.#identify);
 	}
 
 	/** Create a map of ids to ancestor-ids by traversing the `hierarchy`. */
 	public toAncestorMap(): MultiMap<Id> {
-		return Nodes.toDescendantMap(this.roots, this.identify);
+		return Nodes.toDescendantMap(this.#roots.values(), this.#identify);
 	}
 
 	/** Create a list of relations by traversing the graph of the `hierarchy`. */
 	public toRelations(): Relation<Id>[] {
-		return Nodes.toRelations(this.roots, this.identify);
+		return Nodes.toRelations(this.#roots.values(), this.#identify);
 	}
 	//#endregion
 
