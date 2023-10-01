@@ -49,15 +49,15 @@ test('Hierarchies.createWithIds(childMap)', () => {
 });
 
 test('Hierarchies.createWithIds(otherHierarchy)', () => {
+	const otherHierarchy = Hierarchies.createWithIds(childMap);
+
 	const itemHc = Hierarchies.createWithItems({
 		items,
 		identify: item => item.id,
-		spec:     childMap,
+		spec:     otherHierarchy,
 	});
 
-	const idHc = Hierarchies.createWithIds(itemHc);
-
-	const actual = idHc.toRelations();
+	const actual = itemHc.toRelations();
 
 	expect(actual).toEqual(relations);
 });
