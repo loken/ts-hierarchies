@@ -109,71 +109,6 @@ export class Hierarchy<Item, Id = Item> {
 
 		return node;
 	}
-
-
-	/**
-	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
-	 */
-	public *find(search: Id[] | NodePredicate<Item>) {
-		if (Array.isArray(search)) {
-			for (const id of search) {
-				const node = this.#nodes.get(id);
-				if (node)
-					yield node;
-			}
-		}
-		else {
-			for (const node of this.#nodes.values()) {
-				if (search(node))
-					yield node;
-			}
-		}
-	}
-
-	/**
-	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
-	 */
-	public *findItems(search: Id[] | NodePredicate<Item>) {
-		for (const node of this.find(search))
-			yield node.item;
-	}
-
-	/**
-	 * Find `Id`s matching a list of `Id`s or a `HCNode<Item>` predicate.
-	 */
-	public *findIds(search: Id[] | NodePredicate<Item>) {
-		if (Array.isArray(search)) {
-			for (const id of search) {
-				if (this.#nodes.has(id))
-					yield id;
-			}
-		}
-		else {
-			for (const [ id, node ] of this.#nodes) {
-				if (search(node))
-					yield id;
-			}
-		}
-	}
-
-	/**
-	 * Find entries matching a list of `Id`s or a `HCNode<Item>` predicate.
-	 */
-	public *findEntries(search: Id[] | NodePredicate<Item>) {
-		if (Array.isArray(search)) {
-			for (const id of search) {
-				const node = this.#nodes.get(id);
-				if (node)
-					yield [ id, node.item, node ] as HierarchyEntry<Item, Id>;
-			}
-		}
-		else {
-			for (const node of this.#nodes.values()) {
-				if (search(node))
-					yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
-			}
-		}
-	}
 	//#endregion
 
 	//#region links
@@ -366,6 +301,72 @@ export class Hierarchy<Item, Id = Item> {
 	public *traverseAllDescendantEntries(includeSelf = false) {
 		for (const node of Nodes.traverseDescendants(this.#roots.values(), includeSelf))
 			yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+	}
+	//#endregion
+
+	//#region search
+	/**
+	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 */
+	public *find(search: Id[] | NodePredicate<Item>) {
+		if (Array.isArray(search)) {
+			for (const id of search) {
+				const node = this.#nodes.get(id);
+				if (node)
+					yield node;
+			}
+		}
+		else {
+			for (const node of this.#nodes.values()) {
+				if (search(node))
+					yield node;
+			}
+		}
+	}
+
+	/**
+	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 */
+	public *findItems(search: Id[] | NodePredicate<Item>) {
+		for (const node of this.find(search))
+			yield node.item;
+	}
+
+	/**
+	 * Find `Id`s matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 */
+	public *findIds(search: Id[] | NodePredicate<Item>) {
+		if (Array.isArray(search)) {
+			for (const id of search) {
+				if (this.#nodes.has(id))
+					yield id;
+			}
+		}
+		else {
+			for (const [ id, node ] of this.#nodes) {
+				if (search(node))
+					yield id;
+			}
+		}
+	}
+
+	/**
+	 * Find entries matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 */
+	public *findEntries(search: Id[] | NodePredicate<Item>) {
+		if (Array.isArray(search)) {
+			for (const id of search) {
+				const node = this.#nodes.get(id);
+				if (node)
+					yield [ id, node.item, node ] as HierarchyEntry<Item, Id>;
+			}
+		}
+		else {
+			for (const node of this.#nodes.values()) {
+				if (search(node))
+					yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+			}
+		}
 	}
 	//#endregion
 
