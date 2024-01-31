@@ -123,7 +123,7 @@ export class Nodes {
 					signal.skip();
 
 				const childItems = children(node.item);
-				if (childItems) {
+				if (childItems?.length) {
 					const childNodes = childItems.map(childItem => new HCNode(childItem));
 					node.attach(childNodes);
 					signal.next(childNodes);

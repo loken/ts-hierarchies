@@ -53,7 +53,7 @@ export class ChildMap {
 
 		for (const item of iterateMultiple(items)) {
 			const childIds = getChildren(item)?.map(identify);
-			if (childIds)
+			if (childIds?.length)
 				childMap.add(identify(item), childIds);
 		}
 
@@ -65,7 +65,7 @@ export class ChildMap {
 		const childMap = new MultiMap<Id>();
 		for (const item of iterateMultiple(items)) {
 			const childIds = identifyChildren(item);
-			if (childIds)
+			if (childIds?.length)
 				childMap.add(identify(item), childIds);
 		}
 
