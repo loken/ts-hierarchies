@@ -3,6 +3,7 @@ import { iterateAll, iterateMultiple, mapArgs, mapGetLazy, MultiMap, type Multip
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import { traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
+import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
 import type { Relation } from '../utilities/relations.js';
@@ -53,6 +54,17 @@ export class Nodes {
 		}
 
 		return roots;
+	}
+
+	/**
+	 * Build nodes of IDs recursively from the property keys.
+	 *
+	 * @param source The object describing the relations.
+	 * @param include Optional predicate used for determining whether a property should be included as an ID.
+	 * @returns The root nodes.
+	 */
+	public static assemblePropertyIds(source: object, include?: (prop: string, val: any) => boolean): HCNode<string>[] {
+		return Nodes.assembleIds(ChildMap.fromPropertyIds(source, include));
 	}
 
 	/**

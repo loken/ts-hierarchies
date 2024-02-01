@@ -25,6 +25,29 @@ test('Assemble IDs', () => {
 	expect(output).toEqual(input);
 });
 
+test('Assemble property IDs', () => {
+	const roots = Nodes.assemblePropertyIds({
+		A: {
+			A1: {
+				A11: true,
+				A12: true,
+			},
+			A2: {},
+		},
+		B: {
+			B1: {
+				B12: true,
+			},
+		},
+		C:       {},
+		IGNORED: 'No match for include fn',
+	}, (_, val) => typeof val === 'object' || val === true);
+
+	const output = Nodes.toChildMap(roots, id => id).render(sep);
+
+	expect(output).toEqual(input);
+});
+
 test('Assemble items', () => {
 	const items = splitBy('A,B,C,A1,A2,B1,A11,A12,B12').map(id => ({ id }));
 

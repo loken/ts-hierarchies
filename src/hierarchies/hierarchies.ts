@@ -36,6 +36,18 @@ export class Hierarchies {
 	}
 
 	/**
+	 * Create a hierarchy of `Id`s matching the properties of the `source`.
+	 *
+	 * @param source The object describing the relations.
+	 * @param include Optional predicate used for determining whether a property should be included as an ID.
+	 */
+	public static createWithPropertyIds(source: object, include?: (prop: string, val: any) => boolean): Hierarchy<string> {
+		const roots = Nodes.assemblePropertyIds(source, include);
+
+		return Hierarchies.createForIds<string>().attachRoot(roots);
+	}
+
+	/**
 	 * Create a hierarchy of `Item`s matching details from the `options`.
 	 *
 	 * @template Item The type of item.

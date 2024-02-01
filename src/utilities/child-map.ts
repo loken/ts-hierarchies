@@ -1,6 +1,7 @@
-import { iterateMultiple, MultiMap, type Multiple, ProbabilityScale, randomInt } from '@loken/utilities';
+import { iterateAll, iterateMultiple, MultiMap, type Multiple, ProbabilityScale, randomInt } from '@loken/utilities';
 
 import { Hierarchy } from '../hierarchies/hierarchy.js';
+import { traverseGraph } from '../traversal/traverse-graph.js';
 import type { Identify } from './identify.js';
 import type { IdSpec, ItemIdOptions } from './identity-options.js';
 import type { GetChildren, GetParent, IdentifyChildren, IdentifyParent } from './related-items.js';
@@ -27,6 +28,38 @@ export class ChildMap {
 			return ChildMap.fromHierarchy(spec);
 
 		throw new Error("Unsupported 'relations' specification.");
+	}
+
+	/**
+	 * Create a child-map from the nested property keys of the `source`.
+	 *
+	 * @param source The object describing the relations.
+	 * @param include Optional predicate used for determining whether a property should be included as an ID.
+	 */
+	public static fromPropertyIds(source: object, include?: (prop: string, val: any) => boolean): MultiMap<string> {
+		const childMap = new MultiMap<string>();
+		const root: {parent?: string, obj: object} = { obj: source };
+
+		iterateAll(traverseGraph({
+			roots:  root,
+			signal: ({ parent, obj }, signal) => {
+				let entries = Object.entries(obj);
+				if (include)
+					entries = entries.filter(([ key, val ]) => include(key, val));
+
+				if (parent)
+					childMap.add(parent, entries.map(([ key ]) => key));
+
+				const children = entries
+					.filter(([ _, val ]) => typeof val === 'object')
+					.map(([ key, val ]) => ({ parent: key, obj: val as object }));
+
+				if (children.length)
+					signal.next(children);
+			},
+		}));
+
+		return childMap;
 	}
 
 
