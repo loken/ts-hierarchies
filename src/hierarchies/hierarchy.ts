@@ -39,9 +39,29 @@ export class Hierarchy<Item, Id = Item> {
 		return [ ...this.#roots.values() ];
 	}
 
+	/** Get a shallow clone of the root items. */
+	public get rootItems() {
+		return this.roots.map(r => r.item);
+	}
+
+	/** Get a shallow clone of the root IDs. */
+	public get rootIds() {
+		return this.roots.map(r => this.#identify(r.item));
+	}
+
 	/** Get a shallow clone of all nodes. */
 	public get nodes() {
 		return [ ...this.#nodes.values() ];
+	}
+
+	/** Get a shallow clone of all node items. */
+	public get nodeItems() {
+		return this.roots.map(n => n.item);
+	}
+
+	/** Get a shallow clone of all node IDs. */
+	public get nodeIds() {
+		return this.roots.map(n => this.#identify(n.item));
 	}
 
 	/** Means of getting an ID for an `item`. */
