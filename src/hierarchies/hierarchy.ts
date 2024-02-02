@@ -371,6 +371,54 @@ export class Hierarchy<Item, Id = Item> {
 		}
 	}
 
+
+	/**
+	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
+	 */
+	public findAncestor(ids: Multiple<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.get(...spreadMultiple(ids));
+
+		return Nodes.findAncestor(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+	/**
+	 * Find a node matching the `search` which is an descendant of a node with one of the `ids`.
+	 */
+	public findDescendant(ids: Multiple<Id>, search: Id | Id[]| NodePredicate<Item>, includeSelf = false) {
+		const roots = this.get(...spreadMultiple(ids));
+
+		return Nodes.findDescendant(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+	/**
+	 * Find nodes matching the `search` which are descendants of a node with one of the `ids`.
+	 */
+	public findDescendants(ids: Multiple<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.get(...spreadMultiple(ids));
+
+		return Nodes.findDescendants(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+
+	/**
+	 * Does a node with one of the `ids` have an ancestor node matching the `search`?
+	 */
+	public hasAncestor(ids: Multiple<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.get(...spreadMultiple(ids));
+
+		return Nodes.hasAncestor(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+	/**
+	 * Does a node with one of the `ids` have a descendant node matching the `search`?
+	 */
+	public hasDescendant(ids: Multiple<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.get(...spreadMultiple(ids));
+
+		return Nodes.hasDescendant(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+
 	/**
 	 * Create a new `Hierarchy` from matching items.
 	 *
@@ -466,6 +514,16 @@ export class Hierarchy<Item, Id = Item> {
 			identify: this.#identify,
 			spec:     childMap,
 		});
+	}
+
+
+	protected normalizeSearch(search: Id | Id[] | NodePredicate<Item>): NodePredicate<Item> {
+		if (typeof search === 'function')
+			return search as NodePredicate<Item>;
+		if (Array.isArray(search))
+			return (node) => search.includes(this.#identify(node.item));
+		else
+			return (node) => this.#identify(node.item) === search;
 	}
 	//#endregion
 

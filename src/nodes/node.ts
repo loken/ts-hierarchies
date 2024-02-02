@@ -3,7 +3,7 @@ import { type Multiple, spreadMultiple } from '@loken/utilities';
 import { traverseGraph } from '../traversal/traverse-graph.js';
 import { traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
-import type { DeBrand } from './node.types.js';
+import type { DeBrand, NodePredicate } from './node.types.js';
 import { nodesToItems } from './node-conversion.js';
 
 
@@ -230,6 +230,46 @@ export class HCNode<Item> {
 	/** Get descendant nodes by traversing according to the options. */
 	public getDescendantItems(includeSelf = false, type: TraversalType = 'breadth-first') {
 		return nodesToItems(this.traverseDescendants(includeSelf, type));
+	}
+
+
+	/** Find the first ancestor node matching the `search`. */
+	public findAncestor(search: NodePredicate<Item>, includeSelf = false) {
+		for (const ancestor of this.traverseAncestors(includeSelf)) {
+			if (search(ancestor))
+				return ancestor;
+		}
+
+		return undefined;
+	}
+
+	/** Find the first descendant node matching the `search`. */
+	public findDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+		for (const descendant of this.traverseDescendants(includeSelf, type)) {
+			if (search(descendant))
+				return descendant;
+		}
+
+		return undefined;
+	}
+
+	/** Find the descendant nodes matching the `search`. */
+	public *findDescendants(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+		for (const descendant of this.traverseDescendants(includeSelf, type)) {
+			if (search(descendant))
+				yield descendant;
+		}
+	}
+
+
+	/** Does an ancestor node matching the `search` exist? */
+	public hasAncestor(search: NodePredicate<Item>, includeSelf = false) {
+		return this.findAncestor(search, includeSelf) !== undefined;
+	}
+
+	/** Does a descendant node matching the `search` exist? */
+	public hasDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+		return this.findDescendant(search, includeSelf, type) !== undefined;
 	}
 	//#endregion
 

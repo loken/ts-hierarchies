@@ -8,6 +8,7 @@ import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
 import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
+import type { NodePredicate } from './node.types.js';
 import { nodesToIds, nodesToItems, nodeToId } from './node-conversion.js';
 
 export class Nodes {
@@ -401,6 +402,47 @@ export class Nodes {
 			next:  node => node.getChildren(),
 			type,
 		});
+	}
+
+
+	/** Find the first ancestor node matching the `search`. */
+	public static findAncestor<Item>(roots: Multiple<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
+		for (const root of iterateMultiple(roots)) {
+			const ancestor = root.findAncestor(search, includeSelf);
+			if (ancestor)
+				return ancestor;
+		}
+
+		return undefined;
+	}
+
+	/** Find the first descendant node matching the `search`. */
+	public static findDescendant<Item>(roots: Multiple<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+		for (const descendant of this.traverseDescendants(roots, includeSelf, type)) {
+			if (search(descendant))
+				return descendant;
+		}
+
+		return undefined;
+	}
+
+	/** Find the descendant nodes matching the `search`. */
+	public static *findDescendants<Item>(roots: Multiple<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+		for (const descendant of this.traverseDescendants(roots, includeSelf, type)) {
+			if (search(descendant))
+				yield descendant;
+		}
+	}
+
+
+	/** Does an ancestor node matching the `search` exist? */
+	public static hasAncestor<Item>(roots: Multiple<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
+		return this.findAncestor(roots, search, includeSelf) !== undefined;
+	}
+
+	/** Does a descendant node matching the `search` exist? */
+	public static hasDescendant<Item>(roots: Multiple<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+		return this.findDescendant(roots, search, includeSelf, type) !== undefined;
 	}
 
 }
