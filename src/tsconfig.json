@@ -1,8 +1,6 @@
 {
-	"extends": "@roenlie/tsconfig",
+	"extends": "../tsconfig.json",
 	"compilerOptions": {
-		"rootDir": ".",
-		"baseUrl": ".",
 		"types": []
 	},
 	"include": [

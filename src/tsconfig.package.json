@@ -1,5 +1,5 @@
 {
-	"extends": "@roenlie/tsconfig",
+	"extends": "../tsconfig.json",
 	"compilerOptions": {
 		"outDir": "../dist/lib",
 		"rootDir": ".",
