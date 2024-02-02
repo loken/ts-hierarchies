@@ -20,7 +20,7 @@ export class ChildMap {
 
 	/** Create a child-map from an `IdSpec`. */
 	public static fromIds<Id>(spec: IdSpec<Id>): MultiMap<Id> {
-		if (spec instanceof MultiMap)
+		if (spec instanceof Map)
 			return spec;
 		if (Array.isArray(spec))
 			return ChildMap.fromRelations(spec);
