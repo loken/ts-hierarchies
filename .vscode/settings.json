@@ -29,7 +29,8 @@
 	"typescript.preferences.importModuleSpecifier": "project-relative",
 	"typescript.preferences.quoteStyle": "single",
 	"typescript.updateImportsOnFileMove.enabled": "always",
-	"typescript.tsdk": "node_modules\\typescript\\lib",
+	"typescript.tsdk": "./node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
 	"workbench.colorCustomizations": {
 		"activityBar.activeBackground": "#2c184d",
 		"activityBar.background": "#2c184d",
