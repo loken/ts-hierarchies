@@ -1,7 +1,7 @@
-import { type Multiple, spreadMultiple } from '@loken/utilities';
+import { type Some, someToArray } from '@loken/utilities';
 
-import { traverseGraph } from '../traversal/traverse-graph.js';
-import { traverseSequence } from '../traversal/traverse-sequence.js';
+import { flattenGraph, traverseGraph } from '../traversal/traverse-graph.js';
+import { flattenSequence, traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
 import type { DeBrand, NodePredicate } from './node.types.js';
 import { nodesToItems } from './node-conversion.js';
@@ -95,8 +95,8 @@ export class HCNode<Item> {
 	/**
 	 * Attach the provided `children`.
 	 */
-	public attach(children: Multiple<HCNode<Item>>): this {
-		const nodes = spreadMultiple(children);
+	public attach(children: Some<HCNode<Item>>): this {
+		const nodes = someToArray(children);
 
 		if (nodes.length === 0)
 			throw new Error("Must provide one or more 'children'.");
@@ -118,8 +118,8 @@ export class HCNode<Item> {
 	}
 
 	/** Detach the provided `children`. */
-	public detach(children: Multiple<HCNode<Item>>): this {
-		const nodes = spreadMultiple(children);
+	public detach(children: Some<HCNode<Item>>): this {
+		const nodes = someToArray(children);
 
 		if (nodes.length === 0)
 			throw new Error("Must provide one or more 'children'.");
@@ -179,7 +179,7 @@ export class HCNode<Item> {
 			parent.dismantle(true);
 		}
 
-		for (const descendant of this.traverseDescendants(false))
+		for (const descendant of this.getDescendants(false))
 			descendant.detachSelf();
 
 		return this;
@@ -214,51 +214,87 @@ export class HCNode<Item> {
 
 	/** Get ancestor nodes by traversing according to the options. */
 	public getAncestors(includeSelf = false) {
-		return [ ...this.traverseAncestors(includeSelf) ];
+		return flattenSequence({
+			first: includeSelf ? this : this.#parent,
+			next:  node => node?.getParent(),
+		});
 	}
 
-	/** Get ancestor nodes by traversing according to the options. */
+	/** Get ancestor items by traversing according to the options. */
 	public getAncestorItems(includeSelf = false) {
-		return nodesToItems(this.traverseAncestors(includeSelf));
+		return this.getAncestors(includeSelf).map(node => node.item);
 	}
 
 	/** Get descendant nodes by traversing according to the options. */
 	public getDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
-		return [ ...this.traverseDescendants(includeSelf, type) ];
+		return flattenGraph({
+			roots: includeSelf ? this : this.getChildren(),
+			next:  node => node.getChildren(),
+			type,
+		});
 	}
 
-	/** Get descendant nodes by traversing according to the options. */
+	/** Get descendant items by traversing according to the options. */
 	public getDescendantItems(includeSelf = false, type: TraversalType = 'breadth-first') {
-		return nodesToItems(this.traverseDescendants(includeSelf, type));
+		return this.getDescendants(includeSelf, type).map(node => node.item);
 	}
 
 
 	/** Find the first ancestor node matching the `search`. */
 	public findAncestor(search: NodePredicate<Item>, includeSelf = false) {
-		for (const ancestor of this.traverseAncestors(includeSelf)) {
-			if (search(ancestor))
-				return ancestor;
-		}
+		return flattenSequence({
+			first:  includeSelf ? this : this.#parent,
+			signal: (n, s) => {
+				if (!search(n)) {
+					s.skip();
+					s.next(n?.getParent());
+				}
+			},
+		})[0];
+	}
 
-		return undefined;
+	/** Find the ancestor nodes matching the `search`. */
+	public findAncestors(search: NodePredicate<Item>, includeSelf = false) {
+		return flattenSequence({
+			first:  includeSelf ? this : this.#parent,
+			signal: (n, s) => {
+				if (!search(n))
+					s.skip();
+
+				s.next(n?.getParent());
+			},
+		});
 	}
 
 	/** Find the first descendant node matching the `search`. */
 	public findDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		for (const descendant of this.traverseDescendants(includeSelf, type)) {
-			if (search(descendant))
-				return descendant;
-		}
-
-		return undefined;
+		return flattenGraph({
+			roots:  includeSelf ? this : this.getChildren(),
+			signal: (n, s) => {
+				if (search(n)) {
+					s.end();
+				}
+				else {
+					s.skip();
+					s.next(n.getChildren());
+				}
+			},
+			type,
+		})[0];
 	}
 
 	/** Find the descendant nodes matching the `search`. */
-	public *findDescendants(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		for (const descendant of this.traverseDescendants(includeSelf, type)) {
-			if (search(descendant))
-				yield descendant;
-		}
+	public findDescendants(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+		return flattenGraph({
+			roots:  includeSelf ? this : this.getChildren(),
+			signal: (n, s) => {
+				if (!search(n))
+					s.skip();
+
+				s.next(n.getChildren());
+			},
+			type,
+		});
 	}
 
 

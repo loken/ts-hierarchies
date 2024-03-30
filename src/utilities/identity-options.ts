@@ -1,4 +1,4 @@
-import type { MultiMap, Multiple } from '@loken/utilities';
+import type { MultiMap, Some } from '@loken/utilities';
 
 import type { Hierarchy } from '../hierarchies/hierarchy.js';
 import type { Identify } from './identify.js';
@@ -30,7 +30,7 @@ export type ItemIdOptions<Item, Id> = IdsFromItems<Item, Id> & (
 
 
 /** Specification for identifying `Id`s from `Item`s. */
-export type IdsFromItems<Item, Id> = {items: Multiple<Item>, identify: Identify<Item, Id>};
+export type IdsFromItems<Item, Id> = {items: Some<Item>, identify: Identify<Item, Id>};
 
 
 /** Specification of `Id` relations from an `IdSpec`. */

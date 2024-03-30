@@ -182,11 +182,14 @@ We support a few representations for relations and provide utilities for convert
 
 ### Traversal
 
-An essential part of any tree/hierarchy/graph library is traversal. The `traverseGraph` and `traverseSequence` utility functions provide a way to traverse a graph (tree) or sequence (list) starting with one or more nodes, called `Multiple<Node<Item>>`.
+An essential part of any tree/hierarchy/graph library is traversal. The `traverseGraph`, `traverseSequence`, `flattenGraph` and `flattenSequence` utility functions provide ways to traverse or flatten a graph (tree) or sequence (list) starting with one or more nodes, called `Some<Node<Item>>`.
 
-They both provide options for simple and more complex, yet more flexible, traversal.
+- The former pair both provide options for simple and more complex, yet more flexible, traversal using an `IterableIterator<>`.
+- The latter pair both provide options for simple and more complex, yet more flexible, flattening of of nodes into an array.
 
-They both return an `IterableIterator<T>` rather than an array for memory optimization purposes when you want to loop over their result. If you need an array of the results, you'll have to spread the iterator into an array; `[...iterator]` or `spreadMultiple(iterator)`.
+Aside from their return type the two pairs behave the same and take the same parameters.
+
+*Performance*: Due to a non-negligible performance overhead with iterators we recommend relying on the `flatten*` variants over the `traverse*` variants unless your application is very sensitive to memory or has HUGE (many millions of nodes) graphs or sequences.
 
 #### Traverse next
 For simple node enumeration you simply pass the starting point as `roots` and a `next` delegate describing where to find the next node(s).
@@ -264,7 +267,7 @@ By default traversal type is `'breadth-first'`. But you can specify `'depth-firs
 It is assumed that the graph is a tree, but if there can be cycles in your nodes, you can enable cycle detection through the optional `detectCycles` option (`false` by default).
 
 #### Traverse a `Hierarchy` or `HCNode`
-We provide some methods for traversal of a `Hierarchy` or a `Node` as a slightly higher abstraction than the `traverseGraph` and `traverseSequence` utilities.
+We provide some methods for traversal of a `Hierarchy` or a `Node` as a slightly higher abstraction than the `flattenGraph` and `flattenSequence` utilities.
 
 These don't give you the option of breaking cycles, but they do give you the option of deciding whether to includeSelf, meaning include the node, id or ids you're starting at.
 
@@ -277,10 +280,10 @@ node.traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-fir
 node.getAncestors(includeSelf = false): HCNode<Item>[];
 node.traverseAncestors(includeSelf = false): Generator<HCNode<Item>>[];
 
-hierarchy.getDescendants(ids: Multiple<Id>, includeSelf = false);
-hierarchy.getDescendantIds(ids: Multiple<Id>, includeSelf = false);
-hierarchy.getDescendantItems(ids: Multiple<Id>, includeSelf = false);
-hierarchy.getDescendantEntries(ids: Multiple<Id>, includeSelf = false);
+hierarchy.getDescendants(ids: Some<Id>, includeSelf = false);
+hierarchy.getDescendantIds(ids: Some<Id>, includeSelf = false);
+hierarchy.getDescendantItems(ids: Some<Id>, includeSelf = false);
+hierarchy.getDescendantEntries(ids: Some<Id>, includeSelf = false);
 
 hierarchy.getAncestors(id: Id, includeSelf = false);
 hierarchy.getAncestorIds(id: Id, includeSelf = false);

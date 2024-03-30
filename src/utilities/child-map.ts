@@ -1,4 +1,4 @@
-import { iterateAll, iterateMultiple, MultiMap, type Multiple, ProbabilityScale, randomInt } from '@loken/utilities';
+import { iterateAll, MultiMap, ProbabilityScale, randomInt, type Some, someToIterable } from '@loken/utilities';
 
 import { Hierarchy } from '../hierarchies/hierarchy.js';
 import { traverseGraph } from '../traversal/traverse-graph.js';
@@ -81,10 +81,10 @@ export class ChildMap {
 
 
 	/** Create a child-map from `items` using `identify` and `getChildren` delegates. */
-	public static fromChildren<Item, Id>(items: Multiple<Item>, identify: Identify<Item, Id>, getChildren: GetChildren<Item>): MultiMap<Id> {
+	public static fromChildren<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, getChildren: GetChildren<Item>): MultiMap<Id> {
 		const childMap = new MultiMap<Id>();
 
-		for (const item of iterateMultiple(items)) {
+		for (const item of someToIterable(items)) {
 			const childIds = getChildren(item)?.map(identify);
 			if (childIds?.length)
 				childMap.add(identify(item), childIds);
@@ -94,9 +94,9 @@ export class ChildMap {
 	}
 
 	/** Create a child-map from `items` using `identify` and `identifyChildren` delegates. */
-	public static fromChildIds<Item, Id>(items: Multiple<Item>, identify: Identify<Item, Id>, identifyChildren: IdentifyChildren<Item, Id>): MultiMap<Id> {
+	public static fromChildIds<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, identifyChildren: IdentifyChildren<Item, Id>): MultiMap<Id> {
 		const childMap = new MultiMap<Id>();
-		for (const item of iterateMultiple(items)) {
+		for (const item of someToIterable(items)) {
 			const childIds = identifyChildren(item);
 			if (childIds?.length)
 				childMap.add(identify(item), childIds);
@@ -106,9 +106,9 @@ export class ChildMap {
 	}
 
 	/** Create a child-map from `items` using `identify` and `getParent` delegates. */
-	public static fromParents<Item, Id>(items: Multiple<Item>, identify: Identify<Item, Id>, getParent: GetParent<Item>): MultiMap<Id> {
+	public static fromParents<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, getParent: GetParent<Item>): MultiMap<Id> {
 		const childMap = new MultiMap<Id>();
-		for (const item of iterateMultiple(items)) {
+		for (const item of someToIterable(items)) {
 			const parent = getParent(item);
 			if (parent)
 				childMap.add(identify(parent), identify(item));
@@ -118,9 +118,9 @@ export class ChildMap {
 	}
 
 	/** Create a child-map from `items` using `identify` and `identifyParent` delegates. */
-	public static fromParentIds<Item, Id>(items: Multiple<Item>, identify: Identify<Item, Id>, identifyParent: IdentifyParent<Item, Id>): MultiMap<Id> {
+	public static fromParentIds<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, identifyParent: IdentifyParent<Item, Id>): MultiMap<Id> {
 		const childMap = new MultiMap<Id>();
-		for (const item of iterateMultiple(items)) {
+		for (const item of someToIterable(items)) {
 			const parentId = identifyParent(item);
 			if (parentId)
 				childMap.add(parentId, identify(item));
@@ -137,10 +137,10 @@ export class ChildMap {
 
 
 	/** Create a child map from the `relations`. */
-	public static fromRelations<Id>(relations: Multiple<Relation<Id>>): MultiMap<Id> {
+	public static fromRelations<Id>(relations: Some<Relation<Id>>): MultiMap<Id> {
 		const map = new MultiMap<Id>();
 
-		for (const [ parent, child ] of iterateMultiple(relations))
+		for (const [ parent, child ] of someToIterable(relations))
 			map.add(parent, child);
 
 		return map;

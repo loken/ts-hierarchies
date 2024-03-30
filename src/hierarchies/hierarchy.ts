@@ -1,10 +1,10 @@
-import { iterateMultiple, mapArgs, MultiMap, type Multiple, spreadMultiple } from '@loken/utilities';
+import { mapArgs, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
 
 import type { HCNode } from '../nodes/node.js';
 import type { DeBrand, NodePredicate } from '../nodes/node.types.js';
 import { nodesToIds } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
-import { traverseGraph } from '../traversal/traverse-graph.js';
+import { flattenGraph } from '../traversal/traverse-graph.js';
 import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../utilities/relations.js';
@@ -71,18 +71,13 @@ export class Hierarchy<Item, Id = Item> {
 
 
 	/** Map the `ids` to a boolean signifying their presence. */
-	public hasMap<Ids extends Id[]>(...ids: Ids) {
+	public has<Ids extends Id[]>(...ids: Ids) {
 		return mapArgs(ids, id => this.#nodes.has(id), true, false);
 	}
 
-	/** Is the `id` present? */
-	public has(id: Id) {
-		return this.#nodes.has(id);
-	}
-
 	/** Is every `Id` in the `ids` present? */
-	public hasEvery(ids: Multiple<Id>) {
-		for (const id of iterateMultiple(ids)) {
+	public hasEvery(ids: Some<Id>) {
+		for (const id of someToIterable(ids)) {
 			if (!this.#nodes.has(id))
 				return false;
 		}
@@ -91,8 +86,8 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/** Is some `Id` in the `ids` present? */
-	public hasSome(ids: Multiple<Id>) {
-		for (const id of iterateMultiple(ids)) {
+	public hasSome(ids: Some<Id>) {
+		for (const id of someToIterable(ids)) {
 			if (this.#nodes.has(id))
 				return true;
 		}
@@ -103,8 +98,7 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get node or nodes by their `Id`.
-	 * @param id The ID of the node or first node to retrieve.
-	 * @param ids The IDs of the nodes to retrieve beyond the first.
+	 * @param ids The IDs of nodes to retrieve.
 	 * @returns A single node when you pass a single ID and a fixed length tuple of nodes when you pass multiple IDs.
 	 * @throws The 'id' must be a hierarchy member.
 	 * @throws Must provide at least one argument.
@@ -114,14 +108,34 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Get item  or items by `Id`.
-	 * @param id The ID of the item or first item to retrieve.
-	 * @param ids The IDs of the items to retrieve beyond the first.
+	 * Get nodes by their `Id`s.
+	 * @param ids The IDs of nodes to retrieve.
+	 * @returns An array of nodes.
 	 * @throws The 'id' must be a hierarchy member.
+	 */
+	public getSome(ids: Some<Id>) {
+		return someToArray(ids).map(id => this.#get(id));
+	}
+
+	/**
+	 * Get item or items by `Id`.
+	 * @param ids The IDs of items to retrieve.
+	 * @throws The 'id' must be a hierarchy member.
+	 * @throws Must provide at least one argument.
 	 * @returns A single item when you pass a single ID and a fixed length tuple of items when you pass multiple IDs.
 	 */
 	public getItems<Ids extends Id[]>(...ids: Ids) {
 		return mapArgs(ids, id => this.#get(id).item, true, false);
+	}
+
+	/**
+	 * Get item or items by `Id`.
+	 * @param ids The IDs of items to retrieve.
+	 * @throws The 'id' must be a hierarchy member.
+	 * @returns An array of items.
+	 */
+	public getSomeItems(ids: Some<Id>) {
+		return someToArray(ids).map(id => this.#get(id).item);
 	}
 
 	#get(id: Id) {
@@ -138,8 +152,8 @@ export class Hierarchy<Item, Id = Item> {
 	 * Attach the provided `roots`.
 	 * @param roots Nodes to attach.
 	 */
-	public attachRoot(roots: Multiple<HCNode<Item>>): this {
-		const nodes = spreadMultiple(roots);
+	public attachRoot(roots: Some<HCNode<Item>>): this {
+		const nodes = someToArray(roots);
 
 		if (!nodes.every(n => n.isRoot))
 			throw new Error("The 'roots' all be roots!");
@@ -154,16 +168,14 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param parentId The ID of the node to attach to.
 	 * @param children Nodes to attach.
 	 */
-	public attach(parentId: Id, children: Multiple<HCNode<Item>>): this {
-		const nodes = spreadMultiple(children);
-
+	public attach(parentId: Id, children: Some<HCNode<Item>>): this {
 		if (!this.#nodes.has(parentId))
 			throw new Error("The 'parentId' must be a hierarchy member.");
 
-		this.#addNodes(nodes);
+		this.#addNodes(children);
 
 		const parent = this.#nodes.get(parentId)!;
-		parent.attach(nodes);
+		parent.attach(children);
 
 		return this;
 	}
@@ -172,10 +184,8 @@ export class Hierarchy<Item, Id = Item> {
 	 * Detach the provided `nodes`.
 	 * @param nodes Nodes to detach.
 	 */
-	public detach(node: Multiple<HCNode<Item>>) {
-		const nodes = spreadMultiple(node);
-
-		for (const node of traverseGraph({
+	public detach(nodes: Some<HCNode<Item>>) {
+		for (const node of flattenGraph({
 			roots: nodes,
 			next:  node => node.getChildren(),
 		})) {
@@ -186,7 +196,7 @@ export class Hierarchy<Item, Id = Item> {
 			this.#roots.delete(id);
 		}
 
-		for (const node of nodes) {
+		for (const node of someToIterable(nodes)) {
 			if (!node.isRoot)
 				node.detachSelf();
 		}
@@ -194,10 +204,8 @@ export class Hierarchy<Item, Id = Item> {
 		return this;
 	}
 
-	#addNodes(node: Multiple<HCNode<Item>>, asRoot = false) {
-		const nodes = spreadMultiple(node);
-
-		for (const node of traverseGraph({
+	#addNodes(nodes: Some<HCNode<Item>>, asRoot = false) {
+		for (const node of flattenGraph({
 			roots: nodes,
 			next:  node => node.getChildren(),
 		})) {
@@ -209,7 +217,7 @@ export class Hierarchy<Item, Id = Item> {
 		if (!asRoot)
 			return;
 
-		for (const node of nodes)
+		for (const node of someToIterable(nodes))
 			this.#roots.set(this.#identify(node.item), node);
 	}
 	//#endregion
@@ -233,96 +241,77 @@ export class Hierarchy<Item, Id = Item> {
 	 * Get the IDs from the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
 	public getAncestorIds(id: Id, includeSelf = false) {
-		return nodesToIds(this.get(id).traverseAncestors(includeSelf), this.#identify);
+		return nodesToIds(this.get(id).getAncestors(includeSelf), this.#identify);
 	}
 
 	/**
 	 * Get the entries from the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
 	public getAncestorEntries(id: Id, includeSelf = false) {
-		return [ ...this.traverseAncestorEntries(id, includeSelf) ];
-	}
-
-	/**
-	 * Traverse the entries from the chain of ancestor nodes starting with the node for the item matching the `id`.
-	 */
-	public *traverseAncestorEntries(id: Id, includeSelf = false) {
-		for (const node of this.get(id).traverseAncestors(includeSelf))
-			yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+		return this.getAncestors(id, includeSelf).map(node => {
+			return [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+		});
 	}
 
 
 	/**
 	 * Get the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 */
-	public getDescendants(ids: Multiple<Id>, includeSelf = false) {
-		return Nodes.getDescendants(this.get(...spreadMultiple(ids)), includeSelf);
+	public getDescendants(ids: Some<Id>, includeSelf = false) {
+		return Nodes.getDescendants(this.getSome(ids), includeSelf);
 	}
 
 	/**
 	 * Get the items from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 */
-	public getDescendantItems(ids: Multiple<Id>, includeSelf = false) {
-		return Nodes.getDescendantItems(this.get(...spreadMultiple(ids)), includeSelf);
+	public getDescendantItems(ids: Some<Id>, includeSelf = false) {
+		return Nodes.getDescendants(this.getSome(ids), includeSelf).map(node => node.item);
 	}
 
 	/**
 	 * Get the IDs from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 */
-	public getDescendantIds(ids: Multiple<Id>, includeSelf = false) {
-		return nodesToIds(Nodes.traverseDescendants(this.get(...spreadMultiple(ids)), includeSelf), this.#identify);
+	public getDescendantIds(ids: Some<Id>, includeSelf = false) {
+		return Nodes.getDescendants(this.getSome(ids), includeSelf).map(node => this.#identify(node.item));
 	}
 
 	/**
 	 * Get the entries from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 */
-	public getDescendantEntries(ids: Multiple<Id>, includeSelf = false) {
-		return [ ...this.traverseDescendantEntries(ids, includeSelf) ];
+	public getDescendantEntries(ids: Some<Id>, includeSelf = false) {
+		return this.getDescendants(ids, includeSelf).map(node => {
+			return [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+		});
 	}
-
-	/**
-	 * Traverse the entries from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
-	 */
-	public *traverseDescendantEntries(ids: Multiple<Id>, includeSelf = false) {
-		for (const node of Nodes.traverseDescendants(this.get(...spreadMultiple(ids)), includeSelf))
-			yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
-	}
-
 
 	/**
 	 * Get the chain of descendant nodes starting with the hierarchy `roots`.
 	 */
 	public getAllDescendants(includeSelf = false) {
-		return Nodes.getDescendants(this.#roots.values(), includeSelf);
+		return Nodes.getDescendants(this.roots, includeSelf);
 	}
 
 	/**
 	 * Get the items from the chain of descendant nodes starting with the hierarchy `roots`.
 	 */
 	public getAllDescendantItems(includeSelf = false) {
-		return Nodes.getDescendantItems(this.#roots.values(), includeSelf);
+		return Nodes.getDescendants(this.roots, includeSelf).map(node => node.item);
 	}
 
 	/**
 	 * Get the IDs from the chain of descendant nodes starting with the hierarchy `roots`.
 	 */
 	public getAllDescendantIds(includeSelf = false) {
-		return nodesToIds(Nodes.traverseDescendants(this.#roots.values(), includeSelf), this.#identify);
+		return nodesToIds(Nodes.getDescendants(this.roots, includeSelf), this.#identify);
 	}
 
 	/**
 	 * Get the entries from the chain of descendant nodes starting with the hierarchy `roots`.
 	 */
 	public getAllDescendantEntries(includeSelf = false) {
-		return [ ...this.traverseAllDescendantEntries(includeSelf) ];
-	}
-
-	/**
-	 * Traverse the entries from the chain of descendant nodes starting with the hierarchy `roots`.
-	 */
-	public *traverseAllDescendantEntries(includeSelf = false) {
-		for (const node of Nodes.traverseDescendants(this.#roots.values(), includeSelf))
-			yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+		return Nodes.getDescendants(this.roots, includeSelf).map(node => {
+			return [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+		});
 	}
 	//#endregion
 
@@ -330,82 +319,102 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public *find(search: Id[] | NodePredicate<Item>) {
+	public find(search: Id[] | NodePredicate<Item>) {
+		const result: HCNode<Item>[] = [];
+
 		if (Array.isArray(search)) {
 			for (const id of search) {
 				const node = this.#nodes.get(id);
 				if (node)
-					yield node;
+					result.push(node);
 			}
 		}
 		else {
 			for (const node of this.#nodes.values()) {
 				if (search(node))
-					yield node;
+					result.push(node);
 			}
 		}
+
+		return result;
 	}
 
 	/**
 	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public *findItems(search: Id[] | NodePredicate<Item>) {
-		for (const node of this.find(search))
-			yield node.item;
+	public findItems(search: Id[] | NodePredicate<Item>) {
+		return this.find(search).map(node => node.item);
 	}
 
 	/**
 	 * Find `Id`s matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public *findIds(search: Id[] | NodePredicate<Item>) {
+	public findIds(search: Id[] | NodePredicate<Item>) {
+		const result: Id[] = [];
+
 		if (Array.isArray(search)) {
 			for (const id of search) {
 				if (this.#nodes.has(id))
-					yield id;
+					result.push(id);
 			}
 		}
 		else {
 			for (const [ id, node ] of this.#nodes) {
 				if (search(node))
-					yield id;
+					result.push(id);
 			}
 		}
+
+		return result;
 	}
 
 	/**
 	 * Find entries matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public *findEntries(search: Id[] | NodePredicate<Item>) {
+	public findEntries(search: Id[] | NodePredicate<Item>) {
+		const result: HierarchyEntry<Item, Id>[] = [];
+
 		if (Array.isArray(search)) {
 			for (const id of search) {
 				const node = this.#nodes.get(id);
 				if (node)
-					yield [ id, node.item, node ] as HierarchyEntry<Item, Id>;
+					result.push([ id, node.item, node ]);
 			}
 		}
 		else {
 			for (const node of this.#nodes.values()) {
 				if (search(node))
-					yield [ this.#identify(node.item), node.item, node ] as HierarchyEntry<Item, Id>;
+					result.push([ this.#identify(node.item), node.item, node ]);
 			}
 		}
+
+		return result;
 	}
 
 
 	/**
 	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
 	 */
-	public findAncestor(ids: Multiple<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
-		const roots = this.get(...spreadMultiple(ids));
+	public findAncestor(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.getSome(ids);
 
 		return Nodes.findAncestor(roots, this.normalizeSearch(search), includeSelf);
 	}
 
 	/**
+	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
+	 */
+	public findAncestors(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.getSome(ids);
+
+		return Nodes.findAncestors(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+	/**
 	 * Find a node matching the `search` which is an descendant of a node with one of the `ids`.
 	 */
-	public findDescendant(ids: Multiple<Id>, search: Id | Id[]| NodePredicate<Item>, includeSelf = false) {
-		const roots = this.get(...spreadMultiple(ids));
+	public findDescendant(ids: Some<Id>, search: Id | Id[]| NodePredicate<Item>, includeSelf = false) {
+		const roots = this.getSome(ids);
 
 		return Nodes.findDescendant(roots, this.normalizeSearch(search), includeSelf);
 	}
@@ -413,8 +422,8 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find nodes matching the `search` which are descendants of a node with one of the `ids`.
 	 */
-	public findDescendants(ids: Multiple<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
-		const roots = this.get(...spreadMultiple(ids));
+	public findDescendants(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.getSome(ids);
 
 		return Nodes.findDescendants(roots, this.normalizeSearch(search), includeSelf);
 	}
@@ -423,8 +432,8 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Does a node with one of the `ids` have an ancestor node matching the `search`?
 	 */
-	public hasAncestor(ids: Multiple<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
-		const roots = this.get(...spreadMultiple(ids));
+	public hasAncestor(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.getSome(ids);
 
 		return Nodes.hasAncestor(roots, this.normalizeSearch(search), includeSelf);
 	}
@@ -432,8 +441,8 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Does a node with one of the `ids` have a descendant node matching the `search`?
 	 */
-	public hasDescendant(ids: Multiple<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
-		const roots = this.get(...spreadMultiple(ids));
+	public hasDescendant(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false) {
+		const roots = this.getSome(ids);
 
 		return Nodes.hasDescendant(roots, this.normalizeSearch(search), includeSelf);
 	}
@@ -468,7 +477,7 @@ export class Hierarchy<Item, Id = Item> {
 		for (const [ id, item, node ] of this.findEntries(search)) {
 			if (include.ancestors) {
 				const ancestorIds: Id[] = [];
-				for (const [ ancestorId, ancestorItem ] of this.traverseAncestorEntries(id, include.matches)) {
+				for (const [ ancestorId, ancestorItem ] of this.getAncestorEntries(id, include.matches)) {
 					ancestorIds.push(ancestorId);
 
 					if (!items.has(ancestorId))
@@ -479,7 +488,7 @@ export class Hierarchy<Item, Id = Item> {
 			}
 
 			if (include.descendants) {
-				for (const [ descendantId, descendantItem, descendantNode ] of this.traverseDescendantEntries(id, include.matches)) {
+				for (const [ descendantId, descendantItem, descendantNode ] of this.getDescendantEntries(id, include.matches)) {
 					if (!items.has(descendantId)) {
 						items.set(descendantId, descendantItem);
 
@@ -530,7 +539,7 @@ export class Hierarchy<Item, Id = Item> {
 		}
 
 		return Hierarchies.createWithItems({
-			items:    items.values(),
+			items:    [ ...items.values() ],
 			identify: this.#identify,
 			spec:     childMap,
 		});
@@ -550,22 +559,22 @@ export class Hierarchy<Item, Id = Item> {
 	//#region MultiMaps
 	/** Create a map of ids to child-ids by traversing the `hierarchy`. */
 	public toChildMap(): MultiMap<Id> {
-		return Nodes.toChildMap(this.#roots.values(), this.#identify);
+		return Nodes.toChildMap(this.roots, this.#identify);
 	}
 
 	/** Create a map of ids to descendant-ids by traversing the `hierarchy`. */
 	public toDescendantMap(): MultiMap<Id> {
-		return Nodes.toDescendantMap(this.#roots.values(), this.#identify);
+		return Nodes.toDescendantMap(this.roots, this.#identify);
 	}
 
 	/** Create a map of ids to ancestor-ids by traversing the `hierarchy`. */
 	public toAncestorMap(): MultiMap<Id> {
-		return Nodes.toDescendantMap(this.#roots.values(), this.#identify);
+		return Nodes.toDescendantMap(this.roots, this.#identify);
 	}
 
 	/** Create a list of relations by traversing the graph of the `hierarchy`. */
 	public toRelations(): Relation<Id>[] {
-		return Nodes.toRelations(this.#roots.values(), this.#identify);
+		return Nodes.toRelations(this.roots, this.#identify);
 	}
 	//#endregion
 

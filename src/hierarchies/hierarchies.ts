@@ -1,5 +1,3 @@
-import { spreadMultiple } from '@loken/utilities';
-
 import type { HCNode } from '../nodes/node.js';
 import { Nodes } from '../nodes/nodes.js';
 import { ChildMap } from '../utilities/child-map.js';
@@ -68,9 +66,6 @@ export class Hierarchies {
 			roots = Nodes.assembleItemsWithParents(options.items, options.parent);
 		}
 		else {
-			// Spread the items so that we don't get multiple iterations over an iterator.
-			options.items = spreadMultiple(options.items);
-
 			const childMap = ChildMap.fromItems(options);
 
 			roots = Nodes.assembleItems(options.items, options.identify, childMap);

@@ -1,4 +1,4 @@
-import { iterateMultiple, type Multiple } from '@loken/utilities';
+import { type Multiple, multipleToIterable } from '@loken/utilities';
 
 import { HCNode } from './node.js';
 
@@ -7,7 +7,7 @@ import { HCNode } from './node.js';
 export const nodesToItems = <Item>(nodes: Multiple<HCNode<Item>>) => {
 	const items: Item[] = [];
 
-	for (const node of iterateMultiple(nodes))
+	for (const node of multipleToIterable(nodes))
 		items.push(node.item);
 
 	return items;
@@ -22,7 +22,7 @@ export const nodeToId = <Item, Id = Item>(node: HCNode<Item>, identify?: (item: 
 export const nodesToIds = <Item, Id = Item>(nodes: Multiple<HCNode<Item>>, identify?: (item: Item) => Id): Id[] => {
 	const ids: Id[] = [];
 
-	for (const node of iterateMultiple(nodes))
+	for (const node of multipleToIterable(nodes))
 		ids.push(identify?.(node.item) ?? node.item as any);
 
 	return ids;

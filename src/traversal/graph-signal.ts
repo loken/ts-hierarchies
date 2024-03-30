@@ -1,4 +1,4 @@
-import { type ILinear, LinearQueue, LinearStack, type Multiple, Stack, type TryResult } from '@loken/utilities';
+import { type ILinear, LinearQueue, LinearStack, type Some, Stack, type TryResult } from '@loken/utilities';
 
 import { type TraversalType } from './traverse-types.js';
 
@@ -13,7 +13,7 @@ export interface IGraphSignal<TNode> {
 	get count(): number;
 
 	/** Call this when traversal should continue to a sub sequence of child roots. */
-	next(nodes: Multiple<TNode>): void;
+	next(nodes: Some<TNode>): void;
 	/**
 	 * Call this when you want to signal that the current root should be skipped,
 	 * meaning it will not be part of the output.
@@ -57,7 +57,7 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 		return this.#count;
 	}
 
-	public next(nodes: Multiple<TNode>) {
+	public next(nodes: Some<TNode>) {
 		const count = this.#nodes.attach(nodes);
 
 		if (this.#isDepthFirst && count > 0)
@@ -74,7 +74,7 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 	//endregion
 
 	//#region internal
-	constructor(options: {roots: Multiple<TNode>, detectCycles?: boolean, type?: TraversalType}) {
+	constructor(options: {roots: Some<TNode>, detectCycles?: boolean, type?: TraversalType}) {
 		if (options.detectCycles ?? false)
 			this.#visited = new Set<TNode>();
 

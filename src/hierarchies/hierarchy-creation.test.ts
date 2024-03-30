@@ -146,7 +146,7 @@ test('Hierarchies.createWithItems() from items with parents', () => {
 
 	/* Ensure we can pass it all of the items. */
 	const hcFromAll = Hierarchies.createWithItems({
-		items:    itemsWithParents.values(),
+		items:    [ ...itemsWithParents.values() ],
 		identify: item => item.id,
 		parent:   item => item.parent,
 	});

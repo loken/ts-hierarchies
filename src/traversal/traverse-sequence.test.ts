@@ -1,4 +1,4 @@
-import { iterateAll, range, spreadMultiple, traverseRange } from '@loken/utilities';
+import { iterateAll, multipleToArray, range, traverseRange } from '@loken/utilities';
 import { describe, expect, it } from 'vitest';
 
 import { traverseSequence } from './traverse-sequence.js';
@@ -21,7 +21,7 @@ describe('traverseSequence', () => {
 			},
 		});
 
-		expect(spreadMultiple(actual)).toEqual(expected);
+		expect(multipleToArray(actual)).toEqual(expected);
 	});
 
 	it('should yield values in order and skip as signaled.', () => {
@@ -47,7 +47,7 @@ describe('traverseSequence', () => {
 			},
 		});
 
-		const actualArr = spreadMultiple(actual).map(el => el.value!);
+		const actualArr = multipleToArray(actual).map(el => el.value!);
 
 		expect(actualArr).toEqual(expected);
 	});

@@ -1,4 +1,4 @@
-import { type Multiple } from '@loken/utilities';
+import { type Some } from '@loken/utilities';
 
 import { GraphSignal, type IGraphSignal } from './graph-signal.js';
 import { type TraversalType } from './traverse-types.js';
@@ -18,7 +18,7 @@ export type SignalNodes<TNode> = (node: TNode, signal: IGraphSignal<TNode>) => v
  */
 export type GraphTraversal<TNode> = {
 	/** The roots may have parents, but they are treated as depth 0 nodes for the traversal. */
-	roots: Multiple<TNode>,
+	roots: Some<TNode>,
 	/**
 	 * The type of traversal.
 	 * - `breadth-first` (default): Breadth first processes each node at a given depth before it proceeds to the next depth.
@@ -61,3 +61,28 @@ export function* traverseGraph<TNode>(options: GraphTraversal<TNode>) {
 		res = signal.tryGetNext();
 	}
 }
+
+/**
+ * Flatten a graph of nodes by traversing the provided `roots` according to the options.
+ */
+export const flattenGraph = <TNode>(options: GraphTraversal<TNode>) => {
+	const result: TNode[] = [];
+	const traverse: SignalNodes<TNode> = options.signal !== undefined
+		? options.signal
+		: (n, s) => s.next(options.next(n));
+
+	const signal = new GraphSignal<TNode>(options);
+	let res = signal.tryGetNext();
+	while (res[1]) {
+		traverse(res[0], signal);
+
+		if (signal.shouldYield())
+			result.push(res[0]);
+
+		signal.cleanup();
+
+		res = signal.tryGetNext();
+	}
+
+	return result;
+};
