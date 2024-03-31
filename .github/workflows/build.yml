@@ -64,7 +64,10 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          pnpm install
 
       - name: Run tests
         run: pnpm test
@@ -74,8 +77,6 @@ jobs:
 
       - name: Publish to GH Actions
         run: |
-          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
           pnpm publish --access restricted --tag next --no-git-checks
 
       - name: Publish to npmjs.org
