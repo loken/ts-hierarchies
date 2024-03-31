@@ -150,12 +150,90 @@ export class ChildMap {
 	public static toRelations<Id>(childMap: MultiMap<Id>): Relation<Id>[] {
 		const relations: Relation<Id>[] = [];
 
-		for (const [ parent, children ] of childMap.entries()) {
-			for (const child of children.values())
+		for (const [ parent, children ] of childMap) {
+			for (const child of children)
 				relations.push([ parent, child ]);
 		}
 
 		return relations;
+	}
+
+	/** Create a parent map from the `childMap`. */
+	public static toParentMap<Id>(childMap: MultiMap<Id>, roots?: Set<Id>): Map<Id, Id | undefined> {
+		const parentMap =  new Map<Id, Id | undefined>();
+		roots ??= this.getRoots(childMap);
+
+		// Add roots that are also leaves, as otherwise we lose them.
+		for (const root of roots) {
+			if (childMap.get(root)!.size === 0)
+				parentMap.set(root, undefined);
+		}
+
+		for (const [ parent, children ] of childMap) {
+			for (const child of children)
+				parentMap.set(child, parent);
+		}
+
+		return parentMap;
+	}
+
+	/** Create a descendants map from the `childMap`. */
+	public static toDescendantMap<Id>(childMap: MultiMap<Id>, parentMap?: Map<Id, Id | undefined>): MultiMap<Id> {
+		parentMap ??= this.toParentMap(childMap);
+		const descendantMap = new MultiMap<Id>();
+
+		for (const [ child, parent ] of parentMap) {
+			if (parent === undefined) {
+				descendantMap.getOrAdd(child);
+				continue;
+			}
+
+			let ancestor: Id | undefined = parent;
+			while (ancestor !== undefined) {
+				descendantMap.getOrAdd(ancestor).add(child);
+				ancestor = parentMap.get(ancestor);
+			}
+		}
+
+		return descendantMap;
+	}
+
+
+	/** Create an ancestor map from the `childMap`. */
+	public static toAncestorMap<Id>(childMap: MultiMap<Id>, parentMap?: Map<Id, Id | undefined>): MultiMap<Id> {
+		parentMap ??= this.toParentMap(childMap);
+		const ancestorMap =  new MultiMap<Id>();
+
+		for (const [ child, parent ] of parentMap) {
+			const ancestors = ancestorMap.getOrAdd(child);
+
+			let ancestor = parent;
+			while (ancestor !== undefined) {
+				ancestors.add(ancestor);
+				ancestor = parentMap.get(ancestor);
+			}
+		}
+
+		return ancestorMap;
+	}
+
+
+	/** Get the set of IDs representing the roots of the `childMap`. */
+	public static getRoots<Id>(childMap: MultiMap<Id>) {
+		const seenChildren = new Set<Id>();
+		const roots = new Set<Id>();
+
+		for (const [ parent, children ] of childMap) {
+			if (!seenChildren.has(parent))
+				roots.add(parent);
+
+			for (const child of children) {
+				seenChildren.add(child);
+				roots.delete(child);
+			}
+		}
+
+		return roots;
 	}
 
 

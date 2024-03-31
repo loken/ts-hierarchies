@@ -1,7 +1,7 @@
-import { iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
+import { iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable, someToSet } from '@loken/utilities';
 
 import { flattenGraph, traverseGraph } from '../traversal/traverse-graph.js';
-import { traverseSequence } from '../traversal/traverse-sequence.js';
+import { flattenSequence, traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
 import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
@@ -258,7 +258,7 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 		descendantMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		const rootIds = new Set<Id>();
+		const rootSet = someToSet(roots);
 
 		const traversal = traverseGraph({
 			roots,
@@ -269,22 +269,21 @@ export class Nodes {
 				const nodeId: Id = nodeToId(node, identify);
 
 				if (signal.depth === 0) {
-					rootIds.add(nodeId);
-
 					if (node.isLeaf)
 						descendantMap.getOrAdd(nodeId);
 
 					return;
 				}
 
-				for (const ancestor of node.getAncestors(false)) {
-					const ancestorId = nodeToId(ancestor, identify);
-					descendantMap.add(ancestorId, nodeId);
+				// Get ancestors starting with the parent and ending with the roots,
+				// for the case where the roots are not actual roots, just acting as such.
+				const ancestors = flattenSequence({
+					first: node.getParent(),
+					next:  node => rootSet.has(node) ? undefined : node.getParent(),
+				});
 
-					// We don't want to include ancestors of our roots.
-					if (rootIds.has(ancestorId))
-						break;
-				}
+				for (const ancestorId of nodesToIds(ancestors, identify))
+					descendantMap.add(ancestorId, nodeId);
 			},
 		});
 
@@ -308,7 +307,7 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 		ancestorMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		const rootIds = new Set<Id>();
+		const rootSet = someToSet(roots);
 
 		const traversal = traverseGraph({
 			roots,
@@ -319,22 +318,20 @@ export class Nodes {
 				const nodeId: Id = nodeToId(node, identify);
 
 				if (signal.depth === 0) {
-					rootIds.add(nodeId);
-
 					if (node.isLeaf)
 						ancestorMap.getOrAdd(nodeId);
 
 					return;
 				}
 
-				for (const ancestor of node.getAncestors(false)) {
-					const ancestorId = nodeToId(ancestor, identify);
-					ancestorMap.add(nodeId, ancestorId);
+				// Get ancestors starting with the parent and ending with the roots,
+				// for the case where the roots are not actual roots, just acting as such.
+				const ancestors = flattenSequence({
+					first: node.getParent(),
+					next:  node => rootSet.has(node) ? undefined : node.getParent(),
+				});
 
-					// We don't want to include ancestors of our roots.
-					if (rootIds.has(ancestorId))
-						break;
-				}
+				ancestorMap.add(nodeId, nodesToIds(ancestors, identify));
 			},
 		});
 
