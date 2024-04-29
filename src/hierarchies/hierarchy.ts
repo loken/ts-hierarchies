@@ -569,7 +569,7 @@ export class Hierarchy<Item, Id = Item> {
 
 	/** Create a map of ids to ancestor-ids by traversing the `hierarchy`. */
 	public toAncestorMap(): MultiMap<Id> {
-		return Nodes.toDescendantMap(this.roots, this.#identify);
+		return Nodes.toAncestorMap(this.roots, this.#identify);
 	}
 
 	/** Create a list of relations by traversing the graph of the `hierarchy`. */
