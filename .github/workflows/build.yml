@@ -40,9 +40,9 @@ jobs:
           sed -i -e 's+1.0.0-es-semver-replace.0+${{ steps.gitversion.outputs.semVer }}+' package.json
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
