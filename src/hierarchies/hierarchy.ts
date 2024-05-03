@@ -331,48 +331,42 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public find(search: Id[] | NodePredicate<Item>): HCNode<Item>[] {
-		const result: HCNode<Item>[] = [];
-
-		if (Array.isArray(search)) {
-			for (const id of search) {
-				const node = this.#nodes.get(id);
-				if (node)
-					result.push(node);
-			}
-		}
-		else {
+	public find(search: Some<Id> | NodePredicate<Item>): HCNode<Item>[] {
+		if (typeof search === 'function') {
+			const result: HCNode<Item>[] = [];
 			for (const node of this.#nodes.values()) {
-				if (search(node))
+				if ((search as NodePredicate<Item>)(node))
 					result.push(node);
 			}
+
+			return result;
 		}
 
-		return result;
+		return this.getSome(search);
 	}
 
 	/**
 	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public findItems(search: Id[] | NodePredicate<Item>): Item[] {
+	public findItems(search: Some<Id> | NodePredicate<Item>): Item[] {
 		return this.find(search).map(node => node.item);
 	}
 
 	/**
 	 * Find `Id`s matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public findIds(search: Id[] | NodePredicate<Item>): Id[] {
+	public findIds(search: Some<Id> | NodePredicate<Item>): Id[] {
 		const result: Id[] = [];
 
-		if (Array.isArray(search)) {
-			for (const id of search) {
-				if (this.#nodes.has(id))
+		if (typeof search === 'function') {
+			for (const [ id, node ] of this.#nodes) {
+				if ((search as NodePredicate<Item>)(node))
 					result.push(id);
 			}
 		}
 		else {
-			for (const [ id, node ] of this.#nodes) {
-				if (search(node))
+			for (const id of someToIterable(search)) {
+				if (this.#nodes.has(id))
 					result.push(id);
 			}
 		}
@@ -383,20 +377,20 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find entries matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
-	public findEntries(search: Id[] | NodePredicate<Item>): HierarchyEntry<Item, Id>[] {
+	public findEntries(search: Some<Id> | NodePredicate<Item>): HierarchyEntry<Item, Id>[] {
 		const result: HierarchyEntry<Item, Id>[] = [];
 
-		if (Array.isArray(search)) {
-			for (const id of search) {
-				const node = this.#nodes.get(id);
-				if (node)
-					result.push([ id, node.item, node ]);
+		if (typeof search === 'function') {
+			for (const node of this.#nodes.values()) {
+				if ((search as NodePredicate<Item>)(node))
+					result.push([ this.#identify(node.item), node.item, node ]);
 			}
 		}
 		else {
-			for (const node of this.#nodes.values()) {
-				if (search(node))
-					result.push([ this.#identify(node.item), node.item, node ]);
+			for (const id of someToIterable(search)) {
+				const node = this.#nodes.get(id);
+				if (node)
+					result.push([ id, node.item, node ]);
 			}
 		}
 
@@ -407,7 +401,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
 	 */
-	public findAncestor(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false): HCNode<Item> | undefined {
+	public findAncestor(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HCNode<Item> | undefined {
 		const roots = this.getSome(ids);
 
 		return Nodes.findAncestor(roots, this.normalizeSearch(search), includeSelf);
@@ -416,7 +410,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
 	 */
-	public findAncestors(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false): HCNode<Item>[] {
+	public findAncestors(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HCNode<Item>[] {
 		const roots = this.getSome(ids);
 
 		return Nodes.findAncestors(roots, this.normalizeSearch(search), includeSelf);
@@ -425,7 +419,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find a node matching the `search` which is an descendant of a node with one of the `ids`.
 	 */
-	public findDescendant(ids: Some<Id>, search: Id | Id[]| NodePredicate<Item>, includeSelf = false): HCNode<Item> | undefined {
+	public findDescendant(ids: Some<Id>, search: Some<Id>| NodePredicate<Item>, includeSelf = false): HCNode<Item> | undefined {
 		const roots = this.getSome(ids);
 
 		return Nodes.findDescendant(roots, this.normalizeSearch(search), includeSelf);
@@ -434,7 +428,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find nodes matching the `search` which are descendants of a node with one of the `ids`.
 	 */
-	public findDescendants(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false): HCNode<Item>[] {
+	public findDescendants(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HCNode<Item>[] {
 		const roots = this.getSome(ids);
 
 		return Nodes.findDescendants(roots, this.normalizeSearch(search), includeSelf);
@@ -444,7 +438,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Does a node with one of the `ids` have an ancestor node matching the `search`?
 	 */
-	public hasAncestor(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false): boolean {
+	public hasAncestor(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): boolean {
 		const roots = this.getSome(ids);
 
 		return Nodes.hasAncestor(roots, this.normalizeSearch(search), includeSelf);
@@ -453,7 +447,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Does a node with one of the `ids` have a descendant node matching the `search`?
 	 */
-	public hasDescendant(ids: Some<Id>, search: Id | Id[] | NodePredicate<Item>, includeSelf = false): boolean {
+	public hasDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): boolean {
 		const roots = this.getSome(ids);
 
 		return Nodes.hasDescendant(roots, this.normalizeSearch(search), includeSelf);
@@ -471,7 +465,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @throws If you provide `include` options but enable no facets.
 	 */
 	public search(
-		search: Id[] | NodePredicate<Item>,
+		search: Some<Id> | NodePredicate<Item>,
 		include?: {matches?: boolean, ancestors?: boolean, descendants?: boolean},
 	): Hierarchy<Item, Id> {
 		include ??= {
@@ -558,11 +552,13 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 
-	protected normalizeSearch(search: Id | Id[] | NodePredicate<Item>): NodePredicate<Item> {
+	protected normalizeSearch(search: Some<Id> | NodePredicate<Item>): NodePredicate<Item> {
 		if (typeof search === 'function')
 			return search as NodePredicate<Item>;
 		if (Array.isArray(search))
 			return (node) => search.includes(this.#identify(node.item));
+		else if (search instanceof Set)
+			return (node) => search.has(this.#identify(node.item));
 		else
 			return (node) => this.#identify(node.item) === search;
 	}
