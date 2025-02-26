@@ -398,6 +398,13 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 
+	/** Find the common ancestor node which is the closest to the `nodes`. */
+	public findCommonAncestor(ids: Some<Id>): HCNode<Item> | undefined {
+		const nodes = this.getSome(ids);
+
+		return Nodes.findCommonAncestor(nodes);
+	}
+
 	/**
 	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
 	 */

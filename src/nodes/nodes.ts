@@ -410,6 +410,18 @@ export class Nodes {
 	}
 
 
+	/** Find the common ancestor node which is the closest to the `nodes`. */
+	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>) {
+		const commonAncestors = someToArray(nodes).reduce((acc, curr) => {
+			const ancestors = new Set(curr.getAncestors(true));
+
+			return !acc ? ancestors : acc.intersection(ancestors);
+		}, null as Set<HCNode<Item>> | null);
+
+		return commonAncestors?.values().next().value;
+	}
+
+
 	/** Find the first ancestor node matching the `search`. */
 	public static findAncestor<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
 		for (const root of someToIterable(roots)) {
