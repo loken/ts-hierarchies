@@ -30,12 +30,12 @@ export type ItemIdOptions<Item, Id> = IdsFromItems<Item, Id> & (
 
 
 /** Specification for identifying `Id`s from `Item`s. */
-export type IdsFromItems<Item, Id> = {items: Some<Item>, identify: Identify<Item, Id>};
+export interface IdsFromItems<Item, Id> { items: Some<Item>, identify: Identify<Item, Id> }
 
 
 /** Specification of `Id` relations from an `IdSpec`. */
-export type IdsFromSpec<Id> = {
-	spec:      IdSpec<Id>;
+export interface IdsFromSpec<Id> {
+	spec: IdSpec<Id>;
 
 	// Discriminated union.
 	children?: never;
@@ -45,9 +45,9 @@ export type IdsFromSpec<Id> = {
 }
 
 /** Specification of `Item` relations from a `children` getter and `identify` function. */
-export type IdsFromChildren<Item, Id> = {
-	identify:  Identify<Item, Id>;
-	children:  GetChildren<Item>;
+export interface IdsFromChildren<Item, Id> {
+	identify: Identify<Item, Id>;
+	children: GetChildren<Item>;
 
 	// Discriminated union.
 	childIds?: never;
@@ -57,8 +57,8 @@ export type IdsFromChildren<Item, Id> = {
 }
 
 /** Specification of `Item` relations from a `childIds` getter. */
-export type IdsFromChildIds<Item, Id> = {
-	childIds:  IdentifyChildren<Item, Id>;
+export interface IdsFromChildIds<Item, Id> {
+	childIds: IdentifyChildren<Item, Id>;
 
 	// Discriminated union.
 	children?: never;
@@ -68,9 +68,9 @@ export type IdsFromChildIds<Item, Id> = {
 }
 
 /** Specification of `Item` relations from a `parent` getter and `identify` function. */
-export type IdsFromParents<Item, Id> = {
-	identify:  Identify<Item, Id>;
-	parent:    GetParent<Item>;
+export interface IdsFromParents<Item, Id> {
+	identify: Identify<Item, Id>;
+	parent:   GetParent<Item>;
 
 	// Discriminated union.
 	parentId?: never;
@@ -80,8 +80,8 @@ export type IdsFromParents<Item, Id> = {
 }
 
 /** Specification of `Item` relations from a `parentId` getter. */
-export type IdsFromParentIds<Item, Id> = {
-	parentId:  IdentifyParent<Item, Id>;
+export interface IdsFromParentIds<Item, Id> {
+	parentId: IdentifyParent<Item, Id>;
 
 	// Discriminated union.
 	parent?:   never;

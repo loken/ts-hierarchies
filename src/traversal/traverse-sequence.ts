@@ -15,17 +15,19 @@ export type SignalElement<TEl> = (element: TEl, signal: ISequenceSignal<TEl>) =>
  */
 export type SequenceTraversal<TEl> = {
 	/** The first element of the traversal. */
-	first: TEl | undefined,
+	first: TEl | undefined;
 } & ({
 	/** Describes how to get the the next element while traversing a sequence. */
-	next: NextElement<TEl>,
+	next: NextElement<TEl>;
+
 	/** Discriminated: Cannot pass a `signal` delegate when you've already passed a `next` delegate. */
 	signal?: never;
 } | {
 	/** Describes how to traverse a sequence when visiting an element using an `ISequenceSignal`. */
-	signal: SignalElement<TEl>,
+	signal: SignalElement<TEl>;
+
 	/** Discriminated: Cannot pass a `next` delegate when you've already passed a `signal` delegate. */
-	next?: never,
+	next?: never;
 });
 
 
@@ -37,7 +39,7 @@ export function* traverseSequence<TEl>(options: SequenceTraversal<TEl>) {
 		? options.signal
 		: (e, s) => s.next(options.next(e));
 
-	const signal = new SequenceSignal<TEl>(options);
+	const signal: SequenceSignal<TEl> = new SequenceSignal(options);
 	let res = signal.tryGetNext();
 	while (res[1]) {
 		traverse(res[0], signal);
@@ -60,7 +62,7 @@ export const flattenSequence = <TEl>(options: SequenceTraversal<TEl>) => {
 		? options.signal
 		: (e, s) => s.next(options.next(e));
 
-	const signal = new SequenceSignal<TEl>(options);
+	const signal: SequenceSignal<TEl> = new SequenceSignal(options);
 	let res = signal.tryGetNext();
 	while (res[1]) {
 		traverse(res[0], signal);

@@ -21,8 +21,8 @@ export class HCNode<Item> {
 	}
 
 	//#region backing fields
-	#item: Item;
-	#parent?: HCNode<Item>;
+	#item:      Item;
+	#parent?:   HCNode<Item>;
 	#children?: Set<HCNode<Item>>;
 
 	/** The brand is used to lock the node to a specific owner. */

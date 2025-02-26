@@ -27,9 +27,9 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	//#region backing fields
-	#roots = new Map<Id, HCNode<Item>>;
-	#nodes = new Map<Id, HCNode<Item>>();
-	#debrand = new Map<Id, DeBrand>();
+	#roots:    Map<Id, HCNode<Item>> = new Map;
+	#nodes:    Map<Id, HCNode<Item>> = new Map();
+	#debrand:  Map<Id, DeBrand> = new Map();
 	#identify: Identify<Item, Id>;
 	//#endregion
 
@@ -419,7 +419,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find a node matching the `search` which is an descendant of a node with one of the `ids`.
 	 */
-	public findDescendant(ids: Some<Id>, search: Some<Id>| NodePredicate<Item>, includeSelf = false): HCNode<Item> | undefined {
+	public findDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HCNode<Item> | undefined {
 		const roots = this.getSome(ids);
 
 		return Nodes.findDescendant(roots, this.normalizeSearch(search), includeSelf);
@@ -466,7 +466,7 @@ export class Hierarchy<Item, Id = Item> {
 	 */
 	public search(
 		search: Some<Id> | NodePredicate<Item>,
-		include?: {matches?: boolean, ancestors?: boolean, descendants?: boolean},
+		include?: { matches?: boolean, ancestors?: boolean, descendants?: boolean },
 	): Hierarchy<Item, Id> {
 		include ??= {
 			matches:     true,
@@ -477,8 +477,8 @@ export class Hierarchy<Item, Id = Item> {
 		if (!(include.matches || include.ancestors || include.descendants))
 			throw new Error("Must enable at least one facet to 'include'.");
 
-		const childMap = new MultiMap<Id>();
-		const items = new Map<Id, Item>();
+		const childMap: MultiMap<Id> = new MultiMap();
+		const items: Map<Id, Item> = new Map();
 
 		for (const [ id, item, node ] of this.findEntries(search)) {
 			if (include.ancestors) {

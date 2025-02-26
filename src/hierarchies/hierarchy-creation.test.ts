@@ -87,8 +87,8 @@ test('Hierarchies.createWithItems() from items and a child-map', () => {
 });
 
 test('Hierarchies.createWithItems() from items with children', () => {
-	type ItemWithChildren = {
-		id: string,
+	interface ItemWithChildren {
+		id:        string,
 		children?: ItemWithChildren[],
 	}
 
@@ -127,13 +127,13 @@ test('Hierarchies.createWithItems() from items with children', () => {
 });
 
 test('Hierarchies.createWithItems() from items with parents', () => {
-	type ItemWithParent = {
-		id: string,
+	interface ItemWithParent {
+		id:      string,
 		parent?: ItemWithParent,
 	}
 
 	// Clone the items into a map.
-	const itemsWithParents = new Map<string, ItemWithParent>();
+	const itemsWithParents: Map<string, ItemWithParent> = new Map();
 	for (const item of items)
 		itemsWithParents.set(item.id, { id: item.id });
 

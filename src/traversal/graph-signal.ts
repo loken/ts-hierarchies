@@ -38,11 +38,11 @@ export interface IGraphSignal<TNode> {
 export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 
 	//#region fields
-	#visited?: Set<TNode>;
+	#visited?:     Set<TNode>;
 	#isDepthFirst: boolean;
-	#nodes: ILinear<TNode>;
+	#nodes:        ILinear<TNode>;
 	#depth = 0;
-	#branchCount: Stack<number>;
+	#branchCount:  Stack<number>;
 	#depthCount = 0;
 	#count = 0;
 	#skipped = false;
@@ -74,7 +74,7 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 	//endregion
 
 	//#region internal
-	constructor(options: {roots: Some<TNode>, detectCycles?: boolean, type?: TraversalType}) {
+	constructor(options: { roots: Some<TNode>, detectCycles?: boolean, type?: TraversalType }) {
 		if (options.detectCycles ?? false)
 			this.#visited = new Set<TNode>();
 

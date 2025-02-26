@@ -37,8 +37,8 @@ export class ChildMap {
 	 * @param include Optional predicate used for determining whether a property should be included as an ID.
 	 */
 	public static fromPropertyIds(source: object, include?: (prop: string, val: any) => boolean): MultiMap<string> {
-		const childMap = new MultiMap<string>();
-		const root: {parent?: string, obj: object} = { obj: source };
+		const childMap: MultiMap<string> = new MultiMap();
+		const root: { parent?: string, obj: object } = { obj: source };
 
 		iterateAll(traverseGraph({
 			roots:  root,
@@ -82,7 +82,7 @@ export class ChildMap {
 
 	/** Create a child-map from `items` using `identify` and `getChildren` delegates. */
 	public static fromChildren<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, getChildren: GetChildren<Item>): MultiMap<Id> {
-		const childMap = new MultiMap<Id>();
+		const childMap: MultiMap<Id> = new MultiMap();
 
 		for (const item of someToIterable(items)) {
 			const childIds = getChildren(item)?.map(identify);
@@ -95,7 +95,7 @@ export class ChildMap {
 
 	/** Create a child-map from `items` using `identify` and `identifyChildren` delegates. */
 	public static fromChildIds<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, identifyChildren: IdentifyChildren<Item, Id>): MultiMap<Id> {
-		const childMap = new MultiMap<Id>();
+		const childMap: MultiMap<Id> = new MultiMap();
 		for (const item of someToIterable(items)) {
 			const childIds = identifyChildren(item);
 			if (childIds?.length)
@@ -107,7 +107,7 @@ export class ChildMap {
 
 	/** Create a child-map from `items` using `identify` and `getParent` delegates. */
 	public static fromParents<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, getParent: GetParent<Item>): MultiMap<Id> {
-		const childMap = new MultiMap<Id>();
+		const childMap: MultiMap<Id> = new MultiMap();
 		for (const item of someToIterable(items)) {
 			const parent = getParent(item);
 			if (parent)
@@ -119,7 +119,7 @@ export class ChildMap {
 
 	/** Create a child-map from `items` using `identify` and `identifyParent` delegates. */
 	public static fromParentIds<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, identifyParent: IdentifyParent<Item, Id>): MultiMap<Id> {
-		const childMap = new MultiMap<Id>();
+		const childMap: MultiMap<Id> = new MultiMap();
 		for (const item of someToIterable(items)) {
 			const parentId = identifyParent(item);
 			if (parentId)
@@ -138,7 +138,7 @@ export class ChildMap {
 
 	/** Create a child map from the `relations`. */
 	public static fromRelations<Id>(relations: Some<Relation<Id>>): MultiMap<Id> {
-		const map = new MultiMap<Id>();
+		const map: MultiMap<Id> = new MultiMap();
 
 		for (const [ parent, child ] of someToIterable(relations))
 			map.add(parent, child);
@@ -160,7 +160,7 @@ export class ChildMap {
 
 	/** Create a parent map from the `childMap`. */
 	public static toParentMap<Id>(childMap: MultiMap<Id>, roots?: Set<Id>): Map<Id, Id | undefined> {
-		const parentMap =  new Map<Id, Id | undefined>();
+		const parentMap: Map<Id, Id | undefined> =  new Map();
 		roots ??= this.getRoots(childMap);
 
 		// Add roots that are also leaves, as otherwise we lose them.
@@ -180,7 +180,7 @@ export class ChildMap {
 	/** Create a descendants map from the `childMap`. */
 	public static toDescendantMap<Id>(childMap: MultiMap<Id>, parentMap?: Map<Id, Id | undefined>): MultiMap<Id> {
 		parentMap ??= this.toParentMap(childMap);
-		const descendantMap = new MultiMap<Id>();
+		const descendantMap: MultiMap<Id> = new MultiMap();
 
 		for (const [ child, parent ] of parentMap) {
 			if (parent === undefined) {
@@ -202,7 +202,7 @@ export class ChildMap {
 	/** Create an ancestor map from the `childMap`. */
 	public static toAncestorMap<Id>(childMap: MultiMap<Id>, parentMap?: Map<Id, Id | undefined>): MultiMap<Id> {
 		parentMap ??= this.toParentMap(childMap);
-		const ancestorMap =  new MultiMap<Id>();
+		const ancestorMap: MultiMap<Id> =  new MultiMap();
 
 		for (const [ child, parent ] of parentMap) {
 			const ancestors = ancestorMap.getOrAdd(child);
@@ -220,8 +220,8 @@ export class ChildMap {
 
 	/** Get the set of IDs representing the roots of the `childMap`. */
 	public static getRoots<Id>(childMap: MultiMap<Id>) {
-		const seenChildren = new Set<Id>();
-		const roots = new Set<Id>();
+		const seenChildren: Set<Id> = new Set();
+		const roots: Set<Id> = new Set();
 
 		for (const [ parent, children ] of childMap) {
 			if (!seenChildren.has(parent))
@@ -243,7 +243,7 @@ export class ChildMap {
 	 * @param childMap A child-map. Default: Empty `MultiMap`.
 	 * @returns The `childMap`.
 	 */
-	public static addAncestors<Id>(ancestors: Id[], childMap = new MultiMap<Id>()) {
+	public static addAncestors<Id>(ancestors: Id[], childMap: MultiMap<Id> = new MultiMap()) {
 		if (ancestors.length === 0)
 			return;
 
@@ -270,17 +270,17 @@ export class ChildMap {
 	 * @param decay The decay to apply to the `chance` for each layer.
 	 */
 	public static generate<Id>(options: {
-		count: number,
+		count:  number,
 		create: (options: ({
-			index: number,
+			index:    number,
 			siblings: Id[],
 			ancestry: Id[],
 		})) => Id,
 		chance?: number,
-		decay?: number,
+		decay?:  number,
 	}): MultiMap<Id> {
 		const { count, create } = options;
-		const childMap = new MultiMap<Id>();
+		const childMap: MultiMap<Id> = new MultiMap();
 		const roots: Id[] = [];
 
 		for (let index = 0; index < count; index++) {

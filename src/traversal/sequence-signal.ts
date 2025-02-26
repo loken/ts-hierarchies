@@ -53,7 +53,7 @@ export class SequenceSignal<TEl> implements ISequenceSignal<TEl> {
 	//endregion
 
 	//#region internal
-	constructor(options: {first: TEl | undefined}) {
+	constructor(options: { first: TEl | undefined }) {
 		this.#element = options.first;
 	}
 
