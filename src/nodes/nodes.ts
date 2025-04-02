@@ -430,14 +430,35 @@ export class Nodes {
 
 
 	/** Find the common ancestor node which is the closest to the `nodes`. */
-	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>) {
+	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
+		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
+
+		return commonAncestors?.values().next().value;
+	}
+
+	/** Find the ancestor nodes common to the `nodes`. */
+	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
+		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
+
+		return commonAncestors ? [ ...commonAncestors ] : undefined;
+	}
+
+	/** Find the ancestor nodes common to the `nodes`. */
+	public static findCommonAncestorItems<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
+		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
+
+		return commonAncestors ? [ ...commonAncestors ].map(n => n.item) : undefined;
+	}
+
+	/** Find the set of ancestor nodes common to the `nodes`. */
+	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
 		const commonAncestors = someToArray(nodes).reduce((acc, curr) => {
-			const ancestors = new Set(curr.getAncestors(true));
+			const ancestors = new Set(curr.getAncestors(includeSelf));
 
 			return !acc ? ancestors : acc.intersection(ancestors);
 		}, null as Set<HCNode<Item>> | null);
 
-		return commonAncestors?.values().next().value;
+		return commonAncestors;
 	}
 
 

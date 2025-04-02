@@ -398,11 +398,18 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 
-	/** Find the common ancestor node which is the closest to the `nodes`. */
-	public findCommonAncestor(ids: Some<Id>): HCNode<Item> | undefined {
+	/** Find the common ancestor node which is the closest to the `ids`. */
+	public findCommonAncestor(ids: Some<Id>, includeSelf = false): HCNode<Item> | undefined {
 		const nodes = this.getSome(ids);
 
-		return Nodes.findCommonAncestor(nodes);
+		return Nodes.findCommonAncestor(nodes, includeSelf);
+	}
+
+	/** Find the ancestor nodes common to the `ids`. */
+	public findCommonAncestors(ids: Some<Id>, includeSelf = false): HCNode<Item>[] | undefined {
+		const nodes = this.getSome(ids);
+
+		return Nodes.findCommonAncestors(nodes, includeSelf);
 	}
 
 	/**

@@ -25,7 +25,7 @@ test('Nodes.findCommonAncestor() returns undefined when there is no common ances
 	const roots = Nodes.assembleIds(MultiMap.parse(input));
 	const nodes = Nodes.findDescendants(roots, n => n.item == 'A1' || n.item == 'B1');
 
-	const actual = Nodes.findCommonAncestor(nodes);
+	const actual = Nodes.findCommonAncestor(nodes, true);
 
 	expect(actual).toBeUndefined();
 });
