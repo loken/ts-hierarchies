@@ -232,24 +232,24 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Get the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
-	public getAncestors(id: Id, includeSelf = false): HCNode<Item>[] {
-		const node = this.#nodes.get(id);
+	public getAncestors(ids: Some<Id>, includeSelf = false): HCNode<Item>[] {
+		const nodes = this.getSome(ids);
 
-		return node ? node.getAncestors(includeSelf) : [];
+		return nodes ? Nodes.getAncestors(nodes, includeSelf) : [];
 	}
 
 	/**
 	 * Get the items from the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
-	public getAncestorItems(id: Id, includeSelf = false): Item[] {
-		return nodesToItems(this.getAncestors(id, includeSelf));
+	public getAncestorItems(ids: Some<Id>, includeSelf = false): Item[] {
+		return nodesToItems(this.getAncestors(ids, includeSelf));
 	}
 
 	/**
 	 * Get the IDs from the chain of ancestor nodes starting with the node for the item matching the `id`.
 	 */
-	public getAncestorIds(id: Id, includeSelf = false): Id[] {
-		return nodesToIds(this.getAncestors(id, includeSelf), this.#identify);
+	public getAncestorIds(ids: Some<Id>, includeSelf = false): Id[] {
+		return nodesToIds(this.getAncestors(ids, includeSelf), this.#identify);
 	}
 
 	/**

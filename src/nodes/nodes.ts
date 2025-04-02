@@ -1,4 +1,4 @@
-import { iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable, someToSet } from '@loken/utilities';
+import { addSome, iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable, someToSet } from '@loken/utilities';
 
 import { flattenGraph, traverseGraph } from '../traversal/traverse-graph.js';
 import { flattenSequence, traverseSequence } from '../traversal/traverse-sequence.js';
@@ -374,6 +374,25 @@ export class Nodes {
 	}
 
 
+	/** Get unique ancestor nodes. */
+	public static getAncestors<Item>(
+		nodes: Some<HCNode<Item>>,
+		includeSelf = false,
+	) {
+		const ancestries = someToArray(nodes).map(node => node.getAncestors(includeSelf));
+
+		return [ ...addSome(new Set<HCNode<Item>>(), ...ancestries) ];
+	}
+
+	/** Get ancestor items from unique ancestor nodes. */
+	public static getAncestorItems<Item>(
+		nodes: Some<HCNode<Item>>,
+		includeSelf = false,
+	) {
+		return this.getAncestors(nodes, includeSelf).map(node => node.item);
+	}
+
+
 	/** Get descendant nodes by traversing according to the options. */
 	public static getDescendants<Item>(
 		roots: Some<HCNode<Item>>,
@@ -485,10 +504,10 @@ export class Nodes {
 	}
 
 
-	private static getRoots<Item>(roots: Some<HCNode<Item>>, includeSelf = false) {
+	public static getRoots<Item>(roots: Some<HCNode<Item>>, includeSelf = false) {
 		return includeSelf ? roots : someToArray(roots).map(root => root.getChildren()).reduce((children, rootChildren) => {
 			if (rootChildren.length)
-				children.unshift(...rootChildren);
+				children.push(...rootChildren);
 
 			return children;
 		});

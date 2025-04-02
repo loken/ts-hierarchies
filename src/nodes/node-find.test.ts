@@ -29,3 +29,19 @@ test('Nodes.findCommonAncestor() returns undefined when there is no common ances
 
 	expect(actual).toBeUndefined();
 });
+
+test('Nodes.getAncestors()', () => {
+	const roots = Nodes.assembleIds(MultiMap.parse(input));
+	const nodes = Nodes.findDescendants(roots, n => [ 'A11', 'A12', 'B1' ].includes(n.item));
+	const nodeItems = nodes.map(n => n.item);
+	// We find B1 first because we're doing a breadth-first search.
+	expect(nodeItems).to.have.ordered.members([ 'B1', 'A11', 'A12' ]);
+
+	// Since B1 is the first node we find its ancestor B first.
+	// Since A1 is next, we find all of its ancestors next.
+	// We finally find A12, whose ancestors have already been found, and are not repeated.
+	const expected = [ 'B1', 'B', 'A11', 'A1', 'A', 'A12' ];
+	const actual = Nodes.getAncestorItems(nodes, true);
+
+	expect(actual).to.have.ordered.members(expected);
+});
