@@ -50,4 +50,7 @@
 		"titleBar.inactiveBackground": "#160c2699",
 		"titleBar.inactiveForeground": "#e7e7e799"
 	},
+	"yaml.schemas": {
+		"https://gitversion.net/schemas/5.12/GitVersion.configuration.json": "GitVersion.yml",
+	}
 }

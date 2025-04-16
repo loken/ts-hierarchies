@@ -133,7 +133,7 @@ test('Hierarchies.createWithItems() from items with parents', () => {
 	}
 
 	// Clone the items into a map.
-	const itemsWithParents: Map<string, ItemWithParent> = new Map();
+	const itemsWithParents = new Map<string, ItemWithParent>();
 	for (const item of items)
 		itemsWithParents.set(item.id, { id: item.id });
 

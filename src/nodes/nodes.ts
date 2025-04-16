@@ -43,7 +43,7 @@ export class Nodes {
 	 * @returns The root nodes.
 	 */
 	public static assembleIds<Id>(childMap: MultiMap<Id>): HCNode<Id>[] {
-		const nodes: Map<Id, HCNode<Id>> = new Map();
+		const nodes = new Map<Id, HCNode<Id>>();
 		const roots: HCNode<Id>[] = [];
 
 		for (const parentId of childMap.keys()) {
@@ -98,8 +98,8 @@ export class Nodes {
 	): HCNode<Item>[] {
 		const roots: HCNode<Item>[] = [];
 
-		const nodeMap: Map<Id, HCNode<Item>> = new Map();
-		const itemMap: Map<Id, Item> = new Map();
+		const nodeMap = new Map<Id, HCNode<Item>>();
+		const itemMap = new Map<Id, Item>();
 		const getItem = (id: Id) => {
 			if (!itemMap.has(id))
 				throw new Error(`Could not find item for mapped ID: ${ id }`);
@@ -171,7 +171,7 @@ export class Nodes {
 		leaves: Some<Item>,
 		parent: GetParent<Item>,
 	) {
-		const nodes: Map<Item, HCNode<Item>> = new Map();
+		const nodes = new Map<Item, HCNode<Item>>();
 		const roots: HCNode<Item>[] = [];
 
 		for (const leaf of someToIterable(leaves)) {
@@ -216,7 +216,7 @@ export class Nodes {
 	public static toChildMap<Item, Id = Item>(
 		roots: Some<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
-		childMap: MultiMap<Id> = new MultiMap(),
+		childMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
 		const traversal = traverseGraph({
 			roots,
@@ -256,7 +256,7 @@ export class Nodes {
 	public static toDescendantMap<Item, Id = Item>(
 		roots: Some<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
-		descendantMap: MultiMap<Id> = new MultiMap(),
+		descendantMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
 		const rootSet = someToSet(roots);
 
@@ -305,7 +305,7 @@ export class Nodes {
 	public static toAncestorMap<Item, Id = Item>(
 		roots: Some<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
-		ancestorMap: MultiMap<Id> = new MultiMap(),
+		ancestorMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
 		const rootSet = someToSet(roots);
 

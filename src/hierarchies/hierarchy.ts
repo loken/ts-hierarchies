@@ -27,9 +27,9 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	//#region backing fields
-	#roots:    Map<Id, HCNode<Item>> = new Map;
-	#nodes:    Map<Id, HCNode<Item>> = new Map();
-	#debrand:  Map<Id, DeBrand> = new Map();
+	#roots = new Map<Id, HCNode<Item>>();
+	#nodes = new Map<Id, HCNode<Item>>();
+	#debrand = new Map<Id, DeBrand>();
 	#identify: Identify<Item, Id>;
 	//#endregion
 
@@ -491,8 +491,8 @@ export class Hierarchy<Item, Id = Item> {
 		if (!(include.matches || include.ancestors || include.descendants))
 			throw new Error("Must enable at least one facet to 'include'.");
 
-		const childMap: MultiMap<Id> = new MultiMap();
-		const items: Map<Id, Item> = new Map();
+		const childMap = new MultiMap<Id>();
+		const items = new Map<Id, Item>();
 
 		for (const [ id, item, node ] of this.findEntries(search)) {
 			if (include.ancestors) {

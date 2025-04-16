@@ -52,7 +52,7 @@ export function* traverseGraph<TNode>(options: GraphTraversal<TNode>) {
 		? options.signal
 		: (n, s) => s.next(options.next(n));
 
-	const signal: GraphSignal<TNode> = new GraphSignal(options);
+	const signal = new GraphSignal<TNode>(options);
 	let res = signal.tryGetNext();
 	while (res[1]) {
 		traverse(res[0], signal);
@@ -75,7 +75,7 @@ export const flattenGraph = <TNode>(options: GraphTraversal<TNode>) => {
 		? options.signal
 		: (n, s) => s.next(options.next(n));
 
-	const signal: GraphSignal<TNode> = new GraphSignal(options);
+	const signal = new GraphSignal<TNode>(options);
 	let res = signal.tryGetNext();
 	while (res[1]) {
 		traverse(res[0], signal);
