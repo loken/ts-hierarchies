@@ -41,6 +41,30 @@ describe('traverseGraph', () => {
 		expect(nodesToItems(actual)).toEqual(expected);
 	});
 
+	it('should yield all items in correct order when traversing breadth-first using the `signal` delegate', () => {
+		const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
+
+		const actual = traverseGraph({
+			type:   'breadth-first',
+			roots:  root,
+			signal: (n, s) => s.next(n.getChildren()),
+		});
+
+		expect(nodesToItems(actual)).toEqual(expected);
+	});
+
+	it('should yield all items in correct order when traversing depth-first using the `signal` delegate', () => {
+		const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
+
+		const actual = traverseGraph({
+			type:   'depth-first',
+			roots:  root,
+			signal: (n, s) => s.next(n.getChildren()),
+		});
+
+		expect(nodesToItems(actual)).toEqual(expected);
+	});
+
 	it('should yield signaled items unless skipped when using the `signal` delegate', () => {
 		const expected = [ 0, 1, 2, 3, 121 ];
 
