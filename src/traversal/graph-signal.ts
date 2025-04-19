@@ -1,35 +1,7 @@
 import { type ILinear, LinearQueue, LinearStack, type Some, Stack, type TryResult } from '@loken/utilities';
 
-import { type TraversalType } from './traverse-types.js';
+import { type IGraphSignal, type TraversalType } from './traverse-types.js';
 
-/**
- * Use this to signal to the traversal what's `next`,
- * what to `skip` and whether to `end`.
- */
-export interface IGraphSignal<TNode> {
-	/** Depth of the current root relative to the traversal roots. */
-	get depth(): number;
-	/** The number of elements returned so far. */
-	get count(): number;
-
-	/** Call this when traversal should continue to a sub sequence of child roots. */
-	next(nodes: Some<TNode>): void;
-	/**
-	 * Call this when you want to signal that the current root should be skipped,
-	 * meaning it will not be part of the output.
-	 *
-	 * Traversal will still continue to whatever roots are passed to
-	 * `next` irrespective of calling `skip`.
-	 */
-	skip(): void;
-	/**
-	 * Call this when all traversal should end immediately.
-	 *
-	 * Ending traversal of a particular branch is controlled by not calling
-	 * `next` for that branch.
-	 */
-	end(): void;
-}
 
 /**
  * @internal Has some members which must be public for internal use

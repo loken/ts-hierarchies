@@ -1,6 +1,6 @@
 import { addSome, iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable, someToSet } from '@loken/utilities';
 
-import { flattenGraph, traverseGraph } from '../traversal/traverse-graph.js';
+import { traverseGraph } from '../traversal/traverse-graph.js';
 import { flattenSequence, traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
 import { ChildMap } from '../utilities/child-map.js';
@@ -10,6 +10,7 @@ import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
 import { nodesToIds, nodeToId } from './node-conversion.js';
+import { flattenGraph } from '../traversal/flatten-graph.js';
 
 export class Nodes {
 
