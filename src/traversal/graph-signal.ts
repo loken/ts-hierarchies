@@ -111,9 +111,9 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 			this.#count++;
 	}
 
-	public tryGetNext(): TryResult<TNode> {
+	public tryGetNext(): TryResult<TNode, string> {
 		if (this.#visited !== undefined) {
-			let res: TryResult<TNode> = this.tryGetNextInternal();
+			let res = this.tryGetNextInternal();
 			while (res[1]) {
 				if (!this.#visited.has(res[0])) {
 					this.#visited.add(res[0]);
@@ -131,29 +131,25 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 		}
 	}
 
-	private tryGetNextInternal(): TryResult<TNode> {
+	private tryGetNextInternal(): TryResult<TNode, string> {
 		const res = this.#nodes.tryDetach();
-		if (res[1]) {
-			this.#skipped = false;
-
-			if (this.#isDepthFirst) {
-				this.#depth = this.#branchCount.count - 1;
-				this.#branchCount.push(this.#branchCount.pop() - 1);
-			}
-			else {
-				if (this.#depthCount-- == 0) {
-					this.#depth++;
-					this.#depthCount = this.#nodes.count;
-				}
-			}
-
-			this.#skipped = false;
-
+		if (!res[1])
 			return res;
+
+		this.#skipped = false;
+
+		if (this.#isDepthFirst) {
+			this.#depth = this.#branchCount.count - 1;
+			this.#branchCount.push(this.#branchCount.pop() - 1);
 		}
 		else {
-			return res;
+			if (this.#depthCount-- == 0) {
+				this.#depth++;
+				this.#depthCount = this.#nodes.count;
+			}
 		}
+
+		return res;
 	}
 	//#endregion
 
