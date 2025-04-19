@@ -281,7 +281,6 @@ export class ChildMap {
 	}): MultiMap<Id> {
 		const { count, create } = options;
 		const childMap = new MultiMap<Id>();
-		const roots: Id[] = [];
 
 		for (let index = 0; index < count; index++) {
 			const probability = new ProbabilityScale({
@@ -290,7 +289,7 @@ export class ChildMap {
 				scale:       options.decay  ?? .10,
 			});
 			const ancestry: Id[] = [];
-			let siblings = roots;
+			let siblings = childMap.keys().toArray();
 
 			while (siblings.length && probability.sample()) {
 				const branch = siblings[siblings.length === 1 ? 0 : randomInt(0, siblings.length)]!;
@@ -304,7 +303,7 @@ export class ChildMap {
 			const id = create({ index, siblings, ancestry });
 
 			if (ancestry.length === 0)
-				roots.push(id);
+				childMap.getOrAdd(id);
 			else
 				childMap.add(ancestry.at(-1)!, id);
 		}
