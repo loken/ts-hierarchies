@@ -7,6 +7,7 @@ import type { DeBrand, NodePredicate } from './node.types.js';
 import { nodesToItems } from './node-conversion.js';
 import { flattenGraph } from '../traversal/graph-flatten.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
+import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
 import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
 
 
@@ -245,27 +246,19 @@ export class HCNode<Item> {
 
 	/** Find the first ancestor node matching the `search`. */
 	public findAncestor(search: NodePredicate<Item>, includeSelf = false) {
-		return flattenSequence({
-			first:  includeSelf ? this : this.#parent,
-			signal: (n, s) => {
-				if (!search(n)) {
-					s.skip();
-					s.next(n?.getParent());
-				}
-			},
-		})[0];
+		return searchSequence({
+			first: includeSelf ? this : this.#parent,
+			next:  node => node.getParent(),
+			search,
+		});
 	}
 
 	/** Find the ancestor nodes matching the `search`. */
 	public findAncestors(search: NodePredicate<Item>, includeSelf = false) {
-		return flattenSequence({
-			first:  includeSelf ? this : this.#parent,
-			signal: (n, s) => {
-				if (!search(n))
-					s.skip();
-
-				s.next(n?.getParent());
-			},
+		return searchSequenceMany({
+			first: includeSelf ? this : this.#parent,
+			next:  node => node.getParent(),
+			search,
 		});
 	}
 
