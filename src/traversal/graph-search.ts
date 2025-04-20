@@ -5,7 +5,7 @@ import type { NextNodes, TraversalType } from './graph.types.ts';
 /**
  * Search a graph of nodes by traversing the provided `roots` according to the options.
  *
- * The search will stop when the first node matching the `match` function is found.
+ * The search will stop when the first node matching the `search` predicate is found.
  */
 export const searchGraph = <TNode>(
 	options: {
@@ -43,7 +43,7 @@ export const searchGraph = <TNode>(
 /**
  * Search a graph of nodes by traversing the provided `roots` according to the options.
  *
- * The search is exhaustive and will return all nodes matching the `match` function.
+ * The search is exhaustive and will return all nodes matching the `search` predicate.
  */
 export const searchGraphMany = <TNode>(
 	options: {
