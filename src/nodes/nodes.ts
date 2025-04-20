@@ -1,6 +1,6 @@
 import { addSome, iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable, someToSet } from '@loken/utilities';
 
-import { flattenGraph, traverseGraph } from '../traversal/traverse-graph.js';
+import { traverseGraph } from '../traversal/traverse-graph.js';
 import { flattenSequence, traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
 import { ChildMap } from '../utilities/child-map.js';
@@ -10,6 +10,8 @@ import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
 import { nodesToIds, nodeToId } from './node-conversion.js';
+import { flattenGraph } from '../traversal/flatten-graph.js';
+import { searchGraph, searchGraphMany } from '../traversal/search-graph.js';
 
 export class Nodes {
 
@@ -43,7 +45,7 @@ export class Nodes {
 	 * @returns The root nodes.
 	 */
 	public static assembleIds<Id>(childMap: MultiMap<Id>): HCNode<Id>[] {
-		const nodes: Map<Id, HCNode<Id>> = new Map();
+		const nodes = new Map<Id, HCNode<Id>>();
 		const roots: HCNode<Id>[] = [];
 
 		for (const parentId of childMap.keys()) {
@@ -98,8 +100,8 @@ export class Nodes {
 	): HCNode<Item>[] {
 		const roots: HCNode<Item>[] = [];
 
-		const nodeMap: Map<Id, HCNode<Item>> = new Map();
-		const itemMap: Map<Id, Item> = new Map();
+		const nodeMap = new Map<Id, HCNode<Item>>();
+		const itemMap = new Map<Id, Item>();
 		const getItem = (id: Id) => {
 			if (!itemMap.has(id))
 				throw new Error(`Could not find item for mapped ID: ${ id }`);
@@ -171,7 +173,7 @@ export class Nodes {
 		leaves: Some<Item>,
 		parent: GetParent<Item>,
 	) {
-		const nodes: Map<Item, HCNode<Item>> = new Map();
+		const nodes = new Map<Item, HCNode<Item>>();
 		const roots: HCNode<Item>[] = [];
 
 		for (const leaf of someToIterable(leaves)) {
@@ -216,7 +218,7 @@ export class Nodes {
 	public static toChildMap<Item, Id = Item>(
 		roots: Some<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
-		childMap: MultiMap<Id> = new MultiMap(),
+		childMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
 		const traversal = traverseGraph({
 			roots,
@@ -256,7 +258,7 @@ export class Nodes {
 	public static toDescendantMap<Item, Id = Item>(
 		roots: Some<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
-		descendantMap: MultiMap<Id> = new MultiMap(),
+		descendantMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
 		const rootSet = someToSet(roots);
 
@@ -305,7 +307,7 @@ export class Nodes {
 	public static toAncestorMap<Item, Id = Item>(
 		roots: Some<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
-		ancestorMap: MultiMap<Id> = new MultiMap(),
+		ancestorMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
 		const rootSet = someToSet(roots);
 
@@ -484,31 +486,20 @@ export class Nodes {
 
 	/** Find the first descendant node matching the `search`. */
 	public static findDescendant<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		return flattenGraph({
-			roots:  this.getRoots(roots, includeSelf),
-			signal: (n, s) => {
-				if (search(n)) {
-					s.end();
-				}
-				else {
-					s.skip();
-					s.next(n.getChildren());
-				}
-			},
+		return searchGraph({
+			roots: this.getRoots(roots, includeSelf),
+			next:  node => node.getChildren(),
+			search,
 			type,
-		})[0];
+		});
 	}
 
 	/** Find the descendant nodes matching the `search`. */
 	public static findDescendants<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		return flattenGraph({
-			roots:  this.getRoots(roots, includeSelf),
-			signal: (n, s) => {
-				if (!search(n))
-					s.skip();
-
-				s.next(n.getChildren());
-			},
+		return searchGraphMany({
+			roots: this.getRoots(roots, includeSelf),
+			next:  node => node.getChildren(),
+			search,
 			type,
 		});
 	}

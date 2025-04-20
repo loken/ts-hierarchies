@@ -1,3 +1,4 @@
+import type { Predicate } from '@loken/utilities';
 import type { HCNode } from './node.js';
 
 /**
@@ -8,4 +9,4 @@ export type DeBrand = () => void;
 
 
 /** Predicate which determines whether the `node` is a match. */
-export type NodePredicate<Item> = (node: HCNode<Item>) => boolean;
+export type NodePredicate<Item> = Predicate<HCNode<Item>>;

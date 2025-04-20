@@ -39,7 +39,7 @@ export function* traverseSequence<TEl>(options: SequenceTraversal<TEl>) {
 		? options.signal
 		: (e, s) => s.next(options.next(e));
 
-	const signal: SequenceSignal<TEl> = new SequenceSignal(options);
+	const signal = new SequenceSignal<TEl>(options);
 	let res = signal.tryGetNext();
 	while (res[1]) {
 		traverse(res[0], signal);
@@ -62,7 +62,7 @@ export const flattenSequence = <TEl>(options: SequenceTraversal<TEl>) => {
 		? options.signal
 		: (e, s) => s.next(options.next(e));
 
-	const signal: SequenceSignal<TEl> = new SequenceSignal(options);
+	const signal = new SequenceSignal<TEl>(options);
 	let res = signal.tryGetNext();
 	while (res[1]) {
 		traverse(res[0], signal);

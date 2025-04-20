@@ -1,10 +1,11 @@
 import { type Some, someToArray } from '@loken/utilities';
 
-import { flattenGraph, traverseGraph } from '../traversal/traverse-graph.js';
+import { traverseGraph } from '../traversal/traverse-graph.js';
 import { flattenSequence, traverseSequence } from '../traversal/traverse-sequence.js';
 import type { TraversalType } from '../traversal/traverse-types.js';
 import type { DeBrand, NodePredicate } from './node.types.js';
 import { nodesToItems } from './node-conversion.js';
+import { flattenGraph } from '../traversal/flatten-graph.js';
 
 
 /**

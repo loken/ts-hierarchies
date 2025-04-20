@@ -5,7 +5,9 @@ export default [
 	...eslintConfig.base,
 	{
 		rules: {
-			'@stylistic/max-len': [
+			'@typescript-eslint/consistent-generic-constructors': [ 'warn', 'constructor' ],
+			'@stylistic/comma-dangle':                            [ 'warn', 'always-multiline' ],
+			'@stylistic/max-len':                                 [
 				'warn',
 				{
 					code:                   155,

@@ -17,7 +17,7 @@ const childMap = MultiMap.parse(`
 
 
 test('ChildMap.toParentMap', () => {
-	const expected: Map<number, number | undefined> = new Map();
+	const expected = new Map<number, number | undefined>();
 	expected.set(-1, undefined);
 	expected.set(1, 0);
 	expected.set(2, 0);

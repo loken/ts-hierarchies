@@ -4,7 +4,7 @@ import type { HCNode } from '../nodes/node.js';
 import type { DeBrand, NodePredicate } from '../nodes/node.types.js';
 import { nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
-import { flattenGraph } from '../traversal/traverse-graph.js';
+import { flattenGraph } from '../traversal/flatten-graph.js';
 import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../utilities/relations.js';
@@ -27,9 +27,9 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	//#region backing fields
-	#roots:    Map<Id, HCNode<Item>> = new Map;
-	#nodes:    Map<Id, HCNode<Item>> = new Map();
-	#debrand:  Map<Id, DeBrand> = new Map();
+	#roots = new Map<Id, HCNode<Item>>();
+	#nodes = new Map<Id, HCNode<Item>>();
+	#debrand = new Map<Id, DeBrand>();
 	#identify: Identify<Item, Id>;
 	//#endregion
 
@@ -491,8 +491,8 @@ export class Hierarchy<Item, Id = Item> {
 		if (!(include.matches || include.ancestors || include.descendants))
 			throw new Error("Must enable at least one facet to 'include'.");
 
-		const childMap: MultiMap<Id> = new MultiMap();
-		const items: Map<Id, Item> = new Map();
+		const childMap = new MultiMap<Id>();
+		const items = new Map<Id, Item>();
 
 		for (const [ id, item, node ] of this.findEntries(search)) {
 			if (include.ancestors) {

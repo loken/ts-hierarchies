@@ -1,28 +1,28 @@
-import { LinearQueue, LinearStack, type Some } from '@loken/utilities';
-
-import { GraphSignal } from './graph-signal.js';
-import { type GraphTraversal, type NextNodes, type SignalNodes, type TraversalType } from './traverse-types.js';
+import { type Some, LinearStack, LinearQueue } from '@loken/utilities';
+import { GraphSignal } from './graph-signal.ts';
+import type { GraphTraversal, SignalNodes, TraversalType, NextNodes } from './traverse-types.ts';
 
 
 /**
- * Generate a sequence of nodes by traversing the provided `roots` according to the options.
+ * Flatten a graph of nodes by traversing the provided `roots` according to the options.
  */
-export const traverseGraph = <TNode>(options: GraphTraversal<TNode>): Generator<TNode, void, undefined> => {
+export const flattenGraph = <TNode>(options: GraphTraversal<TNode>): TNode[] => {
 	if (options.signal !== undefined)
-		return traverseSignalGraph(options);
+		return flattenSignalGraph(options);
 	else
-		return traverseFullGraph(options);
+		return flattenFullGraph(options);
 };
 
 /** @internalexport */
-export function* traverseSignalGraph<TNode>(
+export const flattenSignalGraph = <TNode>(
 	options: {
 		roots:         Some<TNode>,
 		signal:        SignalNodes<TNode>,
-		type?:         TraversalType
 		detectCycles?: boolean,
+		type?:         TraversalType
 	},
-) {
+) => {
+	const result: TNode[] = [];
 	const signal = new GraphSignal<TNode>(options);
 	const signalFn = options.signal;
 	let res = signal.tryGetNext();
@@ -30,24 +30,26 @@ export function* traverseSignalGraph<TNode>(
 		signalFn(res[0], signal);
 
 		if (signal.shouldYield())
-			yield res[0];
+			result.push(res[0]);
 
 		signal.cleanup();
 
 		res = signal.tryGetNext();
 	}
-}
 
+	return result;
+};
 
 /** @internalexport */
-export function* traverseFullGraph<TNode>(
+export const flattenFullGraph = <TNode>(
 	options: {
 		roots:         Some<TNode>,
 		next:          NextNodes<TNode>,
 		type?:         TraversalType,
 		detectCycles?: boolean,
 	},
-) {
+) => {
+	const result: TNode[] = [];
 	const visited = options.detectCycles ? new Set<TNode>() : undefined;
 	const store = options.type === 'depth-first'
 		? new LinearStack<TNode>()
@@ -63,10 +65,12 @@ export function* traverseFullGraph<TNode>(
 
 		visited?.add(node);
 
-		yield node;
+		result.push(node);
 
 		const children = nextFn(node);
 
 		store.attach(children);
 	}
-}
+
+	return result;
+};
