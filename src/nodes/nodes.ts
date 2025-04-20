@@ -11,6 +11,7 @@ import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
 import { nodesToIds, nodeToId } from './node-conversion.js';
 import { flattenGraph } from '../traversal/flatten-graph.js';
+import { searchGraph, searchGraphMany } from '../traversal/search-graph.js';
 
 export class Nodes {
 
@@ -485,31 +486,20 @@ export class Nodes {
 
 	/** Find the first descendant node matching the `search`. */
 	public static findDescendant<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		return flattenGraph({
-			roots:  this.getRoots(roots, includeSelf),
-			signal: (n, s) => {
-				if (search(n)) {
-					s.end();
-				}
-				else {
-					s.skip();
-					s.next(n.getChildren());
-				}
-			},
+		return searchGraph({
+			roots: this.getRoots(roots, includeSelf),
+			next:  node => node.getChildren(),
+			search,
 			type,
-		})[0];
+		});
 	}
 
 	/** Find the descendant nodes matching the `search`. */
 	public static findDescendants<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		return flattenGraph({
-			roots:  this.getRoots(roots, includeSelf),
-			signal: (n, s) => {
-				if (!search(n))
-					s.skip();
-
-				s.next(n.getChildren());
-			},
+		return searchGraphMany({
+			roots: this.getRoots(roots, includeSelf),
+			next:  node => node.getChildren(),
+			search,
 			type,
 		});
 	}
