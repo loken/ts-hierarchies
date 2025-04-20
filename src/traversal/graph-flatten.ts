@@ -1,6 +1,6 @@
 import { type Some, LinearStack, LinearQueue } from '@loken/utilities';
 import { GraphSignal } from './graph-signal.ts';
-import type { GraphTraversal, SignalNodes, TraversalType, NextNodes } from './traverse-types.ts';
+import type { GraphTraversal, SignalNodes, TraversalType, NextNodes } from './graph.types.ts';
 
 
 /**

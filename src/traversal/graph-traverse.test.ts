@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { nodesToItems } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
-import { traverseGraph } from './traverse-graph.js';
+import { traverseGraph } from './graph-traverse.js';
 
 
 const root = Nodes.create(0).attach([

@@ -1,25 +1,6 @@
 import { type TryResult, tryResult } from '@loken/utilities';
+import type { ISequenceSignal } from './sequence.types.ts';
 
-/**
- * Use this to signal to the traversal what's `next` and what to `skip`.
- */
-export interface ISequenceSignal<TEl> {
-	/** The source index of the current element. */
-	get index(): number;
-	/** The number of elements returned so far. */
-	get count(): number;
-
-	/** Call this when traversal should continue to a sub sequence of child roots. */
-	next(element?: TEl): void;
-	/**
-	 * Call this when you want to signal that the current element should be skipped,
-	 * meaning it will not be part of the output.
-	 *
-	 * Traversal will still continue to an element passed to
-	 * `next` irrespective of calling `skip`.
-	 */
-	skip(): void;
-}
 
 /**
  * @internal Has some members which must be public for internal use

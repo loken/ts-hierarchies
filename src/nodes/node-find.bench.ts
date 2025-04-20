@@ -1,9 +1,9 @@
 import { bench, describe, expect } from 'vitest';
 import { Nodes } from './nodes.ts';
 import { MultiMap } from '@loken/utilities';
-import { searchGraph } from '../traversal/search-graph.ts';
-import { flattenGraph } from '../traversal/flatten-graph.ts';
-import type { TraversalType } from '../traversal/traverse-types.ts';
+import { searchGraph } from '../traversal/graph-search.ts';
+import { flattenGraph } from '../traversal/graph-flatten.ts';
+import type { TraversalType } from '../traversal/graph.types.ts';
 import type { HCNode } from './node.ts';
 
 const input = `

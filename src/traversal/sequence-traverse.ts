@@ -1,0 +1,25 @@
+import { SequenceSignal } from './sequence-signal.js';
+import type { SequenceTraversal, SignalElement } from './sequence.types.js';
+
+
+/**
+ * Generate a sequence of elements starting with the `first` element and traversing according to the options.
+ */
+export function* traverseSequence<TEl>(options: SequenceTraversal<TEl>) {
+	const traverse: SignalElement<TEl> = options.signal !== undefined
+		? options.signal
+		: (e, s) => s.next(options.next(e));
+
+	const signal = new SequenceSignal<TEl>(options);
+	let res = signal.tryGetNext();
+	while (res[1]) {
+		traverse(res[0], signal);
+
+		if (signal.shouldYield())
+			yield res[0];
+
+		signal.cleanup();
+
+		res = signal.tryGetNext();
+	}
+}

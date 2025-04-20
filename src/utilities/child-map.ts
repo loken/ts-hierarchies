@@ -1,7 +1,7 @@
 import { iterateAll, MultiMap, ProbabilityScale, randomInt, type Some, someToIterable } from '@loken/utilities';
 
 import { Hierarchy } from '../hierarchies/hierarchy.js';
-import { traverseGraph } from '../traversal/traverse-graph.js';
+import { traverseGraph } from '../traversal/graph-traverse.js';
 import type { Identify } from './identify.js';
 import type { IdSpec, ItemIdOptions } from './identity-options.js';
 import type { GetChildren, GetParent, IdentifyChildren, IdentifyParent } from './related-items.js';

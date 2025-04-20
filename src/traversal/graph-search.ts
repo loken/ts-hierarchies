@@ -1,5 +1,5 @@
 import { LinearQueue, type Some, LinearStack, type Predicate } from '@loken/utilities';
-import type { NextNodes, TraversalType } from './traverse-types.ts';
+import type { NextNodes, TraversalType } from './graph.types.ts';
 
 
 /**

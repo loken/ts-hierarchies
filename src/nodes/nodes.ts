@@ -1,8 +1,8 @@
 import { addSome, iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable, someToSet } from '@loken/utilities';
 
-import { traverseGraph } from '../traversal/traverse-graph.js';
-import { flattenSequence, traverseSequence } from '../traversal/traverse-sequence.js';
-import type { TraversalType } from '../traversal/traverse-types.js';
+import { traverseGraph } from '../traversal/graph-traverse.js';
+import { traverseSequence } from '../traversal/sequence-traverse.js';
+import type { TraversalType } from '../traversal/graph.types.js';
 import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
@@ -10,8 +10,9 @@ import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
 import { nodesToIds, nodeToId } from './node-conversion.js';
-import { flattenGraph } from '../traversal/flatten-graph.js';
-import { searchGraph, searchGraphMany } from '../traversal/search-graph.js';
+import { flattenGraph } from '../traversal/graph-flatten.js';
+import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
+import { flattenSequence } from '../traversal/sequence-flatten.js';
 
 export class Nodes {
 

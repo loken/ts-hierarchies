@@ -1,6 +1,6 @@
 import { type ILinear, LinearQueue, LinearStack, type Some, Stack, type TryResult } from '@loken/utilities';
 
-import { type IGraphSignal, type TraversalType } from './traverse-types.js';
+import { type IGraphSignal, type TraversalType } from './graph.types.js';
 
 
 /**

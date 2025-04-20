@@ -1,7 +1,7 @@
 import { LinearQueue, LinearStack, type Some } from '@loken/utilities';
 
 import { GraphSignal } from './graph-signal.js';
-import { type GraphTraversal, type NextNodes, type SignalNodes, type TraversalType } from './traverse-types.js';
+import { type GraphTraversal, type NextNodes, type SignalNodes, type TraversalType } from './graph.types.js';
 
 
 /**
