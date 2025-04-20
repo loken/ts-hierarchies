@@ -1,19 +1,27 @@
 import { SequenceSignal } from './sequence-signal.js';
-import type { SequenceTraversal, SignalElement } from './sequence.types.js';
+import type { NextElement, SequenceTraversal, SignalElement } from './sequence.types.js';
 
 
 /**
  * Generate a sequence of elements starting with the `first` element and traversing according to the options.
  */
-export function* traverseSequence<TEl>(options: SequenceTraversal<TEl>) {
-	const traverse: SignalElement<TEl> = options.signal !== undefined
-		? options.signal
-		: (e, s) => s.next(options.next(e));
+export const traverseSequence = <TEl>(options: SequenceTraversal<TEl>): Generator<TEl, void, undefined> => {
+	if (options.signal !== undefined)
+		return traverseSignalSequence(options);
+	else
+		return traverseFullSequence(options);
+};
 
+/** @internalexport */
+export function* traverseSignalSequence<TEl>(options: {
+	first:  TEl | undefined;
+	signal: SignalElement<TEl>;
+}) {
 	const signal = new SequenceSignal<TEl>(options);
+	const signalFn = options.signal;
 	let res = signal.tryGetNext();
 	while (res[1]) {
-		traverse(res[0], signal);
+		signalFn(res[0], signal);
 
 		if (signal.shouldYield())
 			yield res[0];
@@ -22,4 +30,16 @@ export function* traverseSequence<TEl>(options: SequenceTraversal<TEl>) {
 
 		res = signal.tryGetNext();
 	}
-}
+};
+
+/** @internalexport */
+export function* traverseFullSequence<TEl>(options: {
+	first: TEl | undefined;
+	next:  NextElement<TEl>;
+}) {
+	let current = options.first;
+	while (current !== undefined) {
+		yield current;
+		current = options.next(current);
+	}
+};
