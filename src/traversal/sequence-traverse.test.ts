@@ -1,7 +1,7 @@
 import { iterateAll, multipleToArray, range, traverseRange } from '@loken/utilities';
 import { describe, expect, it } from 'vitest';
 
-import { traverseSequence } from './traverse-sequence.js';
+import { traverseSequence } from './sequence-traverse.js';
 
 
 describe('traverseSequence', () => {

@@ -1,8 +1,8 @@
-import { addSome, iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable, someToSet } from '@loken/utilities';
+import { isSomeItem, iterateAll, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable, someToSet } from '@loken/utilities';
 
-import { traverseGraph } from '../traversal/traverse-graph.js';
-import { flattenSequence, traverseSequence } from '../traversal/traverse-sequence.js';
-import type { TraversalType } from '../traversal/traverse-types.js';
+import { traverseGraph } from '../traversal/graph-traverse.js';
+import { traverseSequence } from '../traversal/sequence-traverse.js';
+import type { TraversalType } from '../traversal/graph.types.js';
 import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
@@ -10,8 +10,10 @@ import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
 import { nodesToIds, nodeToId } from './node-conversion.js';
-import { flattenGraph } from '../traversal/flatten-graph.js';
-import { searchGraph, searchGraphMany } from '../traversal/search-graph.js';
+import { flattenGraph } from '../traversal/graph-flatten.js';
+import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
+import { flattenSequence } from '../traversal/sequence-flatten.js';
+import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
 
 export class Nodes {
 
@@ -381,9 +383,34 @@ export class Nodes {
 		nodes: Some<HCNode<Item>>,
 		includeSelf = false,
 	) {
-		const ancestries = someToArray(nodes).map(node => node.getAncestors(includeSelf));
+		if (isSomeItem(nodes))
+			return nodes.getAncestors(includeSelf);
 
-		return [ ...addSome(new Set<HCNode<Item>>(), ...ancestries) ];
+		const seen = new Set<HCNode<Item>>();
+		const ancestors: HCNode<Item>[] = [];
+
+		for (const node of someToIterable(nodes)) {
+			const first = includeSelf ? node : node.getParent();
+			if (!first || seen.has(first))
+				continue;
+
+			const unseenAncestors = flattenSequence({
+				first,
+				next: node => {
+					const parent = node.getParent();
+					if (!parent || seen.has(parent))
+						return undefined;
+
+					seen.add(node);
+
+					return parent;
+				},
+			});
+
+			ancestors.push(...unseenAncestors);
+		}
+
+		return ancestors;
 	}
 
 	/** Get ancestor items from unique ancestor nodes. */
@@ -466,10 +493,32 @@ export class Nodes {
 
 	/** Find the first ancestor node matching the `search`. */
 	public static findAncestor<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
-		for (const root of someToIterable(roots)) {
-			const ancestor = root.findAncestor(search, includeSelf);
-			if (ancestor)
-				return ancestor;
+		if (isSomeItem(roots))
+			return roots.findAncestor(search, includeSelf);
+
+		const seen = new Set<HCNode<Item>>();
+
+		for (const root of roots) {
+			const first = includeSelf ? root : root.getParent();
+			if (!first || seen.has(first))
+				continue;
+
+			const found = searchSequence({
+				first,
+				next: node => {
+					const parent = node.getParent();
+					if (!parent || seen.has(parent))
+						return undefined;
+
+					seen.add(node);
+
+					return parent;
+				},
+				search,
+			});
+
+			if (found)
+				return found;
 		}
 
 		return undefined;
@@ -477,11 +526,35 @@ export class Nodes {
 
 	/** Find the first ancestor node matching the `search`. */
 	public static findAncestors<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
-		return someToArray(roots).reduce((ancestors, root) => {
-			ancestors.push(...root.findAncestors(search, includeSelf));
+		if (isSomeItem(roots))
+			return roots.findAncestors(search, includeSelf);
 
-			return ancestors;
-		}, [] as HCNode<Item>[]);
+		const seen = new Set<HCNode<Item>>();
+		const ancestors: HCNode<Item>[] = [];
+
+		for (const root of roots) {
+			const first = includeSelf ? root : root.getParent();
+			if (!first || seen.has(first))
+				continue;
+
+			const found = searchSequenceMany({
+				first,
+				next: node => {
+					const parent = node.getParent();
+					if (!parent || seen.has(parent))
+						return undefined;
+
+					seen.add(node);
+
+					return parent;
+				},
+				search,
+			});
+
+			ancestors.push(...found);
+		}
+
+		return ancestors;
 	}
 
 	/** Find the first descendant node matching the `search`. */
