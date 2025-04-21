@@ -35,8 +35,8 @@ export const searchGraph = <TNode>(
 			return node;
 
 		const children = nextFn(node);
-
-		store.attach(children);
+		if (children)
+			store.attach(children);
 	}
 };
 
@@ -75,7 +75,8 @@ export const searchGraphMany = <TNode>(
 
 		const children = nextFn(node);
 
-		store.attach(children);
+		if (children)
+			store.attach(children);
 	}
 
 	return result;

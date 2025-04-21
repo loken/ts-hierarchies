@@ -43,7 +43,7 @@ export type GraphTraversal<TNode> = {
 
 
 /** Describes how to get the the next nodes from a node visited while traversing a graph. */
-export type NextNodes<TNode> = (node: TNode) => TNode[];
+export type NextNodes<TNode> = (node: TNode) => TNode[] | Set<TNode> | undefined | void;
 
 /** Describes how to traverse a graph when visiting a node using an `IGraphSignal`. */
 export type SignalNodes<TNode> = (node: TNode, signal: IGraphSignal<TNode>) => void;

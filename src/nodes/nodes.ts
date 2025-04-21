@@ -429,7 +429,7 @@ export class Nodes {
 		type: TraversalType = 'breadth-first',
 	) {
 		return flattenGraph({
-			roots: this.getRoots(roots, includeSelf),
+			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.getChildren(),
 			type,
 		});
@@ -451,7 +451,7 @@ export class Nodes {
 		type: TraversalType = 'breadth-first',
 	) {
 		return traverseGraph({
-			roots: this.getRoots(roots, includeSelf),
+			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.getChildren(),
 			type,
 		});
@@ -560,7 +560,7 @@ export class Nodes {
 	/** Find the first descendant node matching the `search`. */
 	public static findDescendant<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
 		return searchGraph({
-			roots: this.getRoots(roots, includeSelf),
+			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.getChildren(),
 			search,
 			type,
@@ -570,7 +570,7 @@ export class Nodes {
 	/** Find the descendant nodes matching the `search`. */
 	public static findDescendants<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
 		return searchGraphMany({
-			roots: this.getRoots(roots, includeSelf),
+			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.getChildren(),
 			search,
 			type,
@@ -586,16 +586,6 @@ export class Nodes {
 	/** Does a descendant node matching the `search` exist? */
 	public static hasDescendant<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
 		return this.findDescendant(roots, search, includeSelf, type) !== undefined;
-	}
-
-
-	public static getRoots<Item>(roots: Some<HCNode<Item>>, includeSelf = false) {
-		return includeSelf ? roots : someToArray(roots).map(root => root.getChildren()).reduce((children, rootChildren) => {
-			if (rootChildren.length)
-				children.push(...rootChildren);
-
-			return children;
-		});
 	}
 
 }
