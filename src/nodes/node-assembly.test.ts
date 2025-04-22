@@ -68,3 +68,84 @@ test('Assemble items should ignore items that are not in the relationship spec',
 
 	expect(output).toEqual(input);
 });
+
+
+test('Nodes.assembleItemsWithChildren() from items with children', () => {
+	interface ItemWithChildren {
+		id:        string,
+		children?: ItemWithChildren[],
+	}
+
+	// Represents the same structure as the `relations`
+	const itemsWithChildren: ItemWithChildren[] = [
+		{
+			id:       'A',
+			children: [
+				{
+					id:       'A1',
+					children: [
+						{ id: 'A11' },
+						{ id: 'A12' },
+					],
+				},
+				{ id: 'A2' },
+			],
+		},
+		{
+			id:       'B',
+			children: [
+				{
+					id:       'B1',
+					children: [ { id: 'B12' } ],
+				},
+			],
+		},
+		{
+			id: 'C',
+		},
+	];
+
+	const roots = Nodes.assembleItemsWithChildren(itemsWithChildren, item => item.children);
+
+	const actual = Nodes.toChildMap(roots, item => item.id).render(sep);
+
+	expect(actual).toEqual(input);
+});
+
+
+test('Hierarchies.createWithItems() from items with parents', () => {
+	const childMap = MultiMap.parse(input);
+
+	interface ItemWithParent {
+		id:      string,
+		parent?: ItemWithParent,
+	}
+
+	// Create a map of items.
+	const itemsWithParents = new Map<string, ItemWithParent>();
+	for (const id of childMap.getAll())
+		itemsWithParents.set(id, { id });
+
+	// Set the parent references.
+	for (const [ parentId, childIds ] of childMap) {
+		const parent = itemsWithParents.get(parentId)!;
+		for (const childId of childIds) {
+			const child = itemsWithParents.get(childId)!;
+			child.parent ??= parent;
+		}
+	}
+
+	/* Ensure we can pass it all of the items. */
+	const allItems = [ ...itemsWithParents.values() ];
+	const rootsFromAll = Nodes.assembleItemsWithParents(allItems, item => item.parent);
+
+	const actualFromAll = Nodes.toChildMap(rootsFromAll, item => item.id);
+	expect(actualFromAll).toEqual(childMap);
+
+	/* Ensure we can pass it the leaf items only. */
+	const leafItems = [ ...itemsWithParents.values().filter(item => !childMap.get(item.id)?.size) ];
+	const rootsFromLeaves = Nodes.assembleItemsWithParents(leafItems, item => item.parent);
+
+	const actualFromLeaves = Nodes.toChildMap(rootsFromLeaves, item => item.id);
+	expect(actualFromLeaves).toEqual(childMap);
+});
