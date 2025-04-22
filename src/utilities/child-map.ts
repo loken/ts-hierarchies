@@ -1,7 +1,6 @@
-import { iterateAll, MultiMap, ProbabilityScale, randomInt, type Some, someToIterable } from '@loken/utilities';
+import { LinearQueue, MultiMap, ProbabilityScale, randomInt, type Some, someToIterable } from '@loken/utilities';
 
 import { Hierarchy } from '../hierarchies/hierarchy.js';
-import { traverseGraph } from '../traversal/graph-traverse.js';
 import type { Identify } from './identify.js';
 import type { IdSpec, ItemIdOptions } from './identity-options.js';
 import type { GetChildren, GetParent, IdentifyChildren, IdentifyParent } from './related-items.js';
@@ -37,27 +36,35 @@ export class ChildMap {
 	 * @param include Optional predicate used for determining whether a property should be included as an ID.
 	 */
 	public static fromPropertyIds(source: object, include?: (prop: string, val: any) => boolean): MultiMap<string> {
+		type Entry = readonly [ id: string, value: any ];
 		const childMap = new MultiMap<string>();
-		const root: { parent?: string, obj: object } = { obj: source };
+		let roots: Entry[] = Object.entries(source).map(([ id, value ]) => [ id, value ]);
+		if (include)
+			roots = roots.filter(([ id, value ]) => include(id, value));
+		if (roots.length === 0)
+			return childMap;
 
-		iterateAll(traverseGraph({
-			roots:  root,
-			signal: ({ parent, obj }, signal) => {
-				let entries = Object.entries(obj);
-				if (include)
-					entries = entries.filter(([ key, val ]) => include(key, val));
+		for (const [ id ] of roots)
+			childMap.getOrAdd(id);
 
-				if (parent)
-					childMap.add(parent, entries.map(([ key ]) => key));
+		const store = new LinearQueue<Entry>();
+		store.attach(roots);
 
-				const children = entries
-					.filter(([ _, val ]) => typeof val === 'object')
-					.map(([ key, val ]) => ({ parent: key, obj: val as object }));
+		while (store.count > 0) {
+			const [ id, value ] = store.detach()!;
+			if (typeof value !== 'object' || value === null)
+				continue;
 
-				if (children.length)
-					signal.next(children);
-			},
-		}));
+			let children: Entry[] = Object.entries(value);
+			if (include)
+				children = children.filter(([ childId, childValue ]) => include(childId, childValue));
+			if (children.length === 0)
+				continue;
+
+			childMap.add(id, children.map(([ childId ]) => childId));
+
+			store.attach(children);
+		}
 
 		return childMap;
 	}

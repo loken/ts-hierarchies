@@ -62,3 +62,41 @@ test('ChildMap.toAncestorMap', () => {
 
 	expect(actual).toEqual(expected);
 });
+
+test('ChildMap.fromPropertyIds', () => {
+	const obj = {
+		a: {},
+		b: {
+			b1: {},
+		},
+		c: {
+			c1: true,
+			c2: true,
+			c3: false,
+		},
+		d: {
+			d1: {},
+			d2: {
+				d21: {},
+				d22: {},
+				d23: 'ignore',
+			},
+		},
+	};
+
+	const expectedMap = MultiMap.parse(`
+	a
+	b:b1
+	c:c1,c2
+	d:d1,d2
+	d2:d21,d22`, sep);
+
+	const map = ChildMap.fromPropertyIds(obj, (_, val) => {
+		if (typeof val === 'boolean')
+			return val;
+
+		return val !== 'ignore';
+	});
+
+	expect(map).toEqual(expectedMap);
+});

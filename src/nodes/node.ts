@@ -1,6 +1,6 @@
-import { type Some, someToArray } from '@loken/utilities';
+import { isSomeItem, type Some, someToArray } from '@loken/utilities';
 
-import { traverseGraph } from '../traversal/graph-traverse.js';
+import { traverseFullGraph } from '../traversal/graph-traverse.js';
 import { traverseSequence } from '../traversal/sequence-traverse.js';
 import type { TraversalType } from '../traversal/graph.types.js';
 import type { DeBrand, NodePredicate } from './node.types.js';
@@ -232,8 +232,8 @@ export class HCNode<Item> {
 	/** Get descendant nodes by traversing according to the options. */
 	public getDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
 		return flattenGraph({
-			roots: includeSelf ? this : this.getChildren(),
-			next:  node => node.getChildren(),
+			roots: this.#getRoots(includeSelf),
+			next:  node => node.#children,
 			type,
 		});
 	}
@@ -265,8 +265,8 @@ export class HCNode<Item> {
 	/** Find the first descendant node matching the `search`. */
 	public findDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
 		return  searchGraph({
-			roots: includeSelf ? this : this.getChildren(),
-			next:  node => node.getChildren(),
+			roots: this.#getRoots(includeSelf),
+			next:  node => node.#children,
 			search,
 			type,
 		});
@@ -275,8 +275,8 @@ export class HCNode<Item> {
 	/** Find the descendant nodes matching the `search`. */
 	public findDescendants(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
 		return  searchGraphMany({
-			roots: includeSelf ? this : this.getChildren(),
-			next:  node => node.getChildren(),
+			roots: this.#getRoots(includeSelf),
+			next:  node => node.#children,
 			search,
 			type,
 		});
@@ -305,11 +305,41 @@ export class HCNode<Item> {
 
 	/** Generate a sequence of descendant nodes by traversing according to the options. */
 	public traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
-		return traverseGraph({
-			roots: includeSelf ? this : this.getChildren(),
-			next:  node => node.getChildren(),
+		return traverseFullGraph({
+			roots: this.#getRoots(includeSelf),
+			next:  node => node.#children,
 			type,
 		});
+	}
+	//#endregion
+
+	//#region helpers
+	/**
+	 * Get nodes to use as roots.
+	 *
+	 * Note: This must be a private method as it could otherwise be exploited to modify the `#children`.
+	 */
+	#getRoots(includeSelf = false): Some<HCNode<Item>> {
+		return includeSelf ? this : (this.#children ?? []);
+	}
+
+	/**
+	 * Get nodes to use as roots.
+	 */
+	public static getRoots<Item>(roots: Some<HCNode<Item>>, includeSelf = false): Some<HCNode<Item>> {
+		if (includeSelf)
+			return roots;
+
+		if (isSomeItem(roots))
+			return roots.#children ? [ ...roots.#children ] : [];
+
+		const children: HCNode<Item>[] = [];
+		for (const root of roots) {
+			if (root.#children)
+				children.push(...root.#children);
+		}
+
+		return children;
 	}
 	//#endregion
 

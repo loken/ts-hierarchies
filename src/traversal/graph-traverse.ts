@@ -67,6 +67,7 @@ export function* traverseFullGraph<TNode>(
 
 		const children = nextFn(node);
 
-		store.attach(children);
+		if (children)
+			store.attach(children);
 	}
 }

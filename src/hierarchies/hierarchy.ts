@@ -4,7 +4,6 @@ import type { HCNode } from '../nodes/node.js';
 import type { DeBrand, NodePredicate } from '../nodes/node.types.js';
 import { nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
-import { flattenGraph } from '../traversal/graph-flatten.js';
 import { ChildMap } from '../utilities/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../utilities/relations.js';
@@ -191,10 +190,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param nodes Nodes to detach.
 	 */
 	public detach(nodes: Some<HCNode<Item>>): this {
-		for (const node of flattenGraph({
-			roots: nodes,
-			next:  node => node.getChildren(),
-		})) {
+		for (const node of Nodes.getDescendants(nodes, true)) {
 			const id = this.#identify(node.item);
 			this.#debrand.get(id)!();
 			this.#debrand.delete(id);
@@ -211,10 +207,7 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	#addNodes(nodes: Some<HCNode<Item>>, asRoot = false) {
-		for (const node of flattenGraph({
-			roots: nodes,
-			next:  node => node.getChildren(),
-		})) {
+		for (const node of Nodes.getDescendants(nodes, true)) {
 			const id = this.#identify(node.item);
 			this.#debrand.set(id, node.brand(this));
 			this.#nodes.set(id, node);

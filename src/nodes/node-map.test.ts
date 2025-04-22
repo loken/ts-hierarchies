@@ -2,6 +2,7 @@ import { type MultiMapSeparators } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import { Nodes } from './nodes.js';
+import type { Relation } from '../utilities/relations.js';
 
 
 const sep: MultiMapSeparators = {
@@ -61,6 +62,23 @@ test('Nodes.toAncestorMap', () => {
 	121:12,1,0`;
 
 	const actual = Nodes.toAncestorMap(roots).render(sep);
+
+	expect(actual).toEqual(expected);
+});
+
+test('Nodes.toRelations', () => {
+	const expected: Relation<number>[] = [
+		[ 0, 1 ],
+		[ 0, 2 ],
+		[ 0, 3 ],
+		[ 1, 11 ],
+		[ 1, 12 ],
+		[ 3, 31 ],
+		[ 3, 32 ],
+		[ 12, 121 ],
+	];
+
+	const actual = Nodes.toRelations(roots);
 
 	expect(actual).toEqual(expected);
 });
