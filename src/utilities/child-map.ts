@@ -131,6 +131,8 @@ export class ChildMap {
 			const parentId = identifyParent(item);
 			if (parentId)
 				childMap.add(parentId, identify(item));
+			else
+				childMap.add(identify(item), []);
 		}
 
 		return childMap;
