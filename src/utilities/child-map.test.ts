@@ -104,21 +104,21 @@ test('ChildMap.fromPropertyIds', () => {
 
 test('ChildMap.fromParentIds', () => {
 	interface Item {
-		 Id:        string;
-		 ParentId?: string;
+		Id:        string;
+		ParentId?: string;
 	}
 	const items = [
-		 { Id: 'a' },
-		 { Id: 'b' },
-		 { Id: 'b1',  ParentId: 'b' },
-		 { Id: 'c1',  ParentId: 'c' },
-		 { Id: 'c2',  ParentId: 'c' },
-		 { Id: 'd21', ParentId: 'd2' },
-		 { Id: 'd22', ParentId: 'd2' },
-		 { Id: 'd1',  ParentId: 'd' },
-		 { Id: 'd2',  ParentId: 'd' },
-		 { Id: 'd' },
-		 { Id: 'c' },
+		{ Id: 'a' },
+		{ Id: 'b' },
+		{ Id: 'b1',  ParentId: 'b' },
+		{ Id: 'c1',  ParentId: 'c' },
+		{ Id: 'c2',  ParentId: 'c' },
+		{ Id: 'd21', ParentId: 'd2' },
+		{ Id: 'd22', ParentId: 'd2' },
+		{ Id: 'd1',  ParentId: 'd' },
+		{ Id: 'd2',  ParentId: 'd' },
+		{ Id: 'd' },
+		{ Id: 'c' },
 	] as Item[];
 
 	const expectedMap = MultiMap.parse(`
