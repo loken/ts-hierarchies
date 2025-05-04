@@ -119,6 +119,8 @@ export class ChildMap {
 			const parent = getParent(item);
 			if (parent)
 				childMap.add(identify(parent), identify(item));
+			else
+				childMap.getOrAdd(identify(item));
 		}
 
 		return childMap;
@@ -131,6 +133,8 @@ export class ChildMap {
 			const parentId = identifyParent(item);
 			if (parentId)
 				childMap.add(parentId, identify(item));
+			else
+				childMap.getOrAdd(identify(item));
 		}
 
 		return childMap;
