@@ -1,12 +1,12 @@
-import { iterateAll, MultiMap } from '@loken/utilities';
-import { describe, expect, it } from 'vitest';
+import { iterateAll } from '@loken/utilities';
+import { expect, test } from 'vitest';
 
 import { nodesToItems } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { traverseGraph } from './graph-traverse.js';
 
 
-const root = Nodes.create(0).attach([
+const intRoot = Nodes.create(0).attach([
 	Nodes.create(1).attach([
 		Nodes.create(11),
 		Nodes.create(12).attach(Nodes.create(121)),
@@ -15,179 +15,172 @@ const root = Nodes.create(0).attach([
 	Nodes.create(3).attach(Nodes.create(31, 32)),
 ]);
 
+const strRoots = [
+	Nodes.create('A').attach([
+		Nodes.create('A1').attach(Nodes.create('A11', 'A12')),
+		Nodes.create('A2').attach(Nodes.create('A21')),
+	]),
+	Nodes.create('B').attach(Nodes.create('B1').attach(Nodes.create('B12'))),
+];
 
-describe('traverseGraph', () => {
-	it('should yield all items in correct order when traversing breadth-first using the `next` delegate', () => {
-		const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
-		const actual = traverseGraph({
-			type:  'breadth-first',
-			roots: root,
-			next:  n => n.getChildren(),
-		});
+test('traverseGraph (next, breadth-first) yields in correct order', () => {
+	const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
-		expect(nodesToItems(actual)).toEqual(expected);
+	const actual = traverseGraph({
+		type:  'breadth-first',
+		roots: intRoot,
+		next:  n => n.getChildren(),
 	});
 
-	it('should yield all items in correct order when traversing depth-first using the `next` delegate', () => {
-		const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
+	expect(nodesToItems(actual)).toEqual(expected);
+});
 
-		const actual = traverseGraph({
-			type:  'depth-first',
-			roots: root,
-			next:  n => n.getChildren(),
-		});
+test('traverseGraph (next, depth-first) yields in correct order', () => {
+	const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
 
-		expect(nodesToItems(actual)).toEqual(expected);
+	const actual = traverseGraph({
+		type:  'depth-first',
+		roots: intRoot,
+		next:  n => n.getChildren(),
 	});
 
-	it('should yield all items in correct order when traversing breadth-first using the `signal` delegate', () => {
-		const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
+	expect(nodesToItems(actual)).toEqual(expected);
+});
 
-		const actual = traverseGraph({
-			type:   'breadth-first',
-			roots:  root,
-			signal: (n, s) => s.next(n.getChildren()),
-		});
+test('traverseGraph (signal, breadth-first) yields in correct order', () => {
+	const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
-		expect(nodesToItems(actual)).toEqual(expected);
+	const actual = traverseGraph({
+		type:   'breadth-first',
+		roots:  intRoot,
+		signal: (n, s) => s.next(n.getChildren()),
 	});
 
-	it('should yield all items in correct order when traversing depth-first using the `signal` delegate', () => {
-		const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
+	expect(nodesToItems(actual)).toEqual(expected);
+});
 
-		const actual = traverseGraph({
-			type:   'depth-first',
-			roots:  root,
-			signal: (n, s) => s.next(n.getChildren()),
-		});
+test('traverseGraph (signal, depth-first) yields in correct order', () => {
+	const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
 
-		expect(nodesToItems(actual)).toEqual(expected);
+	const actual = traverseGraph({
+		type:   'depth-first',
+		roots:  intRoot,
+		signal: (n, s) => s.next(n.getChildren()),
 	});
 
-	it('should yield signaled items unless skipped when using the `signal` delegate', () => {
-		const expected = [ 0, 1, 2, 3, 121 ];
+	expect(nodesToItems(actual)).toEqual(expected);
+});
 
-		const actual = traverseGraph({
-			roots:  root,
-			signal: (node, signal) => {
-				// Exclude children of 3 which is 31 and 32.
-				if (node.item !== 3)
-					signal.next(node.getChildren());
+test('traverseGraph (signal) with skip yields in correct order', () => {
+	const expected = [ 0, 1, 2, 3, 121 ];
 
-				// Skip children of 1 which is 11 and 12.
-				if (node.getParent()?.item === 1)
-					signal.skip();
-			},
-		});
-
-		expect(nodesToItems(actual)).toEqual(expected);
-	});
-
-	it('should signal the correct depth during traversal', () => {
-		const actual = traverseGraph({
-			roots:  root,
-			signal: (node, signal) => {
+	const actual = traverseGraph({
+		roots:  intRoot,
+		signal: (node, signal) => {
+			// Exclude children of 3 which is 31 and 32.
+			if (node.item !== 3)
 				signal.next(node.getChildren());
 
-				// Due to our value scheme the depth is equal to
-				// the number of digits which we can get with a bit of math.
-				const expectedDepth = node.item == 0 ? 0 : Math.floor(Math.log10(node.item) + 1);
-				expect(expectedDepth).toEqual(signal.depth);
-			},
-		});
-
-		iterateAll(actual);
+			// Skip children of 1 which is 11 and 12.
+			if (node.getParent()?.item === 1)
+				signal.skip();
+		},
 	});
 
-	it('should find node using `skip` and `end`', () => {
-		// Let's implement a search for a single node.
-		const expected = 12;
-		const actual = traverseGraph({
-			roots:  root,
-			signal: (node, signal) => {
-				signal.next(node.getChildren());
+	expect(nodesToItems(actual)).toEqual(expected);
+});
 
-				// We want to stop traversal once we find the item we want
-				// and to skip every other item.
-				if (node.item == expected)
-					signal.end();
-				else
-					signal.skip();
-			},
-		});
+test('traverseGraph (signal) with skip and end yields wanted node', () => {
+	// Let's implement a search for a single node.
+	const expected = 12;
+	const actual = traverseGraph({
+		roots:  intRoot,
+		signal: (node, signal) => {
+			signal.next(node.getChildren());
 
-		const node = [ ...actual ][0];
-
-		expect(node?.item).toEqual(12);
+			// We want to stop traversal once we find the item we want
+			// and to skip every other item.
+			if (node.item == expected)
+				signal.end();
+			else
+				signal.skip();
+		},
 	});
 
-	it('should be able to break circular dependencies', () => {
-		const last = Nodes.create(4);
-		const first = Nodes.create(1).attach(
-			Nodes.create(2).attach(
-				Nodes.create(3).attach(last),
-			),
-		);
+	const items = nodesToItems(actual);
 
-		// Make it circular!
-		last.attach(first);
+	expect(items.length).toEqual(1);
+	expect(items[0]).toEqual(expected);
+});
 
-		const actual = traverseGraph({
-			roots:        first,
-			detectCycles: true,
-			next:         node => node.getChildren(),
-		});
+test('traverseGraph (next) on circular graph breaks on visited', () => {
+	const last = Nodes.create(4);
+	const first = Nodes.create(1).attach(
+		Nodes.create(2).attach(
+			Nodes.create(3).attach(last),
+		),
+	);
 
-		expect(nodesToItems(actual)).toEqual([ 1, 2, 3, 4 ]);
+	// Make it circular!
+	last.attach(first);
+
+	const actual = traverseGraph({
+		roots:        first,
+		detectCycles: true,
+		next:         node => node.getChildren(),
 	});
 
+	expect(nodesToItems(actual)).toEqual([ 1, 2, 3, 4 ]);
+});
 
-	it('should signal the correct depth during breadth-first traversal', () => {
-		const childMap = MultiMap.parse(`
-		A:A1,A2
-		A1:A11,A12
-		A2:A21
-		B:B1
-		B1:B12
-		`);
+test('traverseGraph (signal) on circular graph breaks on visited', () => {
+	const last = Nodes.create(4);
+	const first = Nodes.create(1).attach(
+		Nodes.create(2).attach(
+			Nodes.create(3).attach(last),
+		),
+	);
 
-		const roots = Nodes.assembleIds(childMap);
+	// Make it circular!
+	last.attach(first);
 
-		const actual = traverseGraph({
-			type:   'breadth-first',
-			roots,
-			signal: (node, signal) => {
-				signal.next(node.getChildren());
-
-				expect(node.item.length - 1).toEqual(signal.depth);
-			},
-		});
-
-		iterateAll(actual);
+	const actual = traverseGraph({
+		roots:        first,
+		detectCycles: true,
+		signal:       (node, signal) => {
+			signal.next(node.getChildren());
+		},
 	});
 
-	it('should signal the correct depth during depth-first traversal', () => {
-		const childMap = MultiMap.parse(`
-		A:A1,A2
-		A1:A11,A12
-		A2:A21
-		B:B1
-		B1:B12
-		`);
+	expect(nodesToItems(actual)).toEqual([ 1, 2, 3, 4 ]);
+});
 
-		const roots = Nodes.assembleIds(childMap);
 
-		const actual = traverseGraph({
-			type:   'depth-first',
-			roots,
-			signal: (node, signal) => {
-				signal.next(node.getChildren());
+test('traverseGraph (signal, breadth-first) provides correct depth', () => {
+	const actual = traverseGraph({
+		type:   'breadth-first',
+		roots:  strRoots,
+		signal: (node, signal) => {
+			signal.next(node.getChildren());
 
-				expect(node.item.length - 1).toEqual(signal.depth);
-			},
-		});
-
-		iterateAll(actual);
+			expect(node.item.length - 1).toEqual(signal.depth);
+		},
 	});
+
+	iterateAll(actual);
+});
+
+test('traverseGraph (signal, depth-first) provides correct depth', () => {
+	const actual = traverseGraph({
+		type:   'depth-first',
+		roots:  strRoots,
+		signal: (node, signal) => {
+			signal.next(node.getChildren());
+
+			expect(node.item.length - 1).toEqual(signal.depth);
+		},
+	});
+
+	iterateAll(actual);
 });
