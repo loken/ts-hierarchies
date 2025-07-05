@@ -1,4 +1,4 @@
-import { iterateAll, multipleToArray, range, traverseRange } from '@loken/utilities';
+import { range, traverseRange } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import { traverseSequence } from './sequence-traverse.js';
@@ -46,16 +46,17 @@ test('traverseSequence (signal) with skip yields in correct values', () => {
 		},
 	});
 
-	const actualArr = multipleToArray(actual).map(el => el.value!);
+	const actualItems = actual.map(el => el.value!).toArray();
 
-	expect(actualArr).toEqual(expected);
+	expect(actualItems).toEqual(expected);
 });
 
 test('traverseSequence (signal) with skip provides correct index and count', () => {
 	// We set it up so that index and value matches
 	// and so that we exclude odd values from the result.
-	const expectedCounts = [ 0, 1, 1, 2, 2 ];
 	const sequence = traverseRange(0, 5);
+	const expected = [ 0, 2, 4 ];
+	const expectedCounts = [ 0, 1, 1, 2, 2 ];
 
 	const actual = traverseSequence({
 		first:  sequence.next(),
@@ -74,5 +75,69 @@ test('traverseSequence (signal) with skip provides correct index and count', () 
 		},
 	});
 
-	iterateAll(actual);
+	const actualValues = actual.map(el => el.value!).toArray();
+
+	expect(actualValues).toEqual(expected);
+});
+
+test('traverseSequence (next) with empty sequence yields nothing', () => {
+	const actual = traverseSequence({
+		first: undefined,
+		next:  () => undefined,
+	});
+
+	expect(actual.toArray()).toEqual([]);
+});
+
+test('traverseSequence (next) with single element yields one item', () => {
+	const expected = [ 42 ];
+
+	const actual = traverseSequence({
+		first: 42,
+		next:  () => undefined,
+	});
+
+	expect(actual.toArray()).toEqual(expected);
+});
+
+test('traverseSequence (signal) with early termination yields wanted element', () => {
+	// Let's implement a search for a single element by not providing next elements after we find it.
+	const expected = [ 3 ];
+	const sequence = traverseRange(0, 10);
+
+	const actual = traverseSequence({
+		first:  sequence.next(),
+		signal: (element, signal) => {
+			// We want to stop traversal once we find the element we want
+			// and to skip every other element.
+			if (element.value === 3) {
+				// Don't provide next element to stop traversal
+				return;
+			}
+			else {
+				signal.skip();
+			}
+
+			// Signal the next element unless we're done.
+			const next = sequence.next();
+			if (!next.done)
+				signal.next(next);
+		},
+	});
+
+	const actualValues = actual.map(el => el.value!).toArray();
+
+	expect(actualValues).toEqual(expected);
+});
+
+test('traverseSequence (signal) with undefined first element yields nothing', () => {
+	const actual = traverseSequence({
+		first:  undefined,
+		signal: (_element, _signal) => {
+			// This should never be called
+			expect.fail('Signal function should not be called with undefined first element');
+		},
+	});
+
+	expect(actual.toArray()).to.be.empty;
 });
