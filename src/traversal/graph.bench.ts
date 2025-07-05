@@ -3,9 +3,9 @@ import { ChildMap } from '../utilities/child-map.ts';
 import { Nodes } from '../nodes/nodes.ts';
 
 import type { HCNode } from '../nodes/node.ts';
-import { flattenFullGraph, flattenSignalGraph } from './graph-flatten.ts';
+import { flattenGraphNext, flattenGraphSignal } from './graph-flatten.ts';
 import { iterateAll } from '@loken/utilities';
-import { traverseFullGraph, traverseSignalGraph } from './graph-traverse.ts';
+import { traverseGraphNext, traverseGraphSignal } from './graph-traverse.ts';
 import { searchGraph } from './graph-search.ts';
 
 
@@ -41,32 +41,32 @@ counts.forEach(count => {
 	describe(`traverse graph of ${ count } nodes`, () => {
 		const roots = infos.get(count)!.roots;
 
-		bench('bf traverseFullGraph', () => {
-			iterateAll(traverseFullGraph({
+		bench('bf traverseGraphNext', () => {
+			iterateAll(traverseGraphNext({
 				roots,
 				next: (node) => node.getChildren(),
 				type: 'breadth-first',
 			}));
 		});
 
-		bench('df traverseFullGraph', () => {
-			iterateAll(traverseFullGraph({
+		bench('df traverseGraphNext', () => {
+			iterateAll(traverseGraphNext({
 				roots,
 				next: (node) => node.getChildren(),
 				type: 'depth-first',
 			}));
 		});
 
-		bench('bf traverseSignalGraph', () => {
-			iterateAll(traverseSignalGraph({
+		bench('bf traverseGraphSignal', () => {
+			iterateAll(traverseGraphSignal({
 				roots,
 				signal: (n, s) => s.next(n.getChildren()),
 				type:   'breadth-first',
 			}));
 		});
 
-		bench('df traverseSignalGraph', () => {
-			iterateAll(traverseSignalGraph({
+		bench('df traverseGraphSignal', () => {
+			iterateAll(traverseGraphSignal({
 				roots,
 				signal: (n, s) => s.next(n.getChildren()),
 				type:   'depth-first',
@@ -74,32 +74,32 @@ counts.forEach(count => {
 		});
 
 
-		bench('bf flattenFullGraph', () => {
-			flattenFullGraph({
+		bench('bf flattenGraphNext', () => {
+			flattenGraphNext({
 				roots,
 				next: (node) => node.getChildren(),
 				type: 'depth-first',
 			});
 		});
 
-		bench('df flattenFullGraph', () => {
-			flattenFullGraph({
+		bench('df flattenGraphNext', () => {
+			flattenGraphNext({
 				roots,
 				next: (node) => node.getChildren(),
 				type: 'breadth-first',
 			});
 		});
 
-		bench('bf flattenSignalGraph', () => {
-			flattenSignalGraph({
+		bench('bf flattenGraphSignal', () => {
+			flattenGraphSignal({
 				roots,
 				signal: (n, s) => s.next(n.getChildren()),
 				type:   'breadth-first',
 			});
 		});
 
-		bench('df flattenSignalGraph', () => {
-			flattenSignalGraph({
+		bench('df flattenGraphSignal', () => {
+			flattenGraphSignal({
 				roots,
 				signal: (n, s) => s.next(n.getChildren()),
 				type:   'depth-first',
@@ -124,8 +124,8 @@ counts.forEach(count => {
 			expect(found?.item).toEqual(searchId);
 		});
 
-		bench('traverseSignalGraph', () => {
-			const found = traverseSignalGraph({
+		bench('traverseGraphSignal', () => {
+			const found = traverseGraphSignal({
 				roots,
 				signal: (n, s) => {
 					if (search(n)) {
@@ -141,8 +141,8 @@ counts.forEach(count => {
 			expect(found?.item).toEqual(searchId);
 		});
 
-		bench('flattenSignalGraph', () => {
-			const found = flattenSignalGraph({
+		bench('flattenGraphSignal', () => {
+			const found = flattenGraphSignal({
 				roots,
 				signal: (n, s) => {
 					if (search(n)) {

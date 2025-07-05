@@ -9,7 +9,7 @@ import type { Relation } from '../utilities/relations.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
 import { nodesToIds, nodeToId } from './node-conversion.js';
-import { flattenFullGraph, flattenGraph } from '../traversal/graph-flatten.js';
+import { flattenGraphNext, flattenGraph } from '../traversal/graph-flatten.js';
 import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
 import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
@@ -145,7 +145,7 @@ export class Nodes {
 	) {
 		const rootNodes = Nodes.createSome(roots);
 
-		flattenFullGraph({
+		flattenGraphNext({
 			roots: rootNodes,
 			next:  node => {
 				const childItems = children(node.item);
@@ -245,7 +245,7 @@ export class Nodes {
 			}
 		}
 
-		const nodes = flattenFullGraph({
+		const nodes = flattenGraphNext({
 			roots,
 			next: node => node.getChildren().filter(n => n.isInternal),
 		});
@@ -361,7 +361,7 @@ export class Nodes {
 	): Relation<Id>[] {
 		const relations: Relation<Id>[] = [];
 
-		flattenFullGraph({
+		flattenGraphNext({
 			roots,
 			next: node => {
 				if (node.isLeaf)

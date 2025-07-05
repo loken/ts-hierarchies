@@ -1,6 +1,6 @@
 import { isSomeItem, type Some, someToArray } from '@loken/utilities';
 
-import { traverseFullGraph } from '../traversal/graph-traverse.js';
+import { traverseGraphNext } from '../traversal/graph-traverse.js';
 import { traverseSequence } from '../traversal/sequence-traverse.js';
 import type { TraversalType } from '../traversal/graph.types.js';
 import type { DeBrand, NodePredicate } from './node.types.js';
@@ -305,7 +305,7 @@ export class HCNode<Item> {
 
 	/** Generate a sequence of descendant nodes by traversing according to the options. */
 	public traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
-		return traverseFullGraph({
+		return traverseGraphNext({
 			roots: this.#getRoots(includeSelf),
 			next:  node => node.#children,
 			type,

@@ -8,13 +8,13 @@ import type { GraphTraversal, SignalNodes, TraversalType, NextNodes } from './gr
  */
 export const flattenGraph = <TNode>(options: GraphTraversal<TNode>): TNode[] => {
 	if (options.signal !== undefined)
-		return flattenSignalGraph(options);
+		return flattenGraphSignal(options);
 	else
-		return flattenFullGraph(options);
+		return flattenGraphNext(options);
 };
 
 /** @internalexport */
-export const flattenSignalGraph = <TNode>(
+export const flattenGraphSignal = <TNode>(
 	options: {
 		roots:         Some<TNode>,
 		signal:        SignalNodes<TNode>,
@@ -41,7 +41,7 @@ export const flattenSignalGraph = <TNode>(
 };
 
 /** @internalexport */
-export const flattenFullGraph = <TNode>(
+export const flattenGraphNext = <TNode>(
 	options: {
 		roots:         Some<TNode>,
 		next:          NextNodes<TNode>,

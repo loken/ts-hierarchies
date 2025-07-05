@@ -7,13 +7,13 @@ import type { NextElement, SequenceTraversal, SignalElement } from './sequence.t
  */
 export const traverseSequence = <TEl>(options: SequenceTraversal<TEl>): Generator<TEl, void, undefined> => {
 	if (options.signal !== undefined)
-		return traverseSignalSequence(options);
+		return traverseSequenceSignal(options);
 	else
-		return traverseFullSequence(options);
+		return traverseSequenceNext(options);
 };
 
 /** @internalexport */
-export function* traverseSignalSequence<TEl>(options: {
+export function* traverseSequenceSignal<TEl>(options: {
 	first:  TEl | undefined;
 	signal: SignalElement<TEl>;
 }) {
@@ -33,7 +33,7 @@ export function* traverseSignalSequence<TEl>(options: {
 };
 
 /** @internalexport */
-export function* traverseFullSequence<TEl>(options: {
+export function* traverseSequenceNext<TEl>(options: {
 	first: TEl | undefined;
 	next:  NextElement<TEl>;
 }) {

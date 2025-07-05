@@ -9,13 +9,13 @@ import { type GraphTraversal, type NextNodes, type SignalNodes, type TraversalTy
  */
 export const traverseGraph = <TNode>(options: GraphTraversal<TNode>): Generator<TNode, void, undefined> => {
 	if (options.signal !== undefined)
-		return traverseSignalGraph(options);
+		return traverseGraphSignal(options);
 	else
-		return traverseFullGraph(options);
+		return traverseGraphNext(options);
 };
 
 /** @internalexport */
-export function* traverseSignalGraph<TNode>(
+export function* traverseGraphSignal<TNode>(
 	options: {
 		roots:         Some<TNode>,
 		signal:        SignalNodes<TNode>,
@@ -40,7 +40,7 @@ export function* traverseSignalGraph<TNode>(
 
 
 /** @internalexport */
-export function* traverseFullGraph<TNode>(
+export function* traverseGraphNext<TNode>(
 	options: {
 		roots:         Some<TNode>,
 		next:          NextNodes<TNode>,
