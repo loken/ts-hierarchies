@@ -2,6 +2,7 @@ import { MultiMap, type MultiMapSeparators, splitBy } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import { Nodes } from './nodes.js';
+import { nodesToIds } from './node-conversion.js';
 
 
 const sep: MultiMapSeparators = {
@@ -16,9 +17,14 @@ C
 A1:A11,A12
 B1:B12`;
 
+const inputRoots = [ 'A', 'B', 'C' ];
+const inputMap = MultiMap.parse<string>(input);
+
 
 test('Assemble IDs', () => {
-	const roots = Nodes.assembleIds(MultiMap.parse(input));
+	const roots = Nodes.assembleIds(inputMap);
+
+	expect(inputRoots).toEqual(nodesToIds(roots));
 
 	const output = Nodes.toChildMap(roots, id => id).render(sep);
 
@@ -43,6 +49,8 @@ test('Assemble property IDs', () => {
 		IGNORED: 'No match for include fn',
 	}, (_, val) => typeof val === 'object' || val === true);
 
+	expect(inputRoots).toEqual(nodesToIds(roots));
+
 	const output = Nodes.toChildMap(roots, id => id).render(sep);
 
 	expect(output).toEqual(input);
@@ -51,7 +59,9 @@ test('Assemble property IDs', () => {
 test('Assemble items', () => {
 	const items = splitBy('A,B,C,A1,A2,B1,A11,A12,B12').map(id => ({ id }));
 
-	const roots = Nodes.assembleItems(items, item => item.id, MultiMap.parse(input));
+	const roots = Nodes.assembleItems(items, item => item.id, inputMap);
+
+	expect(inputRoots).toEqual(nodesToIds(roots, item => item.id));
 
 	const output = Nodes.toChildMap(roots, item => item.id).render(sep);
 
@@ -62,7 +72,9 @@ test('Assemble items', () => {
 test('Assemble items should ignore items that are not in the relationship spec', () => {
 	const items = splitBy('A,B,C,A1,A2,B1,A11,A12,B12,IGNORED').map(id => ({ id }));
 
-	const roots = Nodes.assembleItems(items, item => item.id, MultiMap.parse(input));
+	const roots = Nodes.assembleItems(items, item => item.id, inputMap);
+
+	expect(inputRoots).toEqual(nodesToIds(roots, item => item.id));
 
 	const output = Nodes.toChildMap(roots, item => item.id).render(sep);
 
@@ -107,6 +119,8 @@ test('Nodes.assembleItemsWithChildren() from items with children', () => {
 
 	const roots = Nodes.assembleItemsWithChildren(itemsWithChildren, item => item.children);
 
+	expect(inputRoots).toEqual(nodesToIds(roots, item => item.id));
+
 	const actual = Nodes.toChildMap(roots, item => item.id).render(sep);
 
 	expect(actual).toEqual(input);
@@ -114,8 +128,6 @@ test('Nodes.assembleItemsWithChildren() from items with children', () => {
 
 
 test('Hierarchies.createWithItems() from items with parents', () => {
-	const childMap = MultiMap.parse(input);
-
 	interface ItemWithParent {
 		id:      string,
 		parent?: ItemWithParent,
@@ -123,11 +135,11 @@ test('Hierarchies.createWithItems() from items with parents', () => {
 
 	// Create a map of items.
 	const itemsWithParents = new Map<string, ItemWithParent>();
-	for (const id of childMap.getAll())
+	for (const id of inputMap.getAll())
 		itemsWithParents.set(id, { id });
 
 	// Set the parent references.
-	for (const [ parentId, childIds ] of childMap) {
+	for (const [ parentId, childIds ] of inputMap) {
 		const parent = itemsWithParents.get(parentId)!;
 		for (const childId of childIds) {
 			const child = itemsWithParents.get(childId)!;
@@ -140,12 +152,12 @@ test('Hierarchies.createWithItems() from items with parents', () => {
 	const rootsFromAll = Nodes.assembleItemsWithParents(allItems, item => item.parent);
 
 	const actualFromAll = Nodes.toChildMap(rootsFromAll, item => item.id);
-	expect(actualFromAll).toEqual(childMap);
+	expect(actualFromAll).toEqual(inputMap);
 
 	/* Ensure we can pass it the leaf items only. */
-	const leafItems = [ ...itemsWithParents.values().filter(item => !childMap.get(item.id)?.size) ];
+	const leafItems = [ ...itemsWithParents.values().filter(item => !inputMap.get(item.id)?.size) ];
 	const rootsFromLeaves = Nodes.assembleItemsWithParents(leafItems, item => item.parent);
 
 	const actualFromLeaves = Nodes.toChildMap(rootsFromLeaves, item => item.id);
-	expect(actualFromLeaves).toEqual(childMap);
+	expect(actualFromLeaves).toEqual(inputMap);
 });
