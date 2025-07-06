@@ -180,30 +180,26 @@ export class Nodes {
 		const roots: HCNode<Item>[] = [];
 
 		for (const leaf of someToIterable(leaves)) {
-			let current: { item: Item, node: HCNode<Item> } | undefined = {
-				item: leaf,
-				node: getNode(leaf),
-			};
+			let currentItem = leaf;
+			let currentNode = getNode(leaf);
 
-			while (current) {
-				const parentItem = parent(current.item);
+			while (true) {
+				const parentItem = parent(currentItem);
 				if (parentItem !== undefined) {
 					const parentSeen = nodes.has(parentItem);
 					const parentNode = getNode(parentItem);
 
-					parentNode.attach(current.node);
+					parentNode.attach(currentNode);
 
 					if (parentSeen)
 						break;
 
-					current = {
-						item: parentItem,
-						node: parentNode,
-					};
+					currentItem = parentItem;
+					currentNode = parentNode;
 				}
 				else {
-					roots.push(current.node);
-					current = undefined;
+					roots.push(currentNode);
+					break;
 				}
 			}
 		}
