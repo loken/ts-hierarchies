@@ -93,41 +93,43 @@ export class Nodes {
 	 * @param identify Means of getting an ID for an item.
 	 * @param childMap The map describing the relations.
 	 * @returns The root nodes.
+	 * @throws {Error} When a parent or child ID referenced in the `childMap`
+	 * is not found in the provided `items`.
 	 */
 	public static assembleItems<Item, Id>(
 		items: Some<Item>,
 		identify: Identify<Item, Id>,
 		childMap: MultiMap<Id>,
 	): HCNode<Item>[] {
-		const roots: HCNode<Item>[] = [];
+		const nodes = new Map<Id, HCNode<Item>>();
+		const roots = new Map<Id, HCNode<Item>>();
 
-		const nodeMap = new Map<Id, HCNode<Item>>();
-		const itemMap = new Map<Id, Item>();
-		const getItem = (id: Id) => {
-			if (!itemMap.has(id))
-				throw new Error(`Could not find item for mapped ID: ${ id }`);
+		for (const item of someToIterable(items)) {
+			const id = identify(item);
+			const node = new HCNode(item);
 
-			return itemMap.get(id);
-		};
+			nodes.set(id, node);
 
-		for (const item of someToIterable(items))
-			itemMap.set(identify(item), item);
+			if (childMap.has(id))
+				roots.set(id, node);
+		}
 
 		for (const [ parentId, childIds ] of childMap.entries()) {
-			const parentNode = mapGetLazy(nodeMap, parentId, () => new HCNode(getItem(parentId)));
+			const parentNode = nodes.get(parentId);
+			if (!parentNode)
+				throw new Error(`Parent item with ID '${ parentId }' not found in provided items.`);
 
 			for (const childId of childIds) {
-				const childNode = mapGetLazy(nodeMap, childId, () => new HCNode(getItem(childId)));
+				const childNode = nodes.get(childId);
+				if (!childNode)
+					throw new Error(`Child item with ID '${ childId }' not found in provided items.`);
+
 				parentNode.attach(childNode);
+				roots.delete(childId);
 			}
 		}
 
-		for (const node of nodeMap.values()) {
-			if (node.isRoot)
-				roots.push(node);
-		}
-
-		return roots;
+		return roots.values().toArray();
 	}
 
 	/**
