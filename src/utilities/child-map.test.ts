@@ -2,6 +2,7 @@ import { MultiMap, type MultiMapSeparators } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import { ChildMap } from './child-map.js';
+import type { Relation } from './relations.js';
 
 const sep: MultiMapSeparators = {
 	entry:  '\n\t',
@@ -131,4 +132,73 @@ test('ChildMap.fromParentIds', () => {
 	const map = ChildMap.fromParentIds(items, item => item.Id, item => item.ParentId);
 
 	expect(map).toEqual(expectedMap);
+});
+
+test('ChildMap.toRelations', () => {
+	const expected: Relation<number>[] = [
+		[ -1 ],
+		[ 0, 1 ],
+		[ 0, 2 ],
+		[ 0, 3 ],
+		[ 1, 11 ],
+		[ 1, 12 ],
+		[ 3, 31 ],
+		[ 3, 32 ],
+		[ 12, 121 ],
+	];
+
+	const actual = ChildMap.toRelations(childMap);
+
+	expect(actual).toEqual(expected);
+});
+
+test('ChildMap.fromRelations', () => {
+	const relations: Relation<number>[] = [
+		[ -1 ],
+		[ 0, 1 ],
+		[ 0, 2 ],
+		[ 0, 3 ],
+		[ 1, 11 ],
+		[ 1, 12 ],
+		[ 3, 31 ],
+		[ 3, 32 ],
+		[ 12, 121 ],
+	];
+
+	const expected = MultiMap.parse(`
+	-1
+	0:1,2,3
+	1:11,12
+	3:31,32
+	12:121`, { transform: parseInt });
+
+	const actual = ChildMap.fromRelations(relations);
+
+	expect(actual).toEqual(expected);
+});
+
+test('ChildMap.toRelations -> fromRelations round-trip', () => {
+	const relations = ChildMap.toRelations(childMap);
+	const roundTripMap = ChildMap.fromRelations(relations);
+
+	expect(roundTripMap).toEqual(childMap);
+});
+
+test('ChildMap.fromRelations -> toRelations round-trip', () => {
+	const originalRelations: Relation<number>[] = [
+		[ -1 ],
+		[ 0, 1 ],
+		[ 0, 2 ],
+		[ 0, 3 ],
+		[ 1, 11 ],
+		[ 1, 12 ],
+		[ 3, 31 ],
+		[ 3, 32 ],
+		[ 12, 121 ],
+	];
+
+	const childMap = ChildMap.fromRelations(originalRelations);
+	const roundTripRelations = ChildMap.toRelations(childMap);
+
+	expect(roundTripRelations).toEqual(originalRelations);
 });

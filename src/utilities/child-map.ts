@@ -45,7 +45,7 @@ export class ChildMap {
 			return childMap;
 
 		for (const [ id ] of roots)
-			childMap.getOrAdd(id);
+			childMap.addEmpty(id);
 
 		const store = new LinearQueue<Entry>();
 		store.attach(roots);
@@ -120,7 +120,7 @@ export class ChildMap {
 			if (parent)
 				childMap.add(identify(parent), identify(item));
 			else
-				childMap.getOrAdd(identify(item));
+				childMap.addEmpty(identify(item));
 		}
 
 		return childMap;
@@ -134,7 +134,7 @@ export class ChildMap {
 			if (parentId)
 				childMap.add(parentId, identify(item));
 			else
-				childMap.getOrAdd(identify(item));
+				childMap.addEmpty(identify(item));
 		}
 
 		return childMap;
@@ -151,8 +151,16 @@ export class ChildMap {
 	public static fromRelations<Id>(relations: Some<Relation<Id>>): MultiMap<Id> {
 		const map = new MultiMap<Id>();
 
-		for (const [ parent, child ] of someToIterable(relations))
-			map.add(parent, child);
+		for (const relation of someToIterable(relations)) {
+			if (relation.length === 1) {
+				const [ parent ] = relation;
+				map.addEmpty(parent);
+			}
+			else {
+				const [ parent, child ] = relation;
+				map.add(parent, child);
+			}
+		}
 
 		return map;
 	}
@@ -162,8 +170,13 @@ export class ChildMap {
 		const relations: Relation<Id>[] = [];
 
 		for (const [ parent, children ] of childMap) {
-			for (const child of children)
-				relations.push([ parent, child ]);
+			if (children.size === 0) {
+				relations.push([ parent ]);
+			}
+			else {
+				for (const child of children)
+					relations.push([ parent, child ]);
+			}
 		}
 
 		return relations;
@@ -195,13 +208,13 @@ export class ChildMap {
 
 		for (const [ child, parent ] of parentMap) {
 			if (parent === undefined) {
-				descendantMap.getOrAdd(child);
+				descendantMap.addEmpty(child);
 				continue;
 			}
 
 			let ancestor: Id | undefined = parent;
 			while (ancestor !== undefined) {
-				descendantMap.getOrAdd(ancestor).add(child);
+				descendantMap.addEmpty(ancestor).add(child);
 				ancestor = parentMap.get(ancestor);
 			}
 		}
@@ -216,7 +229,7 @@ export class ChildMap {
 		const ancestorMap =  new MultiMap<Id>();
 
 		for (const [ child, parent ] of parentMap) {
-			const ancestors = ancestorMap.getOrAdd(child);
+			const ancestors = ancestorMap.addEmpty(child);
 
 			let ancestor = parent;
 			while (ancestor !== undefined) {
@@ -259,7 +272,7 @@ export class ChildMap {
 			return;
 
 		if (ancestors.length === 1) {
-			childMap.getOrAdd(ancestors[0]!);
+			childMap.addEmpty(ancestors[0]!);
 		}
 		else {
 			ancestors.reduce((child, parent) => {
@@ -314,7 +327,7 @@ export class ChildMap {
 			const id = create({ index, siblings, ancestry });
 
 			if (ancestry.length === 0)
-				childMap.getOrAdd(id);
+				childMap.addEmpty(id);
 			else
 				childMap.add(ancestry.at(-1)!, id);
 		}

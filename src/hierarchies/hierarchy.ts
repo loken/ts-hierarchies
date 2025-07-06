@@ -506,7 +506,7 @@ export class Hierarchy<Item, Id = Item> {
 						items.set(descendantId, descendantItem);
 
 						if (descendantNode.isLeaf)
-							childMap.getOrAdd(descendantId);
+							childMap.addEmpty(descendantId);
 					}
 
 					if (!descendantNode.isLeaf) {
@@ -545,7 +545,7 @@ export class Hierarchy<Item, Id = Item> {
 				}
 
 				if (!addedToChildMap)
-					childMap.getOrAdd(id);
+					childMap.addEmpty(id);
 
 				items.set(id, item);
 			}

@@ -239,7 +239,7 @@ export class Nodes {
 				childMap.add(nodeId, childIds);
 			}
 			else {
-				childMap.getOrAdd(nodeToId(root, identify));
+				childMap.addEmpty(nodeToId(root, identify));
 			}
 		}
 
@@ -280,7 +280,7 @@ export class Nodes {
 		store.enqueue(roots.map(node => [ node, [] ] as Stored));
 
 		for (const root of roots)
-			descendantMap.getOrAdd(nodeToId(root, identify));
+			descendantMap.addEmpty(nodeToId(root, identify));
 
 		while (store.count > 0) {
 			const [ node, ancestors ] = store.dequeue()!;
@@ -291,7 +291,7 @@ export class Nodes {
 
 			const children = node.getChildren();
 			if (children?.length) {
-				const nodeDescendants = descendantMap.getOrAdd(nodeId);
+				const nodeDescendants = descendantMap.addEmpty(nodeId);
 				const childAncestors = [ ...ancestors, nodeDescendants ];
 				store.enqueue(children.map(node => [ node, childAncestors ] as Stored));
 			}
@@ -323,9 +323,8 @@ export class Nodes {
 
 		for (const root of roots) {
 			if (root.isLeaf)
-				ancestorMap.getOrAdd(nodeToId(root, identify));
+				ancestorMap.addEmpty(nodeToId(root, identify));
 		}
-
 
 		while (store.count > 0) {
 			const [ node, ancestors ] = store.dequeue()!;
@@ -362,12 +361,21 @@ export class Nodes {
 		flattenGraphNext({
 			roots,
 			next: node => {
-				if (node.isLeaf)
+				const { isLeaf, isRoot } = node;
+
+				if (isLeaf && isRoot) {
+					const nodeId = nodeToId(node, identify);
+					relations.push([ nodeId ]);
+
+					return;
+				}
+
+				if (isLeaf)
 					return;
 
+				const nodeId = nodeToId(node, identify);
 				const children = node.getChildren();
 				const childIds = nodesToIds(children, identify);
-				const nodeId = nodeToId(node, identify);
 				for (const childId of childIds)
 					relations.push([ nodeId, childId ]);
 
@@ -376,6 +384,57 @@ export class Nodes {
 		});
 
 		return relations;
+	}
+
+	/**
+	 * Build nodes linked as described by the provided `relations`.
+	 *
+	 * @template Id The type of IDs.
+	 * @param relations The relations describing the hierarchy structure.
+	 * @returns The root nodes.
+	 */
+	public static fromRelations<Id>(relations: Some<Relation<Id>>): HCNode<Id>[] {
+		const nodes = new Map<Id, HCNode<Id>>();
+		const children = new Set<Id>();
+
+		// Process all relations
+		for (const relation of someToIterable(relations)) {
+			if (relation.length === 1) {
+				// One-sided relation: [node] - isolated node
+				const [ nodeId ] = relation;
+				if (!nodes.has(nodeId))
+					nodes.set(nodeId, new HCNode(nodeId));
+			}
+			else {
+				// Two-sided relation: [parent, child]
+				const [ parentId, childId ] = relation;
+
+				// Ensure parent node exists
+				if (!nodes.has(parentId))
+					nodes.set(parentId, new HCNode(parentId));
+
+				// Ensure child node exists
+				if (!nodes.has(childId))
+					nodes.set(childId, new HCNode(childId));
+
+				// Create the parent-child relationship
+				const parentNode = nodes.get(parentId)!;
+				const childNode = nodes.get(childId)!;
+				parentNode.attach(childNode);
+
+				// Track child nodes (they cannot be roots)
+				children.add(childId);
+			}
+		}
+
+		// Find roots: nodes that exist but are not children of any other node
+		const roots: HCNode<Id>[] = [];
+		for (const [ nodeId, node ] of nodes) {
+			if (!children.has(nodeId))
+				roots.push(node);
+		}
+
+		return roots;
 	}
 
 

@@ -60,7 +60,7 @@
 		"up-interactive": "pnpm update --latest --interactive"
 	},
 	"dependencies": {
-		"@loken/utilities": "^0.7.4",
+		"@loken/utilities": "^0.7.5",
 		"tslib": "^2.8.1"
 	},
 	"devDependencies": {

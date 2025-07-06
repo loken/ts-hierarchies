@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@loken/utilities':
-        specifier: ^0.7.4
-        version: 0.7.4
+        specifier: ^0.7.5
+        version: 0.7.5
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -263,8 +263,8 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.0':
     resolution: {integrity: sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==}
 
-  '@loken/utilities@0.7.4':
-    resolution: {integrity: sha512-s8BgS0PeVXwRFUcgjIcBeTCjQUa/+7h1UjgOYGpSVOoBGrso0/8OBFbGDl4XcmvbgkXeMu5bhAkIoE3GYhYH4A==}
+  '@loken/utilities@0.7.5':
+    resolution: {integrity: sha512-eJZUjMJYXkb6xjXFlsuV8ZRcWP6+EhsvariJHMFAY8BpvSr5vFuWbpPtAOAh1UI7BqWoa58wWe5ZzTEVJqOsGA==}
     engines: {node: '>=20.10.0'}
 
   '@nodelib/fs.scandir@2.1.5':
@@ -1376,7 +1376,7 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.0': {}
 
-  '@loken/utilities@0.7.4':
+  '@loken/utilities@0.7.5':
     dependencies:
       tslib: 2.8.1
 

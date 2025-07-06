@@ -1,8 +1,12 @@
 import { type Some } from '@loken/utilities';
 
 
-/** Represent a link between a `parent` and `child` using their `Id`s. */
-export type Relation<Id> = readonly [parent: Id, child: Id];
+/**
+ * Represent a relation in a hierarchy.
+ * - `[parent, child]` represents a parent-child relationship
+ * - `[node]` represents an isolated node (root with no children)
+ */
+export type Relation<Id> = readonly [parent: Id, child: Id] | readonly [node: Id];
 
 /** The type of relation. */
 export type RelType = 'ancestors' | 'descendants' | 'children';
