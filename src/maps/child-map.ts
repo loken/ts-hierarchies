@@ -1,10 +1,10 @@
 import { LinearQueue, MultiMap, ProbabilityScale, randomInt, type Some, someToIterable } from '@loken/utilities';
 
 import { Hierarchy } from '../hierarchies/hierarchy.js';
-import type { Identify } from './identify.js';
-import type { IdSpec, ItemIdOptions } from './identity-options.js';
-import type { GetChildren, GetParent, IdentifyChildren, IdentifyParent } from './related-items.js';
-import type { Relation } from './relations.js';
+import type { Identify } from '../utilities/identify.js';
+import type { IdSpec, ItemIdOptions } from '../utilities/identity-options.js';
+import type { GetChildren, GetParent, IdentifyChildren, IdentifyParent } from '../utilities/related-items.js';
+import type { Relation } from '../relations/relation.types.js';
 
 
 /**

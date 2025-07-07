@@ -2,10 +2,10 @@ import { isSomeItem, mapArgs, mapGetLazy, MultiMap, Queue, type Some, someToArra
 
 import { traverseGraph } from '../traversal/graph-traverse.js';
 import type { TraversalType } from '../traversal/graph.types.js';
-import { ChildMap } from '../utilities/child-map.js';
+import { ChildMap } from '../maps/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
-import type { Relation } from '../utilities/relations.js';
+import type { Relation } from '../relations/relation.types.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
 import { nodesToIds, nodeToId } from './node-conversion.js';

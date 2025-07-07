@@ -1,6 +1,6 @@
 import type { HCNode } from '../nodes/node.js';
 import { Nodes } from '../nodes/nodes.js';
-import { ChildMap } from '../utilities/child-map.js';
+import { ChildMap } from '../maps/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { IdSpec, ItemIdOptions } from '../utilities/identity-options.js';
 import { Hierarchy } from './hierarchy.js';

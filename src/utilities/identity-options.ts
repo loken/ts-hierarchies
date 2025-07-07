@@ -3,7 +3,7 @@ import type { MultiMap, Some } from '@loken/utilities';
 import type { Hierarchy } from '../hierarchies/hierarchy.js';
 import type { Identify } from './identify.js';
 import type { GetChildren, GetParent, IdentifyChildren, IdentifyParent } from './related-items.js';
-import type { Relation } from './relations.js';
+import type { Relation } from '../relations/relation.types.js';
 
 
 /** Specification of how `Id`s relate to one another in a parent-to-child, one-to-many relationship. */

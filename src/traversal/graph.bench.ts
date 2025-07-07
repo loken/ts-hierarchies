@@ -1,5 +1,5 @@
 import { bench, describe, expect } from 'vitest';
-import { ChildMap } from '../utilities/child-map.ts';
+import { ChildMap } from '../maps/child-map.ts';
 import { Nodes } from '../nodes/nodes.ts';
 
 import type { HCNode } from '../nodes/node.ts';

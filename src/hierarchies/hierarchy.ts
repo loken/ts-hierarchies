@@ -4,9 +4,9 @@ import type { HCNode } from '../nodes/node.js';
 import type { DeBrand, NodePredicate } from '../nodes/node.types.js';
 import { nodesToIds, nodesToItems } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
-import { ChildMap } from '../utilities/child-map.js';
+import { ChildMap } from '../maps/child-map.js';
 import type { Identify } from '../utilities/identify.js';
-import type { Relation } from '../utilities/relations.js';
+import type { Relation } from '../relations/relation.types.js';
 import { Hierarchies } from './hierarchies.js';
 
 

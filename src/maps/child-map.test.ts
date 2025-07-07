@@ -2,7 +2,7 @@ import { MultiMap, type MultiMapSeparators } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import { ChildMap } from './child-map.js';
-import type { Relation } from './relations.js';
+import type { Relation } from '../relations/relation.types.js';
 
 const sep: MultiMapSeparators = {
 	entry:  '\n\t',

@@ -1,7 +1,7 @@
 import { MultiMap } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
-import { type Relation } from '../utilities/relations.js';
+import { type Relation } from '../relations/relation.types.js';
 import { Hierarchies } from './hierarchies.js';
 
 const childMap = new MultiMap();
@@ -139,6 +139,9 @@ test('Hierarchies.createWithItems() from items with parents', () => {
 
 	// Set the parent references.
 	for (const [ parentId, childId ] of relations) {
+		if (childId === undefined)
+			continue;
+
 		const parent = itemsWithParents.get(parentId)!;
 		const child = itemsWithParents.get(childId)!;
 		child.parent = parent;
