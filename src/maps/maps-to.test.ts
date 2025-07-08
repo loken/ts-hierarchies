@@ -2,7 +2,7 @@ import { MultiMap, type MultiMapSeparators } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import type { Relation } from '../relations/relation.types.js';
-import { childMapToParentMap, childMapToDescendantMap, childMapToAncestorMap, childMapToRelations } from './maps-to.js';
+import { childMapToParentMap, childMapToDescendantMap, childMapToAncestorMap, childMapToRelations, childMapToRootIds } from './maps-to.js';
 import { relationsToChildMap } from '../relations/relations-to.js';
 
 const sep: MultiMapSeparators = {
@@ -89,4 +89,26 @@ test('childMapToRelations -> relationsToChildMap round-trip', () => {
 	const roundTripChildMap = relationsToChildMap(relations);
 
 	expect(roundTripChildMap).toEqual(childMap);
+});
+
+test('childMapToRootIds', () => {
+	const expected = new Set([ -1, 0 ]);
+	const actual = childMapToRootIds(childMap);
+
+	expect(actual).toEqual(expected);
+});
+
+test('childMapToRootIds with empty map', () => {
+	const emptyMap = new MultiMap<number>();
+	const actual = childMapToRootIds(emptyMap);
+
+	expect(actual).toEqual(new Set());
+});
+
+test('childMapToRootIds with single isolated node', () => {
+	const singleNodeMap = new MultiMap<number>();
+	singleNodeMap.addEmpty(42);
+	const actual = childMapToRootIds(singleNodeMap);
+
+	expect(actual).toEqual(new Set([ 42 ]));
 });
