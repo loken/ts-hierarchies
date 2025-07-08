@@ -1,11 +1,13 @@
 import { LinearQueue, MultiMap, ProbabilityScale, randomInt, type Some, someToIterable } from '@loken/utilities';
 
 import { Hierarchy } from '../hierarchies/hierarchy.js';
+import type { HCNode } from '../nodes/node.js';
 import type { Identify } from '../utilities/identify.js';
 import type { IdSpec, ItemIdOptions } from '../utilities/identity-options.js';
 import type { GetChildren, GetParent, IdentifyChildren, IdentifyParent } from '../utilities/related-items.js';
 import type { Relation } from '../relations/relation.types.js';
 import { relationsToChildMap } from '../relations/relations-to.js';
+import { nodesToChildMap } from '../nodes/nodes-to.js';
 import { childMapToAncestorMap, childMapToDescendantMap, childMapToParentMap, childMapToRelations, childMapToRootIds } from './maps-to.js';
 
 
@@ -162,15 +164,23 @@ export class ChildMap {
 	}
 
 
-	/** Create a child map from the `hierarchy`. */
+	/** Create a child-map from the `hierarchy`. */
 	public static fromHierarchy<Item, Id>(hierarchy: Hierarchy<Item, Id>): MultiMap<Id> {
 		return hierarchy.toChildMap();
 	}
 
 
-	/** Create a child map from the `relations`. */
+	/** Create a child-map from `relations`. */
 	public static fromRelations<Id>(relations: Some<Relation<Id>>): MultiMap<Id> {
 		return relationsToChildMap(relations);
+	}
+
+	/** Create a child-map from node `roots`. */
+	public static fromNodes<Item, Id = Item>(
+		roots: Some<HCNode<Item>>,
+		identify?: Identify<Item, Id>,
+	): MultiMap<Id> {
+		return nodesToChildMap(roots, identify);
 	}
 
 	/** Create relations from the `childMap`. */

@@ -1,9 +1,11 @@
-import { type Some } from '@loken/utilities';
+import { MultiMap, type Some } from '@loken/utilities';
 import { HCNode } from '../nodes/node.ts';
 import type { Identify } from '../utilities/identify.ts';
 import type { Relation } from './relation.types.ts';
-import { relationsToNodes } from './relations-to.ts';
+import { relationsToNodes, relationsToChildMap } from './relations-to.ts';
 import { nodesToRelations } from '../nodes/nodes-to.ts';
+import { childMapToRelations } from '../maps/maps-to.ts';
+
 
 export class Relations {
 
@@ -32,6 +34,29 @@ export class Relations {
 		identify?: Identify<Item, Id>,
 	): Relation<Id>[] {
 		return nodesToRelations(roots, identify);
+	}
+
+
+	/**
+	 * Create a child map from relations.
+	 *
+	 * @template Id The type of IDs.
+	 * @param relations The relations describing the hierarchy structure.
+	 * @returns A `MultiMap<Id>` representing the child map.
+	 */
+	public static toChildMap<Id>(relations: Some<Relation<Id>>): MultiMap<Id> {
+		return relationsToChildMap(relations);
+	}
+
+	/**
+	 * Create a list of relations from a child map.
+	 *
+	 * @template Id The type of IDs.
+	 * @param childMap The map describing the relations.
+	 * @returns An array of `Relation<Id>`s.
+	 */
+	public static fromChildMap<Id>(childMap: MultiMap<Id>): Relation<Id>[] {
+		return childMapToRelations(childMap);
 	}
 
 }

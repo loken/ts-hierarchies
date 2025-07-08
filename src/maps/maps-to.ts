@@ -1,6 +1,34 @@
-import { MultiMap } from '@loken/utilities';
+import { mapGetLazy, MultiMap } from '@loken/utilities';
 import type { Relation } from '../relations/relation.types.ts';
+import { HCNode } from '../nodes/node.ts';
 
+
+/** @internalexport */
+export const childMapToNodes = <Id>(childMap: MultiMap<Id>): HCNode<Id>[] => {
+	const nodes = new Map<Id, HCNode<Id>>();
+	const roots: HCNode<Id>[] = [];
+
+	for (const parentId of childMap.keys()) {
+		const parentNode = new HCNode(parentId);
+		nodes.set(parentId, parentNode);
+	}
+
+	for (const [ parentId, childIds ] of childMap.entries()) {
+		const parentNode = nodes.get(parentId)!;
+
+		for (const childId of childIds) {
+			const childNode = mapGetLazy(nodes, childId, () => new HCNode(childId));
+			parentNode.attach(childNode);
+		}
+	}
+
+	for (const node of nodes.values()) {
+		if (node.isRoot)
+			roots.push(node);
+	}
+
+	return roots;
+};
 
 /** @internalexport */
 export const childMapToRelations = <Id>(childMap: MultiMap<Id>): Relation<Id>[] => {

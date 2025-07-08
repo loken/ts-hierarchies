@@ -28,7 +28,7 @@ export class Hierarchies {
 	 */
 	public static createWithIds<Id>(spec: IdSpec<Id>): Hierarchy<Id> {
 		const childMap = ChildMap.fromIds(spec);
-		const roots = Nodes.assembleIds(childMap);
+		const roots = Nodes.fromChildMap(childMap);
 
 		return Hierarchies.createForIds<Id>().attachRoot(roots);
 	}
@@ -40,7 +40,7 @@ export class Hierarchies {
 	 * @param include Optional predicate used for determining whether a property should be included as an ID.
 	 */
 	public static createWithPropertyIds(source: object, include?: (prop: string, val: any) => boolean): Hierarchy<string> {
-		const roots = Nodes.assemblePropertyIds(source, include);
+		const roots = Nodes.fromPropertyIds(source, include);
 
 		return Hierarchies.createForIds<string>().attachRoot(roots);
 	}
@@ -60,15 +60,15 @@ export class Hierarchies {
 		let roots: HCNode<Item>[];
 
 		if (options.children) {
-			roots = Nodes.assembleItemsWithChildren(options.items, options.children);
+			roots = Nodes.fromItemsWithChildren(options.items, options.children);
 		}
 		else if (options.parent) {
-			roots = Nodes.assembleItemsWithParents(options.items, options.parent);
+			roots = Nodes.fromItemsWithParents(options.items, options.parent);
 		}
 		else {
 			const childMap = ChildMap.fromItems(options);
 
-			roots = Nodes.assembleItems(options.items, options.identify, childMap);
+			roots = Nodes.fromItemsWithChildMap(options.items, options.identify, childMap);
 		}
 
 		return new Hierarchy<Item, Id>(options.identify).attachRoot(roots);

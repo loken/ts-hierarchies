@@ -12,7 +12,7 @@ B1:B12`;
 
 
 test('Nodes.findCommonAncestor() returns the closest common ancestor', () => {
-	const roots = Nodes.assembleIds(MultiMap.parse(input));
+	const roots = Nodes.fromChildMap(MultiMap.parse(input));
 	const nodes = Nodes.findDescendants(roots, n => n.item == 'A11' || n.item == 'A2');
 
 	const expected = Nodes.findDescendant(roots, n => n.item === 'A', true);
@@ -22,7 +22,7 @@ test('Nodes.findCommonAncestor() returns the closest common ancestor', () => {
 });
 
 test('Nodes.findCommonAncestor() returns undefined when there is no common ancestor', () => {
-	const roots = Nodes.assembleIds(MultiMap.parse(input));
+	const roots = Nodes.fromChildMap(MultiMap.parse(input));
 	const nodes = Nodes.findDescendants(roots, n => n.item == 'A1' || n.item == 'B1');
 
 	const actual = Nodes.findCommonAncestor(nodes, true);
@@ -31,7 +31,7 @@ test('Nodes.findCommonAncestor() returns undefined when there is no common ances
 });
 
 test('Nodes.getAncestors()', () => {
-	const roots = Nodes.assembleIds(MultiMap.parse(input));
+	const roots = Nodes.fromChildMap(MultiMap.parse(input));
 	const nodes = Nodes.findDescendants(roots, n => [ 'A11', 'A12', 'B1' ].includes(n.item));
 	const nodeItems = nodes.map(n => n.item);
 	// We find B1 first because we're doing a breadth-first search.
@@ -47,7 +47,7 @@ test('Nodes.getAncestors()', () => {
 });
 
 test('Nodes.findAncestors()', () => {
-	const roots = Nodes.assembleIds(MultiMap.parse(input));
+	const roots = Nodes.fromChildMap(MultiMap.parse(input));
 	const nodes = Nodes.findDescendants(roots, n => [ 'A11', 'A12', 'B1' ].includes(n.item));
 	const nodeItems = nodes.map(n => n.item);
 	// We find B1 first because we're doing a breadth-first search.

@@ -34,7 +34,7 @@ counts.forEach(count => {
 		},
 	});
 
-	infos.set(count, { roots: Nodes.assembleIds(childMap), searchId, searchDepth });
+	infos.set(count, { roots: Nodes.fromChildMap(childMap), searchId, searchDepth });
 });
 
 counts.forEach(count => {

@@ -1,4 +1,4 @@
-import { isSomeItem, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
+import { isSomeItem, mapArgs, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/graph-traverse.js';
 import type { TraversalType } from '../traversal/graph.types.js';
@@ -8,12 +8,14 @@ import type { GetChildren, GetParent } from '../utilities/related-items.js';
 import type { Relation } from '../relations/relation.types.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
-import { flattenGraphNext, flattenGraph } from '../traversal/graph-flatten.js';
+import { flattenGraph } from '../traversal/graph-flatten.js';
 import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
 import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
 import { nodesToAncestorMap, nodesToChildMap, nodesToDescendantMap, nodesToRelations } from './nodes-to.js';
 import { relationsToNodes } from '../relations/relations-to.js';
+import { childMapToNodes } from '../maps/maps-to.js';
+import { nodesFromItemsWithChildMap, nodesFromItemsWithChildren, nodesFromItemsWithParents } from './nodes-from-items.js';
 
 export class Nodes {
 
@@ -39,6 +41,7 @@ export class Nodes {
 		return someToArray(items).map(item => new HCNode(item));
 	}
 
+
 	/**
 	 * Build nodes of IDs linked as described by the provided `childMap`.
 	 *
@@ -46,30 +49,19 @@ export class Nodes {
 	 * @param childMap The map describing the relations.
 	 * @returns The root nodes.
 	 */
-	public static assembleIds<Id>(childMap: MultiMap<Id>): HCNode<Id>[] {
-		const nodes = new Map<Id, HCNode<Id>>();
-		const roots: HCNode<Id>[] = [];
+	public static fromChildMap<Id>(childMap: MultiMap<Id>): HCNode<Id>[] {
+		return childMapToNodes(childMap);
+	}
 
-		for (const parentId of childMap.keys()) {
-			const parentNode = new HCNode(parentId);
-			nodes.set(parentId, parentNode);
-		}
-
-		for (const [ parentId, childIds ] of childMap.entries()) {
-			const parentNode = nodes.get(parentId)!;
-
-			for (const childId of childIds) {
-				const childNode = mapGetLazy(nodes, childId, () => new HCNode(childId));
-				parentNode.attach(childNode);
-			}
-		}
-
-		for (const node of nodes.values()) {
-			if (node.isRoot)
-				roots.push(node);
-		}
-
-		return roots;
+	/**
+	 * Build nodes of IDs linked as described by the provided `relations`.
+	 *
+	 * @template Id The type of IDs.
+	 * @param relations The relations describing the hierarchy structure.
+	 * @returns The root nodes.
+	 */
+	public static fromRelations<Id>(relations: Some<Relation<Id>>): HCNode<Id>[] {
+		return relationsToNodes(relations);
 	}
 
 	/**
@@ -79,9 +71,10 @@ export class Nodes {
 	 * @param include Optional predicate used for determining whether a property should be included as an ID.
 	 * @returns The root nodes.
 	 */
-	public static assemblePropertyIds(source: object, include?: (prop: string, val: any) => boolean): HCNode<string>[] {
-		return Nodes.assembleIds(ChildMap.fromPropertyIds(source, include));
+	public static fromPropertyIds(source: object, include?: (prop: string, val: any) => boolean): HCNode<string>[] {
+		return childMapToNodes(ChildMap.fromPropertyIds(source, include));
 	}
+
 
 	/**
 	 * Build nodes of `items` linked as described by the provided `childMap`.
@@ -97,40 +90,12 @@ export class Nodes {
 	 * @throws {Error} When a parent or child ID referenced in the `childMap`
 	 * is not found in the provided `items`.
 	 */
-	public static assembleItems<Item, Id>(
+	public static fromItemsWithChildMap<Item, Id>(
 		items: Some<Item>,
 		identify: Identify<Item, Id>,
 		childMap: MultiMap<Id>,
 	): HCNode<Item>[] {
-		const nodes = new Map<Id, HCNode<Item>>();
-		const roots = new Map<Id, HCNode<Item>>();
-
-		for (const item of someToIterable(items)) {
-			const id = identify(item);
-			const node = new HCNode(item);
-
-			nodes.set(id, node);
-
-			if (childMap.has(id))
-				roots.set(id, node);
-		}
-
-		for (const [ parentId, childIds ] of childMap.entries()) {
-			const parentNode = nodes.get(parentId);
-			if (!parentNode)
-				throw new Error(`Parent item with ID '${ parentId }' not found in provided items.`);
-
-			for (const childId of childIds) {
-				const childNode = nodes.get(childId);
-				if (!childNode)
-					throw new Error(`Child item with ID '${ childId }' not found in provided items.`);
-
-				parentNode.attach(childNode);
-				roots.delete(childId);
-			}
-		}
-
-		return roots.values().toArray();
+		return nodesFromItemsWithChildMap(items, identify, childMap);
 	}
 
 	/**
@@ -142,26 +107,11 @@ export class Nodes {
 	 * @param children The delegate for getting the child items from a parent item.
 	 * @returns The root nodes.
 	 */
-	public static assembleItemsWithChildren<Item>(
+	public static fromItemsWithChildren<Item>(
 		roots: Some<Item>,
 		children: GetChildren<Item>,
 	) {
-		const rootNodes = Nodes.createSome(roots);
-
-		flattenGraphNext({
-			roots: rootNodes,
-			next:  node => {
-				const childItems = children(node.item);
-				if (childItems?.length) {
-					const childNodes = childItems.map(childItem => new HCNode(childItem));
-					node.attach(childNodes);
-
-					return childNodes;
-				}
-			},
-		});
-
-		return rootNodes;
+		return nodesFromItemsWithChildren(roots, children);
 	}
 
 	/**
@@ -173,49 +123,11 @@ export class Nodes {
 	 * @param parent The delegate for getting the parent of an item.
 	 * @returns The root nodes.
 	 */
-	public static assembleItemsWithParents<Item>(
+	public static fromItemsWithParents<Item>(
 		leaves: Some<Item>,
 		parent: GetParent<Item>,
 	) {
-		const nodes = new Map<Item, HCNode<Item>>();
-		const roots: HCNode<Item>[] = [];
-
-		for (const leaf of someToIterable(leaves)) {
-			let currentItem = leaf;
-			let currentNode = getNode(leaf);
-
-			while (true) {
-				const parentItem = parent(currentItem);
-				if (parentItem !== undefined) {
-					const parentSeen = nodes.has(parentItem);
-					const parentNode = getNode(parentItem);
-
-					parentNode.attach(currentNode);
-
-					if (parentSeen)
-						break;
-
-					currentItem = parentItem;
-					currentNode = parentNode;
-				}
-				else {
-					roots.push(currentNode);
-					break;
-				}
-			}
-		}
-
-		return roots;
-
-		function getNode(item: Item) {
-			let node = nodes.get(item);
-			if (!node) {
-				node = new HCNode(item);
-				nodes.set(item, node);
-			}
-
-			return node;
-		}
+		return nodesFromItemsWithParents(leaves, parent);
 	}
 
 	/**
@@ -286,17 +198,6 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 	): Relation<Id>[] {
 		return nodesToRelations(roots, identify);
-	}
-
-	/**
-	 * Build nodes linked as described by the provided `relations`.
-	 *
-	 * @template Id The type of IDs.
-	 * @param relations The relations describing the hierarchy structure.
-	 * @returns The root nodes.
-	 */
-	public static fromRelations<Id>(relations: Some<Relation<Id>>): HCNode<Id>[] {
-		return relationsToNodes(relations);
 	}
 
 
