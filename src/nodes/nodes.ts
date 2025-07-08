@@ -1,4 +1,4 @@
-import { isSomeItem, mapArgs, mapGetLazy, MultiMap, Queue, type Some, someToArray, someToIterable } from '@loken/utilities';
+import { isSomeItem, mapArgs, mapGetLazy, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/graph-traverse.js';
 import type { TraversalType } from '../traversal/graph.types.js';
@@ -8,11 +8,12 @@ import type { GetChildren, GetParent } from '../utilities/related-items.js';
 import type { Relation } from '../relations/relation.types.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
-import { nodesToIds, nodeToId } from './node-conversion.js';
 import { flattenGraphNext, flattenGraph } from '../traversal/graph-flatten.js';
 import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
 import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
+import { nodesToAncestorMap, nodesToChildMap, nodesToDescendantMap, nodesToRelations } from './nodes-to.js';
+import { relationsToNodes } from '../relations/relations-to.js';
 
 export class Nodes {
 
@@ -232,30 +233,7 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 		childMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		for (const root of someToIterable(roots)) {
-			const nodeId = nodeToId(root, identify);
-			if (root.isInternal) {
-				const childIds = nodesToIds(root.getChildren(), identify);
-				childMap.add(nodeId, childIds);
-			}
-			else {
-				childMap.addEmpty(nodeToId(root, identify));
-			}
-		}
-
-		const nodes = flattenGraphNext({
-			roots,
-			next: node => node.getChildren().filter(n => n.isInternal),
-		});
-
-		for (const node of nodes) {
-			const childNodes = node.getChildren();
-			const nodeId = nodeToId(node, identify);
-			const childIds = nodesToIds(childNodes, identify);
-			childMap.add(nodeId, childIds);
-		}
-
-		return childMap;
+		return nodesToChildMap(roots, identify, childMap);
 	}
 
 	/**
@@ -273,31 +251,7 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 		descendantMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		roots = someToArray(roots);
-
-		type Stored = [ node: HCNode<Item>, ancestors: Set<Id>[] ];
-		const store = new Queue<Stored>();
-		store.enqueue(roots.map(node => [ node, [] ] as Stored));
-
-		for (const root of roots)
-			descendantMap.addEmpty(nodeToId(root, identify));
-
-		while (store.count > 0) {
-			const [ node, ancestors ] = store.dequeue()!;
-			const nodeId = nodeToId(node, identify);
-
-			for (const ancestor of ancestors)
-				ancestor.add(nodeId);
-
-			const children = node.getChildren();
-			if (children?.length) {
-				const nodeDescendants = descendantMap.addEmpty(nodeId);
-				const childAncestors = [ ...ancestors, nodeDescendants ];
-				store.enqueue(children.map(node => [ node, childAncestors ] as Stored));
-			}
-		}
-
-		return descendantMap;
+		return nodesToDescendantMap(roots, identify, descendantMap);
 	}
 
 	/**
@@ -315,32 +269,7 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 		ancestorMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		roots = someToArray(roots);
-
-		type Stored = [ node: HCNode<Item>, ancestors?: Id[] ];
-		const store = new Queue<Stored>();
-		store.enqueue(roots.map(node => [ node ] as Stored));
-
-		for (const root of roots) {
-			if (root.isLeaf)
-				ancestorMap.addEmpty(nodeToId(root, identify));
-		}
-
-		while (store.count > 0) {
-			const [ node, ancestors ] = store.dequeue()!;
-			const nodeId = nodeToId(node, identify);
-
-			if (ancestors)
-				ancestorMap.add(nodeId, ancestors);
-
-			const children = node.getChildren();
-			if (children?.length) {
-				const childAncestors = ancestors ? [ nodeId, ...ancestors ] : [ nodeId ];
-				store.enqueue(children.map(node => [ node, childAncestors ] as Stored));
-			}
-		}
-
-		return ancestorMap;
+		return nodesToAncestorMap(roots, identify, ancestorMap);
 	}
 
 	/**
@@ -356,34 +285,7 @@ export class Nodes {
 		roots: Some<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
 	): Relation<Id>[] {
-		const relations: Relation<Id>[] = [];
-
-		flattenGraphNext({
-			roots,
-			next: node => {
-				const { isLeaf, isRoot } = node;
-
-				if (isLeaf && isRoot) {
-					const nodeId = nodeToId(node, identify);
-					relations.push([ nodeId ]);
-
-					return;
-				}
-
-				if (isLeaf)
-					return;
-
-				const nodeId = nodeToId(node, identify);
-				const children = node.getChildren();
-				const childIds = nodesToIds(children, identify);
-				for (const childId of childIds)
-					relations.push([ nodeId, childId ]);
-
-				return children.filter(child => child.isInternal);
-			},
-		});
-
-		return relations;
+		return nodesToRelations(roots, identify);
 	}
 
 	/**
@@ -394,47 +296,7 @@ export class Nodes {
 	 * @returns The root nodes.
 	 */
 	public static fromRelations<Id>(relations: Some<Relation<Id>>): HCNode<Id>[] {
-		const nodes = new Map<Id, HCNode<Id>>();
-		const children = new Set<Id>();
-
-		// Process all relations
-		for (const relation of someToIterable(relations)) {
-			if (relation.length === 1) {
-				// One-sided relation: [node] - isolated node
-				const [ nodeId ] = relation;
-				if (!nodes.has(nodeId))
-					nodes.set(nodeId, new HCNode(nodeId));
-			}
-			else {
-				// Two-sided relation: [parent, child]
-				const [ parentId, childId ] = relation;
-
-				// Ensure parent node exists
-				if (!nodes.has(parentId))
-					nodes.set(parentId, new HCNode(parentId));
-
-				// Ensure child node exists
-				if (!nodes.has(childId))
-					nodes.set(childId, new HCNode(childId));
-
-				// Create the parent-child relationship
-				const parentNode = nodes.get(parentId)!;
-				const childNode = nodes.get(childId)!;
-				parentNode.attach(childNode);
-
-				// Track child nodes (they cannot be roots)
-				children.add(childId);
-			}
-		}
-
-		// Find roots: nodes that exist but are not children of any other node
-		const roots: HCNode<Id>[] = [];
-		for (const [ nodeId, node ] of nodes) {
-			if (!children.has(nodeId))
-				roots.push(node);
-		}
-
-		return roots;
+		return relationsToNodes(relations);
 	}
 
 
@@ -552,7 +414,11 @@ export class Nodes {
 
 
 	/** Find the first ancestor node matching the `search`. */
-	public static findAncestor<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
+	public static findAncestor<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		includeSelf = false,
+	): HCNode<Item> | undefined {
 		if (isSomeItem(roots))
 			return roots.findAncestor(search, includeSelf);
 
@@ -585,7 +451,11 @@ export class Nodes {
 	}
 
 	/** Find the first ancestor node matching the `search`. */
-	public static findAncestors<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
+	public static findAncestors<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		includeSelf = false,
+	): HCNode<Item>[] {
 		if (isSomeItem(roots))
 			return roots.findAncestors(search, includeSelf);
 
@@ -618,7 +488,12 @@ export class Nodes {
 	}
 
 	/** Find the first descendant node matching the `search`. */
-	public static findDescendant<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+	public static findDescendant<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		includeSelf = false,
+		type: TraversalType = 'breadth-first',
+	): HCNode<Item> | undefined {
 		return searchGraph({
 			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.getChildren(),
@@ -628,7 +503,12 @@ export class Nodes {
 	}
 
 	/** Find the descendant nodes matching the `search`. */
-	public static findDescendants<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+	public static findDescendants<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		includeSelf = false,
+		type: TraversalType = 'breadth-first',
+	): HCNode<Item>[] {
 		return searchGraphMany({
 			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.getChildren(),
@@ -639,12 +519,20 @@ export class Nodes {
 
 
 	/** Does an ancestor node matching the `search` exist? */
-	public static hasAncestor<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
+	public static hasAncestor<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		includeSelf = false,
+	): boolean {
 		return this.findAncestor(roots, search, includeSelf) !== undefined;
 	}
 
 	/** Does a descendant node matching the `search` exist? */
-	public static hasDescendant<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+	public static hasDescendant<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		includeSelf = false, type: TraversalType = 'breadth-first',
+	): boolean {
 		return this.findDescendant(roots, search, includeSelf, type) !== undefined;
 	}
 

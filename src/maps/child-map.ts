@@ -5,6 +5,8 @@ import type { Identify } from '../utilities/identify.js';
 import type { IdSpec, ItemIdOptions } from '../utilities/identity-options.js';
 import type { GetChildren, GetParent, IdentifyChildren, IdentifyParent } from '../utilities/related-items.js';
 import type { Relation } from '../relations/relation.types.js';
+import { relationsToChildMap } from '../relations/relations-to.js';
+import { childMapToAncestorMap, childMapToDescendantMap, childMapToParentMap, childMapToRelations, childMapToRootIds } from './maps-to.js';
 
 
 /**
@@ -35,7 +37,10 @@ export class ChildMap {
 	 * @param source The object describing the relations.
 	 * @param include Optional predicate used for determining whether a property should be included as an ID.
 	 */
-	public static fromPropertyIds(source: object, include?: (prop: string, val: any) => boolean): MultiMap<string> {
+	public static fromPropertyIds(
+		source: object,
+		include?: (prop: string, val: any) => boolean,
+	): MultiMap<string> {
 		type Entry = readonly [ id: string, value: any ];
 		const childMap = new MultiMap<string>();
 		let roots: Entry[] = Object.entries(source).map(([ id, value ]) => [ id, value ]);
@@ -88,7 +93,11 @@ export class ChildMap {
 
 
 	/** Create a child-map from `items` using `identify` and `getChildren` delegates. */
-	public static fromChildren<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, getChildren: GetChildren<Item>): MultiMap<Id> {
+	public static fromChildren<Item, Id>(
+		items: Some<Item>,
+		identify: Identify<Item, Id>,
+		getChildren: GetChildren<Item>,
+	): MultiMap<Id> {
 		const childMap = new MultiMap<Id>();
 
 		for (const item of someToIterable(items)) {
@@ -101,7 +110,11 @@ export class ChildMap {
 	}
 
 	/** Create a child-map from `items` using `identify` and `identifyChildren` delegates. */
-	public static fromChildIds<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, identifyChildren: IdentifyChildren<Item, Id>): MultiMap<Id> {
+	public static fromChildIds<Item, Id>(
+		items: Some<Item>,
+		identify: Identify<Item, Id>,
+		identifyChildren: IdentifyChildren<Item, Id>,
+	): MultiMap<Id> {
 		const childMap = new MultiMap<Id>();
 		for (const item of someToIterable(items)) {
 			const childIds = identifyChildren(item);
@@ -113,7 +126,11 @@ export class ChildMap {
 	}
 
 	/** Create a child-map from `items` using `identify` and `getParent` delegates. */
-	public static fromParents<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, getParent: GetParent<Item>): MultiMap<Id> {
+	public static fromParents<Item, Id>(
+		items: Some<Item>,
+		identify: Identify<Item, Id>,
+		getParent: GetParent<Item>,
+	): MultiMap<Id> {
 		const childMap = new MultiMap<Id>();
 		for (const item of someToIterable(items)) {
 			const parent = getParent(item);
@@ -127,7 +144,11 @@ export class ChildMap {
 	}
 
 	/** Create a child-map from `items` using `identify` and `identifyParent` delegates. */
-	public static fromParentIds<Item, Id>(items: Some<Item>, identify: Identify<Item, Id>, identifyParent: IdentifyParent<Item, Id>): MultiMap<Id> {
+	public static fromParentIds<Item, Id>(
+		items: Some<Item>,
+		identify: Identify<Item, Id>,
+		identifyParent: IdentifyParent<Item, Id>,
+	): MultiMap<Id> {
 		const childMap = new MultiMap<Id>();
 		for (const item of someToIterable(items)) {
 			const parentId = identifyParent(item);
@@ -149,115 +170,32 @@ export class ChildMap {
 
 	/** Create a child map from the `relations`. */
 	public static fromRelations<Id>(relations: Some<Relation<Id>>): MultiMap<Id> {
-		const map = new MultiMap<Id>();
-
-		for (const relation of someToIterable(relations)) {
-			if (relation.length === 1) {
-				const [ parent ] = relation;
-				map.addEmpty(parent);
-			}
-			else {
-				const [ parent, child ] = relation;
-				map.add(parent, child);
-			}
-		}
-
-		return map;
+		return relationsToChildMap(relations);
 	}
 
 	/** Create relations from the `childMap`. */
 	public static toRelations<Id>(childMap: MultiMap<Id>): Relation<Id>[] {
-		const relations: Relation<Id>[] = [];
-
-		for (const [ parent, children ] of childMap) {
-			if (children.size === 0) {
-				relations.push([ parent ]);
-			}
-			else {
-				for (const child of children)
-					relations.push([ parent, child ]);
-			}
-		}
-
-		return relations;
+		return childMapToRelations(childMap);
 	}
 
 	/** Create a parent map from the `childMap`. */
 	public static toParentMap<Id>(childMap: MultiMap<Id>, roots?: Set<Id>): Map<Id, Id | undefined> {
-		const parentMap =  new Map<Id, Id | undefined>();
-		roots ??= this.getRoots(childMap);
-
-		// Add roots that are also leaves, as otherwise we lose them.
-		for (const root of roots) {
-			if (childMap.get(root)!.size === 0)
-				parentMap.set(root, undefined);
-		}
-
-		for (const [ parent, children ] of childMap) {
-			for (const child of children)
-				parentMap.set(child, parent);
-		}
-
-		return parentMap;
+		return childMapToParentMap(childMap, roots);
 	}
 
 	/** Create a descendants map from the `childMap`. */
 	public static toDescendantMap<Id>(childMap: MultiMap<Id>, parentMap?: Map<Id, Id | undefined>): MultiMap<Id> {
-		parentMap ??= this.toParentMap(childMap);
-		const descendantMap = new MultiMap<Id>();
-
-		for (const [ child, parent ] of parentMap) {
-			if (parent === undefined) {
-				descendantMap.addEmpty(child);
-				continue;
-			}
-
-			let ancestor: Id | undefined = parent;
-			while (ancestor !== undefined) {
-				descendantMap.addEmpty(ancestor).add(child);
-				ancestor = parentMap.get(ancestor);
-			}
-		}
-
-		return descendantMap;
+		return childMapToDescendantMap(childMap, parentMap);
 	}
-
 
 	/** Create an ancestor map from the `childMap`. */
 	public static toAncestorMap<Id>(childMap: MultiMap<Id>, parentMap?: Map<Id, Id | undefined>): MultiMap<Id> {
-		parentMap ??= this.toParentMap(childMap);
-		const ancestorMap =  new MultiMap<Id>();
-
-		for (const [ child, parent ] of parentMap) {
-			const ancestors = ancestorMap.addEmpty(child);
-
-			let ancestor = parent;
-			while (ancestor !== undefined) {
-				ancestors.add(ancestor);
-				ancestor = parentMap.get(ancestor);
-			}
-		}
-
-		return ancestorMap;
+		return childMapToAncestorMap(childMap, parentMap);
 	}
 
-
 	/** Get the set of IDs representing the roots of the `childMap`. */
-	public static getRoots<Id>(childMap: MultiMap<Id>) {
-		const seenChildren = new Set<Id>();
-		const roots = new Set<Id>();
-
-		for (const [ parent, children ] of childMap) {
-			if (!seenChildren.has(parent))
-				roots.add(parent);
-
-			for (const child of children) {
-				seenChildren.add(child);
-				roots.delete(child);
-			}
-		}
-
-		return roots;
+	public static getRootsIds<Id>(childMap: MultiMap<Id>) {
+		return childMapToRootIds(childMap);
 	}
 
 
@@ -267,9 +205,9 @@ export class ChildMap {
 	 * @param childMap A child-map. Default: Empty `MultiMap`.
 	 * @returns The `childMap`.
 	 */
-	public static addAncestors<Id>(ancestors: Id[], childMap = new MultiMap<Id>()) {
+	public static addAncestors<Id>(ancestors: Id[], childMap = new MultiMap<Id>()): MultiMap<Id> {
 		if (ancestors.length === 0)
-			return;
+			return childMap;
 
 		if (ancestors.length === 1) {
 			childMap.addEmpty(ancestors[0]!);

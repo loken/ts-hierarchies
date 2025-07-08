@@ -8,6 +8,7 @@ import { ChildMap } from '../maps/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../relations/relation.types.js';
 import { Hierarchies } from './hierarchies.js';
+import { nodesToChildMap, nodesToDescendantMap, nodesToAncestorMap, nodesToRelations } from '../nodes/nodes-to.js';
 
 
 /** Contains the `id`, `item` and `node` for a `HCNode` in a `Hierarchy`. */
@@ -574,22 +575,22 @@ export class Hierarchy<Item, Id = Item> {
 	//#region MultiMaps
 	/** Create a map of ids to child-ids by traversing the `hierarchy`. */
 	public toChildMap(): MultiMap<Id> {
-		return Nodes.toChildMap(this.roots, this.#identify);
+		return nodesToChildMap(this.roots, this.#identify);
 	}
 
 	/** Create a map of ids to descendant-ids by traversing the `hierarchy`. */
 	public toDescendantMap(): MultiMap<Id> {
-		return Nodes.toDescendantMap(this.roots, this.#identify);
+		return nodesToDescendantMap(this.roots, this.#identify);
 	}
 
 	/** Create a map of ids to ancestor-ids by traversing the `hierarchy`. */
 	public toAncestorMap(): MultiMap<Id> {
-		return Nodes.toAncestorMap(this.roots, this.#identify);
+		return nodesToAncestorMap(this.roots, this.#identify);
 	}
 
 	/** Create a list of relations by traversing the graph of the `hierarchy`. */
 	public toRelations(): Relation<Id>[] {
-		return Nodes.toRelations(this.roots, this.#identify);
+		return nodesToRelations(this.roots, this.#identify);
 	}
 	//#endregion
 
