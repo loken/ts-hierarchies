@@ -100,7 +100,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * Get node or nodes by their `Id`.
 	 * @param ids The IDs of nodes to retrieve.
 	 * @returns A single node when you pass a single ID and a fixed length tuple of nodes when you pass multiple IDs.
-	 * @throws The 'id' must be a hierarchy member.
+	 * @throws Node with ID not found in hierarchy.
 	 * @throws Must provide at least one argument.
 	 */
 	public get<Ids extends Id[]>(...ids: Ids): MapArgs<Ids, HCNode<Item>, true, false> {
@@ -127,7 +127,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Get item or items by `Id`.
 	 * @param ids The IDs of items to retrieve.
-	 * @throws The 'id' must be a hierarchy member.
+	 * @throws Node with ID not found in hierarchy.
 	 * @throws Must provide at least one argument.
 	 * @returns A single item when you pass a single ID and a fixed length tuple of items when you pass multiple IDs.
 	 */
@@ -147,7 +147,7 @@ export class Hierarchy<Item, Id = Item> {
 	#get(id: Id) {
 		const node = this.#nodes.get(id);
 		if (node === undefined)
-			throw new Error("The 'id' must be a hierarchy member.");
+			throw new Error(`Node with ID '${ id }' not found in hierarchy. Use 'has()' to check existence before calling 'get()'.`);
 
 		return node;
 	}
@@ -162,7 +162,7 @@ export class Hierarchy<Item, Id = Item> {
 		const nodes = someToArray(roots);
 
 		if (!nodes.every(n => n.isRoot))
-			throw new Error("The 'roots' all be roots!");
+			throw new Error('Cannot attach non-root nodes as roots. All nodes must be roots (have no parent).');
 
 		this.#addNodes(nodes, true);
 
@@ -176,7 +176,7 @@ export class Hierarchy<Item, Id = Item> {
 	 */
 	public attach(parentId: Id, children: Some<HCNode<Item>>): this {
 		if (!this.#nodes.has(parentId))
-			throw new Error("The 'parentId' must be a hierarchy member.");
+			throw new Error(`Parent node with ID '${ parentId }' not found in hierarchy. Use 'has()' to check existence before calling 'attach()'.`);
 
 		this.#addNodes(children);
 
@@ -224,7 +224,10 @@ export class Hierarchy<Item, Id = Item> {
 
 	//#region traversal
 	/**
-	 * Get the chain of ancestor nodes starting with the node for the item matching the `id`.
+	 * Get the chain of ancestor nodes starting with the nodes for the items matching the `ids`.
+	 * @param ids The IDs of nodes to start traversal from.
+	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @returns An array of ancestor nodes in order from immediate parent to root.
 	 */
 	public getAncestors(ids: Some<Id>, includeSelf = false): HCNode<Item>[] {
 		const nodes = this.getSome(ids);
@@ -233,14 +236,20 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Get the items from the chain of ancestor nodes starting with the node for the item matching the `id`.
+	 * Get the items from the chain of ancestor nodes starting with the nodes for the items matching the `ids`.
+	 * @param ids The IDs of nodes to start traversal from.
+	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @returns An array of ancestor items in order from immediate parent to root.
 	 */
 	public getAncestorItems(ids: Some<Id>, includeSelf = false): Item[] {
 		return nodesToItems(this.getAncestors(ids, includeSelf));
 	}
 
 	/**
-	 * Get the IDs from the chain of ancestor nodes starting with the node for the item matching the `id`.
+	 * Get the IDs from the chain of ancestor nodes starting with the nodes for the items matching the `ids`.
+	 * @param ids The IDs of nodes to start traversal from.
+	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @returns An array of ancestor IDs in order from immediate parent to root.
 	 */
 	public getAncestorIds(ids: Some<Id>, includeSelf = false): Id[] {
 		return nodesToIds(this.getAncestors(ids, includeSelf), this.#identify);
@@ -248,6 +257,9 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the entries from the chain of ancestor nodes starting with the node for the item matching the `id`.
+	 * @param id The ID of the node to start traversal from.
+	 * @param includeSelf Whether to include the starting node in the result.
+	 * @returns An array of ancestor entries in order from immediate parent to root.
 	 */
 	public getAncestorEntries(id: Id, includeSelf = false): HierarchyEntry<Item, Id>[] {
 		return this.getAncestors(id, includeSelf).map(node => {
@@ -258,6 +270,9 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the chain of descendant nodes starting with the nodes for the items matching the `ids`.
+	 * @param ids The IDs of nodes to start traversal from.
+	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @returns An array of descendant nodes in breadth-first order.
 	 */
 	public getDescendants(ids: Some<Id>, includeSelf = false): HCNode<Item>[] {
 		const roots = this.getSome(ids);
@@ -269,6 +284,9 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the items from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
+	 * @param ids The IDs of nodes to start traversal from.
+	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @returns An array of descendant items in breadth-first order.
 	 */
 	public getDescendantItems(ids: Some<Id>, includeSelf = false): Item[] {
 		return nodesToItems(this.getDescendants(ids, includeSelf));
@@ -276,6 +294,9 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the IDs from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
+	 * @param ids The IDs of nodes to start traversal from.
+	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @returns An array of descendant IDs in breadth-first order.
 	 */
 	public getDescendantIds(ids: Some<Id>, includeSelf = false): Id[] {
 		return nodesToIds(this.getDescendants(ids, includeSelf), this.#identify);
@@ -283,6 +304,9 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the entries from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
+	 * @param ids The IDs of nodes to start traversal from.
+	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @returns An array of descendant entries in breadth-first order.
 	 */
 	public getDescendantEntries(ids: Some<Id>, includeSelf = false): HierarchyEntry<Item, Id>[] {
 		return this.getDescendants(ids, includeSelf).map(node => {
@@ -292,6 +316,8 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the chain of descendant nodes starting with the hierarchy `roots`.
+	 * @param includeSelf Whether to include the root nodes in the result.
+	 * @returns An array of descendant nodes in breadth-first order.
 	 */
 	public getAllDescendants(includeSelf = false): HCNode<Item>[] {
 		return Nodes.getDescendants(this.roots, includeSelf);
@@ -299,6 +325,8 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the items from the chain of descendant nodes starting with the hierarchy `roots`.
+	 * @param includeSelf Whether to include the root nodes in the result.
+	 * @returns An array of descendant items in breadth-first order.
 	 */
 	public getAllDescendantItems(includeSelf = false): Item[] {
 		return nodesToItems(Nodes.getDescendants(this.roots, includeSelf));
@@ -306,6 +334,8 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the IDs from the chain of descendant nodes starting with the hierarchy `roots`.
+	 * @param includeSelf Whether to include the root nodes in the result.
+	 * @returns An array of descendant IDs in breadth-first order.
 	 */
 	public getAllDescendantIds(includeSelf = false): Id[] {
 		return nodesToIds(Nodes.getDescendants(this.roots, includeSelf), this.#identify);
@@ -313,6 +343,8 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Get the entries from the chain of descendant nodes starting with the hierarchy `roots`.
+	 * @param includeSelf Whether to include the root nodes in the result.
+	 * @returns An array of descendant entries in breadth-first order.
 	 */
 	public getAllDescendantEntries(includeSelf = false): HierarchyEntry<Item, Id>[] {
 		return Nodes.getDescendants(this.roots, includeSelf).map(node => {
@@ -324,6 +356,10 @@ export class Hierarchy<Item, Id = Item> {
 	//#region search
 	/**
 	 * Does a node with one of the `ids` have an ancestor node matching the `search`?
+	 * @param ids The IDs of nodes to search from.
+	 * @param search The search criteria - either IDs or a predicate function.
+	 * @param includeSelf Whether to include the starting nodes in the search.
+	 * @returns True if any ancestor matches the search criteria.
 	 */
 	public hasAncestor(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): boolean {
 		const roots = this.getSome(ids);
@@ -333,6 +369,10 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Does a node with one of the `ids` have a descendant node matching the `search`?
+	 * @param ids The IDs of nodes to search from.
+	 * @param search The search criteria - either IDs or a predicate function.
+	 * @param includeSelf Whether to include the starting nodes in the search.
+	 * @returns True if any descendant matches the search criteria.
 	 */
 	public hasDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): boolean {
 		const roots = this.getSome(ids);
@@ -342,6 +382,8 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 * @param search The search criteria - either IDs or a predicate function.
+	 * @returns An array of matching nodes.
 	 */
 	public find(search: Some<Id> | NodePredicate<Item>): HCNode<Item>[] {
 		if (typeof search === 'function') {
@@ -358,14 +400,18 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 * Find items matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 * @param search The search criteria - either IDs or a predicate function.
+	 * @returns An array of matching items.
 	 */
 	public findItems(search: Some<Id> | NodePredicate<Item>): Item[] {
 		return this.find(search).map(node => node.item);
 	}
 
 	/**
-	 * Find `Id`s matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 * Find IDs matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 * @param search The search criteria - either IDs or a predicate function.
+	 * @returns An array of matching IDs.
 	 */
 	public findIds(search: Some<Id> | NodePredicate<Item>): Id[] {
 		const result: Id[] = [];
@@ -388,6 +434,8 @@ export class Hierarchy<Item, Id = Item> {
 
 	/**
 	 * Find entries matching a list of `Id`s or a `HCNode<Item>` predicate.
+	 * @param search The search criteria - either IDs or a predicate function.
+	 * @returns An array of matching entries (tuples of [id, item, node]).
 	 */
 	public findEntries(search: Some<Id> | NodePredicate<Item>): HierarchyEntry<Item, Id>[] {
 		const result: HierarchyEntry<Item, Id>[] = [];
@@ -627,7 +675,7 @@ export class Hierarchy<Item, Id = Item> {
 		};
 
 		if (!(include.matches || include.ancestors || include.descendants))
-			throw new Error("Must enable at least one facet to 'include'.");
+			throw new Error('At least one facet must be enabled in the include options: matches, ancestors, or descendants.');
 
 		const childMap = new MultiMap<Id>();
 		const items = new Map<Id, Item>();
