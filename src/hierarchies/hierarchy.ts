@@ -323,6 +323,24 @@ export class Hierarchy<Item, Id = Item> {
 
 	//#region search
 	/**
+	 * Does a node with one of the `ids` have an ancestor node matching the `search`?
+	 */
+	public hasAncestor(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): boolean {
+		const roots = this.getSome(ids);
+
+		return Nodes.hasAncestor(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+	/**
+	 * Does a node with one of the `ids` have a descendant node matching the `search`?
+	 */
+	public hasDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): boolean {
+		const roots = this.getSome(ids);
+
+		return Nodes.hasDescendant(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+	/**
 	 * Find nodes matching a list of `Id`s or a `HCNode<Item>` predicate.
 	 */
 	public find(search: Some<Id> | NodePredicate<Item>): HCNode<Item>[] {
@@ -392,20 +410,6 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 
-	/** Find the common ancestor node which is the closest to the `ids`. */
-	public findCommonAncestor(ids: Some<Id>, includeSelf = false): HCNode<Item> | undefined {
-		const nodes = this.getSome(ids);
-
-		return Nodes.findCommonAncestor(nodes, includeSelf);
-	}
-
-	/** Find the ancestor nodes common to the `ids`. */
-	public findCommonAncestors(ids: Some<Id>, includeSelf = false): HCNode<Item>[] | undefined {
-		const nodes = this.getSome(ids);
-
-		return Nodes.findCommonAncestors(nodes, includeSelf);
-	}
-
 	/**
 	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
 	 */
@@ -416,7 +420,34 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
+	 * Find an item matching the `search` which is an ancestor of a node with one of the `ids`.
+	 */
+	public findAncestorItem(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Item | undefined {
+		const ancestor = this.findAncestor(ids, search, includeSelf);
+
+		return ancestor?.item;
+	}
+
+	/**
+	 * Find an ID matching the `search` which is an ancestor of a node with one of the `ids`.
+	 */
+	public findAncestorId(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Id | undefined {
+		const ancestor = this.findAncestor(ids, search, includeSelf);
+
+		return ancestor ? this.#identify(ancestor.item) : undefined;
+	}
+
+	/**
+	 * Find an entry matching the `search` which is an ancestor of a node with one of the `ids`.
+	 */
+	public findAncestorEntry(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HierarchyEntry<Item, Id> | undefined {
+		const ancestor = this.findAncestor(ids, search, includeSelf);
+
+		return ancestor ? [ this.#identify(ancestor.item), ancestor.item, ancestor ] : undefined;
+	}
+
+	/**
+	 * Find nodes matching the `search` which are ancestors of a node with one of the `ids`.
 	 */
 	public findAncestors(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HCNode<Item>[] {
 		const roots = this.getSome(ids);
@@ -425,12 +456,62 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	/**
-	 * Find a node matching the `search` which is an descendant of a node with one of the `ids`.
+	 * Find items matching the `search` which are ancestors of a node with one of the `ids`.
+	 */
+	public findAncestorItems(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Item[] {
+		return nodesToItems(this.findAncestors(ids, search, includeSelf));
+	}
+
+	/**
+	 * Find IDs matching the `search` which are ancestors of a node with one of the `ids`.
+	 */
+	public findAncestorIds(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Id[] {
+		return nodesToIds(this.findAncestors(ids, search, includeSelf), this.#identify);
+	}
+
+	/**
+	 * Find entries matching the `search` which are ancestors of a node with one of the `ids`.
+	 */
+	public findAncestorEntries(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HierarchyEntry<Item, Id>[] {
+		return this.findAncestors(ids, search, includeSelf).map(node => {
+			return [ this.#identify(node.item), node.item, node ];
+		});
+	}
+
+	/**
+	 * Find a node matching the `search` which is a descendant of a node with one of the `ids`.
 	 */
 	public findDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HCNode<Item> | undefined {
 		const roots = this.getSome(ids);
 
 		return Nodes.findDescendant(roots, this.normalizeSearch(search), includeSelf);
+	}
+
+	/**
+	 * Find an item matching the `search` which is a descendant of a node with one of the `ids`.
+	 */
+	public findDescendantItem(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Item | undefined {
+		const descendant = this.findDescendant(ids, search, includeSelf);
+
+		return descendant?.item;
+	}
+
+	/**
+	 * Find an ID matching the `search` which is a descendant of a node with one of the `ids`.
+	 */
+	public findDescendantId(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Id | undefined {
+		const descendant = this.findDescendant(ids, search, includeSelf);
+
+		return descendant ? this.#identify(descendant.item) : undefined;
+	}
+
+	/**
+	 * Find an entry matching the `search` which is a descendant of a node with one of the `ids`.
+	 */
+	public findDescendantEntry(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HierarchyEntry<Item, Id> | undefined {
+		const descendant = this.findDescendant(ids, search, includeSelf);
+
+		return descendant ? [ this.#identify(descendant.item), descendant.item, descendant ] : undefined;
 	}
 
 	/**
@@ -442,23 +523,86 @@ export class Hierarchy<Item, Id = Item> {
 		return Nodes.findDescendants(roots, this.normalizeSearch(search), includeSelf);
 	}
 
-
 	/**
-	 * Does a node with one of the `ids` have an ancestor node matching the `search`?
+	 * Find items matching the `search` which are descendants of a node with one of the `ids`.
 	 */
-	public hasAncestor(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): boolean {
-		const roots = this.getSome(ids);
-
-		return Nodes.hasAncestor(roots, this.normalizeSearch(search), includeSelf);
+	public findDescendantItems(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Item[] {
+		return nodesToItems(this.findDescendants(ids, search, includeSelf));
 	}
 
 	/**
-	 * Does a node with one of the `ids` have a descendant node matching the `search`?
+	 * Find IDs matching the `search` which are descendants of a node with one of the `ids`.
 	 */
-	public hasDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): boolean {
-		const roots = this.getSome(ids);
+	public findDescendantIds(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Id[] {
+		return nodesToIds(this.findDescendants(ids, search, includeSelf), this.#identify);
+	}
 
-		return Nodes.hasDescendant(roots, this.normalizeSearch(search), includeSelf);
+	/**
+	 * Find entries matching the `search` which are descendants of a node with one of the `ids`.
+	 */
+	public findDescendantEntries(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HierarchyEntry<Item, Id>[] {
+		return this.findDescendants(ids, search, includeSelf).map(node => {
+			return [ this.#identify(node.item), node.item, node ];
+		});
+	}
+
+
+	/** Find the common ancestor node which is the closest to the `ids`. */
+	public findCommonAncestor(ids: Some<Id>, includeSelf = false): HCNode<Item> | undefined {
+		const nodes = this.getSome(ids);
+
+		return Nodes.findCommonAncestor(nodes, includeSelf);
+	}
+
+	/** Find the item of the common ancestor node which is the closest to the `ids`. */
+	public findCommonAncestorItem(ids: Some<Id>, includeSelf = false): Item | undefined {
+		const commonAncestor = this.findCommonAncestor(ids, includeSelf);
+
+		return commonAncestor?.item;
+	}
+
+	/** Find the ID of the common ancestor node which is the closest to the `ids`. */
+	public findCommonAncestorId(ids: Some<Id>, includeSelf = false): Id | undefined {
+		const commonAncestor = this.findCommonAncestor(ids, includeSelf);
+
+		return commonAncestor ? this.#identify(commonAncestor.item) : undefined;
+	}
+
+	/** Find the ancestor nodes common to the `ids`. */
+	public findCommonAncestors(ids: Some<Id>, includeSelf = false): HCNode<Item>[] | undefined {
+		const nodes = this.getSome(ids);
+
+		return Nodes.findCommonAncestors(nodes, includeSelf);
+	}
+
+	/** Find the items of ancestor nodes common to the `ids`. */
+	public findCommonAncestorItems(ids: Some<Id>, includeSelf = false): Item[] | undefined {
+		const nodes = this.getSome(ids);
+
+		return Nodes.findCommonAncestorItems(nodes, includeSelf);
+	}
+
+	/** Find the IDs of ancestor nodes common to the `ids`. */
+	public findCommonAncestorIds(ids: Some<Id>, includeSelf = false): Id[] | undefined {
+		const commonAncestors = this.findCommonAncestors(ids, includeSelf);
+
+		return commonAncestors ? nodesToIds(commonAncestors, this.#identify) : undefined;
+	}
+
+	/** Find the entries of ancestor nodes common to the `ids`. */
+	public findCommonAncestorEntries(ids: Some<Id>, includeSelf = false): HierarchyEntry<Item, Id>[] | undefined {
+		const commonAncestors = this.findCommonAncestors(ids, includeSelf);
+
+		return commonAncestors ? commonAncestors.map(node => {
+			return [ this.#identify(node.item), node.item, node ];
+		}) : undefined;
+	}
+
+	/** Find the set of ancestor nodes common to the `ids`. */
+	public findCommonAncestorSet(ids: Some<Id>, includeSelf = false): Set<HCNode<Item>> | undefined {
+		const nodes = this.getSome(ids);
+
+		return Nodes.findCommonAncestorSet(nodes, includeSelf);
 	}
 
 

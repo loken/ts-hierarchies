@@ -308,7 +308,7 @@ export class Nodes {
 			const ancestors = new Set(curr.getAncestors(includeSelf));
 
 			return !acc ? ancestors : acc.intersection(ancestors);
-		}, null as Set<HCNode<Item>> | null);
+		}, undefined as Set<HCNode<Item>> | undefined);
 
 		return commonAncestors;
 	}
