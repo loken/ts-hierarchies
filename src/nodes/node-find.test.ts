@@ -1,63 +1,324 @@
-import { MultiMap } from '@loken/utilities';
-import { test, expect } from 'vitest';
+import { test, expect, describe } from 'vitest';
 import { Nodes } from './nodes.ts';
 
+// Create explicit hierarchy for testing:
+// A -> A1 -> A11
+//   -> A2 -> A12
+// B -> B1 -> B12
+// C
+const nodeA   = Nodes.create('A');
+const nodeA1  = Nodes.create('A1');
+const nodeA2  = Nodes.create('A2');
+const nodeA11 = Nodes.create('A11');
+const nodeA12 = Nodes.create('A12');
+const nodeB   = Nodes.create('B');
+const nodeB1  = Nodes.create('B1');
+const nodeB12 = Nodes.create('B12');
+const nodeC   = Nodes.create('C');
 
-const input = `
-A:A1,A2
-B:B1
-C
-A1:A11,A12
-B1:B12`;
+// Build the hierarchy
+nodeA.attach([ nodeA1, nodeA2 ]);
+nodeA1.attach([ nodeA11, nodeA12 ]);
+nodeB.attach(nodeB1);
+nodeB1.attach(nodeB12);
 
+const roots = [ nodeA, nodeB, nodeC ];
 
-test('Nodes.findCommonAncestor() returns the closest common ancestor', () => {
-	const roots = Nodes.fromChildMap(MultiMap.parse(input));
-	const nodes = Nodes.findDescendants(roots, n => n.item == 'A11' || n.item == 'A2');
+describe('findDescendant', () => {
+	test('finds first descendant matching predicate', () => {
+		const actual = Nodes.findDescendant(roots, n => n.item.startsWith('A1'));
+		expect(actual?.item).toBe('A1');
+	});
 
-	const expected = Nodes.findDescendant(roots, n => n.item === 'A', true);
-	const actual = Nodes.findCommonAncestor(nodes);
+	test('finds first descendant with includeSelf=true', () => {
+		const actual = Nodes.findDescendant(nodeA, n => n.item === 'A', true);
+		expect(actual?.item).toBe('A');
+	});
 
-	expect(actual).toBe(expected);
+	test('returns undefined when no match found', () => {
+		const actual = Nodes.findDescendant(roots, n => n.item === 'X');
+		expect(actual).toBeUndefined();
+	});
+
+	test('supports depth-first and breadth-first traversal', () => {
+		// Breadth-first traversal: A1, A2, B1, A11, A12, B12 => A11
+		const breadthFirst = Nodes.findDescendant(roots, n => n.item === 'A11' || n.item === 'B12', false, 'breadth-first');
+		expect(breadthFirst?.item).toBe('A11');
+
+		// Depth-first traversal: B1, B12, A2, A1, A12, A11 => B12
+		const depthFirst = Nodes.findDescendant(roots, n => n.item === 'A11' || n.item === 'B12', false, 'depth-first');
+		expect(depthFirst?.item).toBe('B12');
+	});
 });
 
-test('Nodes.findCommonAncestor() returns undefined when there is no common ancestor', () => {
-	const roots = Nodes.fromChildMap(MultiMap.parse(input));
-	const nodes = Nodes.findDescendants(roots, n => n.item == 'A1' || n.item == 'B1');
+describe('findDescendants', () => {
+	test('finds all descendants matching predicate', () => {
+		const actual = Nodes.findDescendants(roots, n => n.item.startsWith('A1'));
+		const items = actual.map(n => n.item).sort();
+		expect(items).toEqual([ 'A1', 'A11', 'A12' ]);
+	});
 
-	const actual = Nodes.findCommonAncestor(nodes, true);
+	test('finds all descendants with includeSelf=true', () => {
+		const actual = Nodes.findDescendants(nodeA, n => n.item.startsWith('A'), true);
+		const items = actual.map(n => n.item).sort();
+		expect(items).toEqual([ 'A', 'A1', 'A11', 'A12', 'A2' ]);
+	});
 
-	expect(actual).toBeUndefined();
+	test('returns empty array when no match found', () => {
+		const actual = Nodes.findDescendants(roots, n => n.item === 'X');
+		expect(actual).toEqual([]);
+	});
 });
 
-test('Nodes.getAncestors()', () => {
-	const roots = Nodes.fromChildMap(MultiMap.parse(input));
-	const nodes = Nodes.findDescendants(roots, n => [ 'A11', 'A12', 'B1' ].includes(n.item));
-	const nodeItems = nodes.map(n => n.item);
-	// We find B1 first because we're doing a breadth-first search.
-	expect(nodeItems).to.have.ordered.members([ 'B1', 'A11', 'A12' ]);
+describe('hasDescendant', () => {
+	test('returns true when descendant exists', () => {
+		const actual = Nodes.hasDescendant(roots, n => n.item === 'A11');
+		expect(actual).toBe(true);
+	});
 
-	// Since B1 is the first node we find its ancestor B first.
-	// Since A1 is next, we find all of its ancestors next.
-	// We finally find A12, whose ancestors have already been found, and are not repeated.
-	const expected = [ 'B1', 'B', 'A11', 'A1', 'A', 'A12' ];
-	const actual = Nodes.getAncestorItems(nodes, true);
+	test('returns false when descendant does not exist', () => {
+		const actual = Nodes.hasDescendant(roots, n => n.item === 'X');
+		expect(actual).toBe(false);
+	});
 
-	expect(actual).to.have.ordered.members(expected);
+	test('works with includeSelf=true', () => {
+		const actual = Nodes.hasDescendant(nodeA, n => n.item === 'A', true);
+		expect(actual).toBe(true);
+	});
 });
 
-test('Nodes.findAncestors()', () => {
-	const roots = Nodes.fromChildMap(MultiMap.parse(input));
-	const nodes = Nodes.findDescendants(roots, n => [ 'A11', 'A12', 'B1' ].includes(n.item));
-	const nodeItems = nodes.map(n => n.item);
-	// We find B1 first because we're doing a breadth-first search.
-	expect(nodeItems).to.have.ordered.members([ 'B1', 'A11', 'A12' ]);
+describe('findAncestor', () => {
+	test('finds first ancestor matching predicate', () => {
+		const actual = Nodes.findAncestor(nodeA11, n => n.item.startsWith('A'));
+		expect(actual?.item).toBe('A1');
+	});
 
-	// Since B1 is the first node we find its ancestor B first.
-	// Since A1 is next, we find all of its ancestors next.
-	// We find A12, whose ancestors have already been found, and are not repeated.
-	const expected = [ 'B', 'A1', 'A', 'A12' ];
-	const actual = Nodes.findAncestors(nodes, node => expected.includes(node.item), true).map(n => n.item);
+	test('finds first ancestor with includeSelf=true', () => {
+		const actual = Nodes.findAncestor(nodeA11, n => n.item === 'A11', true);
+		expect(actual?.item).toBe('A11');
+	});
 
-	expect(actual).to.have.ordered.members(expected);
+	test('returns undefined when no match found', () => {
+		const actual = Nodes.findAncestor(nodeA11, n => n.item === 'X');
+		expect(actual).toBeUndefined();
+	});
+
+	test('handles multiple starting nodes with deduplication', () => {
+		const actual = Nodes.findAncestor([ nodeA11, nodeA12 ], n => n.item === 'A1');
+		expect(actual?.item).toBe('A1');
+	});
+
+	test('handles single node optimization', () => {
+		const actual = Nodes.findAncestor(nodeA11, n => n.item === 'A1');
+		expect(actual?.item).toBe('A1');
+	});
+});
+
+describe('findAncestors', () => {
+	test('finds all ancestors matching predicate', () => {
+		const actual = Nodes.findAncestors(nodeA11, n => n.item.startsWith('A'));
+		const items = actual.map(n => n.item).sort();
+		expect(items).toEqual([ 'A', 'A1' ]);
+	});
+
+	test('finds all ancestors with includeSelf=true', () => {
+		const actual = Nodes.findAncestors(nodeA11, n => n.item.startsWith('A'), true);
+		const items = actual.map(n => n.item).sort();
+		expect(items).toEqual([ 'A', 'A1', 'A11' ]);
+	});
+
+	test('returns empty array when no match found', () => {
+		const actual = Nodes.findAncestors(nodeA11, n => n.item === 'X');
+		expect(actual).toEqual([]);
+	});
+
+	test('handles multiple starting nodes with deduplication', () => {
+		const actual = Nodes.findAncestors([ nodeA11, nodeA12, nodeB1 ], n => [ 'A', 'A1', 'B' ].includes(n.item), true);
+		const items = actual.map(n => n.item).sort();
+		expect(items).toEqual([ 'A', 'A1', 'B' ]);
+	});
+
+	test('handles single node optimization', () => {
+		const actual = Nodes.findAncestors(nodeA11, n => n.item.startsWith('A'));
+		const items = actual.map(n => n.item).sort();
+		expect(items).toEqual([ 'A', 'A1' ]);
+	});
+});
+
+describe('hasAncestor', () => {
+	test('returns true when ancestor exists', () => {
+		const actual = Nodes.hasAncestor(nodeA11, n => n.item === 'A');
+		expect(actual).toBe(true);
+	});
+
+	test('returns false when ancestor does not exist', () => {
+		const actual = Nodes.hasAncestor(nodeA11, n => n.item === 'B');
+		expect(actual).toBe(false);
+	});
+
+	test('works with includeSelf=true', () => {
+		const actual = Nodes.hasAncestor(nodeA11, n => n.item === 'A11', true);
+		expect(actual).toBe(true);
+	});
+});
+
+describe('getAncestors', () => {
+	test('gets all unique ancestors from single node', () => {
+		const actual = Nodes.getAncestors(nodeA11);
+		const items = actual.map(n => n.item);
+		expect(items).toEqual([ 'A1', 'A' ]);
+	});
+
+	test('gets all unique ancestors with includeSelf=true', () => {
+		const actual = Nodes.getAncestors(nodeA11, true);
+		const items = actual.map(n => n.item);
+		expect(items).toEqual([ 'A11', 'A1', 'A' ]);
+	});
+
+	test('deduplicates ancestors from multiple nodes', () => {
+		const nodes = [ nodeA11, nodeA12, nodeB1 ];
+		const nodeItems = nodes.map(n => n.item);
+		// The input nodes are in this order: A11, A12, B1
+		expect(nodeItems).to.have.ordered.members([ 'A11', 'A12', 'B1' ]);
+
+		// A11 is processed first: adds A1, A (bottom-up from A11)
+		// A12 is processed next: A1, A already seen, so skipped
+		// B1 is processed last: adds B (bottom-up from B1)
+		const expected = [ 'A1', 'A', 'B' ];
+		const actual = Nodes.getAncestors(nodes);
+		const items = actual.map(n => n.item);
+		expect(items).to.have.ordered.members(expected);
+	});
+
+	test('handles single node optimization', () => {
+		const actual = Nodes.getAncestors(nodeA11);
+		const items = actual.map(n => n.item);
+		expect(items).toEqual([ 'A1', 'A' ]);
+	});
+});
+
+describe('getAncestorItems', () => {
+	test('gets ancestor items from nodes', () => {
+		const actual = Nodes.getAncestorItems(nodeA11);
+		expect(actual).toEqual([ 'A1', 'A' ]);
+	});
+
+	test('gets ancestor items with includeSelf=true', () => {
+		const actual = Nodes.getAncestorItems(nodeA11, true);
+		expect(actual).toEqual([ 'A11', 'A1', 'A' ]);
+	});
+
+	test('deduplicates from multiple nodes', () => {
+		const nodes = [ nodeA11, nodeA12, nodeB1 ];
+		const expected = [ 'A1', 'A', 'B' ];
+		const actual = Nodes.getAncestorItems(nodes);
+		expect(actual).to.have.ordered.members(expected);
+	});
+});
+
+describe('getDescendants', () => {
+	test('gets all descendants breadth-first by default', () => {
+		const actual = Nodes.getDescendants(nodeA);
+		const items = actual.map(n => n.item);
+		expect(items).toEqual([ 'A1', 'A2', 'A11', 'A12' ]);
+	});
+
+	test('gets all descendants with includeSelf=true', () => {
+		const actual = Nodes.getDescendants(nodeA, true);
+		const items = actual.map(n => n.item);
+		expect(items).toEqual([ 'A', 'A1', 'A2', 'A11', 'A12' ]);
+	});
+
+	test('supports depth-first traversal', () => {
+		const actual = Nodes.getDescendants(nodeA, false, 'depth-first');
+		const items = actual.map(n => n.item);
+		expect(items).toEqual([ 'A2', 'A1', 'A12', 'A11' ]);
+	});
+});
+
+describe('getDescendantItems', () => {
+	test('gets descendant items from nodes', () => {
+		const actual = Nodes.getDescendantItems(nodeA);
+		expect(actual).toEqual([ 'A1', 'A2', 'A11', 'A12' ]);
+	});
+
+	test('gets descendant items with includeSelf=true', () => {
+		const actual = Nodes.getDescendantItems(nodeA, true);
+		expect(actual).toEqual([ 'A', 'A1', 'A2', 'A11', 'A12' ]);
+	});
+});
+
+describe('findCommonAncestor', () => {
+	test('returns the closest common ancestor', () => {
+		const actual = Nodes.findCommonAncestor([ nodeA11, nodeA2 ]);
+		expect(actual).toBe(nodeA);
+	});
+
+	test('returns undefined when there is no common ancestor', () => {
+		const actual = Nodes.findCommonAncestor([ nodeA1, nodeB1 ]);
+		expect(actual).toBeUndefined();
+	});
+
+	test('works with includeSelf=true', () => {
+		const actual = Nodes.findCommonAncestor([ nodeA1, nodeA2 ], true);
+		expect(actual).toBe(nodeA);
+	});
+
+	test('returns the node itself when single node passed', () => {
+		const actual = Nodes.findCommonAncestor(nodeA11, true);
+		expect(actual).toBe(nodeA11);
+	});
+});
+
+describe('findCommonAncestors', () => {
+	test('returns all common ancestors', () => {
+		const actual = Nodes.findCommonAncestors([ nodeA11, nodeA12 ]);
+		const items = actual?.map(n => n.item).sort();
+		expect(items).toEqual([ 'A', 'A1' ]);
+	});
+
+	test('returns empty array when there are no common ancestors', () => {
+		const actual = Nodes.findCommonAncestors([ nodeA1, nodeB1 ]);
+		expect(actual).toEqual([]);
+	});
+});
+
+describe('findCommonAncestorItems', () => {
+	test('returns common ancestor items', () => {
+		const actual = Nodes.findCommonAncestorItems([ nodeA11, nodeA12 ]);
+		const items = actual?.sort();
+		expect(items).toEqual([ 'A', 'A1' ]);
+	});
+
+	test('returns empty array when there are no common ancestors', () => {
+		const actual = Nodes.findCommonAncestorItems([ nodeA1, nodeB1 ]);
+		expect(actual).toEqual([]);
+	});
+});
+
+describe('findCommonAncestorSet', () => {
+	test('returns set of common ancestors', () => {
+		const actual = Nodes.findCommonAncestorSet([ nodeA11, nodeA12 ]);
+		const items = [ ...actual! ].map(n => n.item).sort();
+		expect(items).toEqual([ 'A', 'A1' ]);
+	});
+
+	test('returns empty set when there are no common ancestors', () => {
+		const actual = Nodes.findCommonAncestorSet([ nodeA1, nodeB1 ]);
+		expect(actual).toEqual(new Set());
+	});
+});
+
+describe('traverseDescendants', () => {
+	test('returns generator for descendants', () => {
+		const actual = Nodes.traverseDescendants(nodeA);
+		const items = [ ...actual ].map(n => n.item);
+		expect(items).toEqual([ 'A1', 'A2', 'A11', 'A12' ]);
+	});
+
+	test('works with includeSelf=true', () => {
+		const actual = Nodes.traverseDescendants(nodeA, true);
+		const items = [ ...actual ].map(n => n.item);
+		expect(items).toEqual([ 'A', 'A1', 'A2', 'A11', 'A12' ]);
+	});
 });
