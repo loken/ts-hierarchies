@@ -213,14 +213,14 @@ export class Nodes {
 		const ancestors: HCNode<Item>[] = [];
 
 		for (const node of someToIterable(nodes)) {
-			const first = includeSelf ? node : node.getParent();
+			const first = includeSelf ? node : node.parent;
 			if (!first || seen.has(first))
 				continue;
 
 			const unseenAncestors = flattenSequence({
 				first,
 				next: node => {
-					const parent = node.getParent();
+					const parent = node.parent;
 					if (!parent || seen.has(parent))
 						return undefined;
 
@@ -253,7 +253,7 @@ export class Nodes {
 	) {
 		return flattenGraph({
 			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.getChildren(),
+			next:  node => node.children,
 			type,
 		});
 	}
@@ -275,7 +275,7 @@ export class Nodes {
 	) {
 		return traverseGraph({
 			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.getChildren(),
+			next:  node => node.children,
 			type,
 		});
 	}
@@ -326,14 +326,14 @@ export class Nodes {
 		const seen = new Set<HCNode<Item>>();
 
 		for (const root of roots) {
-			const first = includeSelf ? root : root.getParent();
+			const first = includeSelf ? root : root.parent;
 			if (!first || seen.has(first))
 				continue;
 
 			const found = searchSequence({
 				first,
 				next: node => {
-					const parent = node.getParent();
+					const parent = node.parent;
 					if (!parent || seen.has(parent))
 						return undefined;
 
@@ -364,14 +364,14 @@ export class Nodes {
 		const ancestors: HCNode<Item>[] = [];
 
 		for (const root of roots) {
-			const first = includeSelf ? root : root.getParent();
+			const first = includeSelf ? root : root.parent;
 			if (!first || seen.has(first))
 				continue;
 
 			const found = searchSequenceMany({
 				first,
 				next: node => {
-					const parent = node.getParent();
+					const parent = node.parent;
 					if (!parent || seen.has(parent))
 						return undefined;
 
@@ -397,7 +397,7 @@ export class Nodes {
 	): HCNode<Item> | undefined {
 		return searchGraph({
 			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.getChildren(),
+			next:  node => node.children,
 			search,
 			type,
 		});
@@ -412,7 +412,7 @@ export class Nodes {
 	): HCNode<Item>[] {
 		return searchGraphMany({
 			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.getChildren(),
+			next:  node => node.children,
 			search,
 			type,
 		});

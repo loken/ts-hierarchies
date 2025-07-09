@@ -694,17 +694,17 @@ export class Hierarchy<Item, Id = Item> {
 			}
 
 			if (include.descendants) {
-				for (const [ descendantId, descendantItem, descendantNode ] of this.getDescendantEntries(id, include.matches)) {
+				for (const [ descendantId, descendantItem, descendant ] of this.getDescendantEntries(id, include.matches)) {
 					if (!items.has(descendantId)) {
 						items.set(descendantId, descendantItem);
 
-						if (descendantNode.isLeaf)
+						if (descendant.isLeaf)
 							childMap.addEmpty(descendantId);
 					}
 
-					if (!descendantNode.isLeaf) {
-						for (const childNode of descendantNode.getChildren()) {
-							const childItem = childNode.item;
+					if (!descendant.isLeaf) {
+						for (const child of descendant.children) {
+							const childItem = child.item;
 							const childId = this.#identify(childItem);
 
 							childMap.add(descendantId, childId);
@@ -717,7 +717,7 @@ export class Hierarchy<Item, Id = Item> {
 			if (include.matches && !include.ancestors && !include.descendants) {
 				let addedToChildMap = false;
 				if (!node.isRoot) {
-					const parentId = this.#identify(node.getParentItem()!);
+					const parentId = this.#identify(node.parentItem!);
 
 					if (items.has(parentId)) {
 						childMap.add(parentId, id);
@@ -727,7 +727,7 @@ export class Hierarchy<Item, Id = Item> {
 
 				if (!node.isLeaf) {
 					const includedChildIds = node
-						.getChildItems()
+						.childItems
 						.map(this.#identify)
 						.filter(id => items.has(id));
 

@@ -44,7 +44,7 @@ counts.forEach(count => {
 		bench('bf traverseGraphNext', () => {
 			iterateAll(traverseGraphNext({
 				roots,
-				next: (node) => node.getChildren(),
+				next: (node) => node.children,
 				type: 'breadth-first',
 			}));
 		});
@@ -52,7 +52,7 @@ counts.forEach(count => {
 		bench('df traverseGraphNext', () => {
 			iterateAll(traverseGraphNext({
 				roots,
-				next: (node) => node.getChildren(),
+				next: (node) => node.children,
 				type: 'depth-first',
 			}));
 		});
@@ -60,7 +60,7 @@ counts.forEach(count => {
 		bench('bf traverseGraphSignal', () => {
 			iterateAll(traverseGraphSignal({
 				roots,
-				signal: (n, s) => s.next(n.getChildren()),
+				signal: (n, s) => s.next(n.children),
 				type:   'breadth-first',
 			}));
 		});
@@ -68,7 +68,7 @@ counts.forEach(count => {
 		bench('df traverseGraphSignal', () => {
 			iterateAll(traverseGraphSignal({
 				roots,
-				signal: (n, s) => s.next(n.getChildren()),
+				signal: (n, s) => s.next(n.children),
 				type:   'depth-first',
 			}));
 		});
@@ -77,7 +77,7 @@ counts.forEach(count => {
 		bench('bf flattenGraphNext', () => {
 			flattenGraphNext({
 				roots,
-				next: (node) => node.getChildren(),
+				next: (node) => node.children,
 				type: 'depth-first',
 			});
 		});
@@ -85,7 +85,7 @@ counts.forEach(count => {
 		bench('df flattenGraphNext', () => {
 			flattenGraphNext({
 				roots,
-				next: (node) => node.getChildren(),
+				next: (node) => node.children,
 				type: 'breadth-first',
 			});
 		});
@@ -93,7 +93,7 @@ counts.forEach(count => {
 		bench('bf flattenGraphSignal', () => {
 			flattenGraphSignal({
 				roots,
-				signal: (n, s) => s.next(n.getChildren()),
+				signal: (n, s) => s.next(n.children),
 				type:   'breadth-first',
 			});
 		});
@@ -101,7 +101,7 @@ counts.forEach(count => {
 		bench('df flattenGraphSignal', () => {
 			flattenGraphSignal({
 				roots,
-				signal: (n, s) => s.next(n.getChildren()),
+				signal: (n, s) => s.next(n.children),
 				type:   'depth-first',
 			});
 		});
@@ -117,7 +117,7 @@ counts.forEach(count => {
 		bench('searchGraph', () => {
 			const found = searchGraph({
 				roots: roots,
-				next:  (node) => node.getChildren(),
+				next:  (node) => node.children,
 				search,
 			});
 
@@ -133,7 +133,7 @@ counts.forEach(count => {
 					}
 					else {
 						s.skip();
-						s.next(n.getChildren());
+						s.next(n.children);
 					}
 				},
 			}).next()?.value;
@@ -150,7 +150,7 @@ counts.forEach(count => {
 					}
 					else {
 						s.skip();
-						s.next(n.getChildren());
+						s.next(n.children);
 					}
 				},
 			})[0];

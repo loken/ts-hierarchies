@@ -29,7 +29,7 @@ test('flattenGraph (next, breadth-first) yields in correct order', () => {
 	const actual = flattenGraph({
 		type:  'breadth-first',
 		roots: intRoot,
-		next:  n => n.getChildren(),
+		next:  n => n.children,
 	});
 
 	expect(nodesToItems(actual)).toEqual(expected);
@@ -41,7 +41,7 @@ test('flattenGraph (next, depth-first) yields in correct order', () => {
 	const actual = flattenGraph({
 		type:  'depth-first',
 		roots: intRoot,
-		next:  n => n.getChildren(),
+		next:  n => n.children,
 	});
 
 	expect(nodesToItems(actual)).toEqual(expected);
@@ -53,7 +53,7 @@ test('flattenGraph (signal, breadth-first) yields in correct order', () => {
 	const actual = flattenGraph({
 		type:   'breadth-first',
 		roots:  intRoot,
-		signal: (n, s) => s.next(n.getChildren()),
+		signal: (n, s) => s.next(n.children),
 	});
 
 	expect(nodesToItems(actual)).toEqual(expected);
@@ -65,7 +65,7 @@ test('flattenGraph (signal, depth-first) yields in correct order', () => {
 	const actual = flattenGraph({
 		type:   'depth-first',
 		roots:  intRoot,
-		signal: (n, s) => s.next(n.getChildren()),
+		signal: (n, s) => s.next(n.children),
 	});
 
 	expect(nodesToItems(actual)).toEqual(expected);
@@ -79,10 +79,10 @@ test('flattenGraph (signal) with skip yields in correct order', () => {
 		signal: (node, signal) => {
 			// Exclude children of 3 which is 31 and 32.
 			if (node.item !== 3)
-				signal.next(node.getChildren());
+				signal.next(node.children);
 
 			// Skip children of 1 which is 11 and 12.
-			if (node.getParent()?.item === 1)
+			if (node.parent?.item === 1)
 				signal.skip();
 		},
 	});
@@ -96,7 +96,7 @@ test('flattenGraph (signal) with skip and end yields wanted node', () => {
 	const actual = flattenGraph({
 		roots:  intRoot,
 		signal: (node, signal) => {
-			signal.next(node.getChildren());
+			signal.next(node.children);
 
 			// We want to stop traversal once we find the item we want
 			// and to skip every other item.
@@ -127,7 +127,7 @@ test('flattenGraph (next) on circular graph breaks on visited', () => {
 	const actual = flattenGraph({
 		roots:        first,
 		detectCycles: true,
-		next:         node => node.getChildren(),
+		next:         node => node.children,
 	});
 
 	expect(nodesToItems(actual)).toEqual([ 1, 2, 3, 4 ]);
@@ -148,7 +148,7 @@ test('flattenGraph (signal) on circular graph breaks on visited', () => {
 		roots:        first,
 		detectCycles: true,
 		signal:       (node, signal) => {
-			signal.next(node.getChildren());
+			signal.next(node.children);
 		},
 	});
 
@@ -161,7 +161,7 @@ test('flattenGraph (signal, breadth-first) provides correct depth', () => {
 		type:   'breadth-first',
 		roots:  strRoots,
 		signal: (node, signal) => {
-			signal.next(node.getChildren());
+			signal.next(node.children);
 
 			expect(node.item.length - 1).toEqual(signal.depth);
 		},
@@ -173,7 +173,7 @@ test('flattenGraph (signal, depth-first) provides correct depth', () => {
 		type:   'depth-first',
 		roots:  strRoots,
 		signal: (node, signal) => {
-			signal.next(node.getChildren());
+			signal.next(node.children);
 
 			expect(node.item.length - 1).toEqual(signal.depth);
 		},

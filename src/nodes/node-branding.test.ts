@@ -132,8 +132,8 @@ test('node.attach() unbranded nodes works', () => {
 	// Should work fine - both unbranded
 	a.attach(b);
 
-	expect(b.getParent()).toBe(a);
-	expect(a.getChildren()).toContain(b);
+	expect(b.parent).toBe(a);
+	expect(a.children).toContain(b);
 });
 
 test('node.attach() same brand nodes works', () => {
@@ -145,8 +145,8 @@ test('node.attach() same brand nodes works', () => {
 	// Should work fine - same brand
 	a.attach(b);
 
-	expect(b.getParent()).toBe(a);
-	expect(a.getChildren()).toContain(b);
+	expect(b.parent).toBe(a);
+	expect(a.children).toContain(b);
 });
 
 
@@ -215,8 +215,8 @@ test('debranding in middle of hierarchy allows restructuring', () => {
 	a.detach(b);
 
 	// C should still be attached to B
-	expect(c.getParent()).toBe(b);
-	expect(b.getChildren()).toContain(c);
+	expect(c.parent).toBe(b);
+	expect(b.children).toContain(c);
 });
 
 test('multiple brand cycles work correctly', () => {

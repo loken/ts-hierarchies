@@ -49,8 +49,8 @@ test('node.dismantle(false) unlinks everything under the node.', () => {
 	// The branch that was dismantled is now a leaf, but not a root as it's still connected to it's parent.
 	expect(branchA.isLeaf).to.be.true;
 	expect(branchA.isRoot).to.be.false;
-	expect(branchA.getParent()).toEqual(root);
-	expect(branchB.getParent()).toEqual(root);
+	expect(branchA.parent).toEqual(root);
+	expect(branchB.parent).toEqual(root);
 
 	// The descendants of the branch however are no longer linked.
 	expect(descendantsOfA).to.satisfy((nodes: HCNode<number>[]) => nodes.every(n => !n.isLinked));

@@ -197,22 +197,22 @@ export class HCNode<Item> {
 	}
 
 	/** Get the parent node, if any. */
-	public getParent() {
+	public get parent() {
 		return this.#parent;
 	}
 
 	/** Get the parent item, if any. */
-	public getParentItem() {
+	public get parentItem() {
 		return this.#parent?.item;
 	}
 
 	/** Get all child nodes. */
-	public getChildren() {
+	public get children() {
 		return this.#children ? [ ...this.#children ] : [];
 	}
 
 	/** Get all child items. */
-	public getChildItems() {
+	public get childItems() {
 		return this.#children ? nodesToItems(this.#children.values()) : [];
 	}
 
@@ -220,7 +220,7 @@ export class HCNode<Item> {
 	public getAncestors(includeSelf = false) {
 		return flattenSequence({
 			first: includeSelf ? this : this.#parent,
-			next:  node => node?.getParent(),
+			next:  node => node?.parent,
 		});
 	}
 
@@ -248,7 +248,7 @@ export class HCNode<Item> {
 	public findAncestor(search: NodePredicate<Item>, includeSelf = false) {
 		return searchSequence({
 			first: includeSelf ? this : this.#parent,
-			next:  node => node.getParent(),
+			next:  node => node.parent,
 			search,
 		});
 	}
@@ -257,7 +257,7 @@ export class HCNode<Item> {
 	public findAncestors(search: NodePredicate<Item>, includeSelf = false) {
 		return searchSequenceMany({
 			first: includeSelf ? this : this.#parent,
-			next:  node => node.getParent(),
+			next:  node => node.parent,
 			search,
 		});
 	}
@@ -299,7 +299,7 @@ export class HCNode<Item> {
 	public traverseAncestors(includeSelf = false) {
 		return traverseSequence({
 			first: includeSelf ? this : this.#parent,
-			next:  node => node?.getParent(),
+			next:  node => node?.parent,
 		});
 	}
 

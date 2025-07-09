@@ -15,7 +15,7 @@ export const nodesToChildMap = <Item, Id = Item>(
 	for (const root of someToIterable(roots)) {
 		const nodeId = nodeToId(root, identify);
 		if (root.isInternal) {
-			const childIds = nodesToIds(root.getChildren(), identify);
+			const childIds = nodesToIds(root.children, identify);
 			childMap.add(nodeId, childIds);
 		}
 		else {
@@ -25,11 +25,11 @@ export const nodesToChildMap = <Item, Id = Item>(
 
 	const nodes = flattenGraphNext({
 		roots,
-		next: node => node.getChildren().filter(n => n.isInternal),
+		next: node => node.children.filter(n => n.isInternal),
 	});
 
 	for (const node of nodes) {
-		const childNodes = node.getChildren();
+		const childNodes = node.children;
 		const nodeId = nodeToId(node, identify);
 		const childIds = nodesToIds(childNodes, identify);
 		childMap.add(nodeId, childIds);
@@ -60,7 +60,7 @@ export const nodesToDescendantMap = <Item, Id = Item>(
 		for (const ancestor of ancestors)
 			ancestor.add(nodeId);
 
-		const children = node.getChildren();
+		const children = node.children;
 		if (children?.length) {
 			const nodeDescendants = descendantMap.addEmpty(nodeId);
 			const childAncestors = [ ...ancestors, nodeDescendants ];
@@ -95,7 +95,7 @@ export const nodesToAncestorMap = <Item, Id = Item>(
 		if (ancestors)
 			ancestorMap.add(nodeId, ancestors);
 
-		const children = node.getChildren();
+		const children = node.children;
 		if (children?.length) {
 			const childAncestors = ancestors ? [ nodeId, ...ancestors ] : [ nodeId ];
 			store.enqueue(children.map(node => [ node, childAncestors ] as Stored));
@@ -128,7 +128,7 @@ export const nodesToRelations = <Item, Id = Item>(
 				return;
 
 			const nodeId = nodeToId(node, identify);
-			const children = node.getChildren();
+			const children = node.children;
 			const childIds = nodesToIds(children, identify);
 			for (const childId of childIds)
 				relations.push([ nodeId, childId ]);
