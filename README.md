@@ -173,6 +173,17 @@ A node can be "branded" so that it cannot be attached to another node with a dif
 
 If you want to use this API yourself, know that when you brand a node, you get a `DeBrand` delegate back. Calling this is the only way to debrand the node, so make sure you keep track of it!
 
+#### Ordering and identity
+
+- Sibling order is deterministic. Children are kept in insertion order, and traversals enumerate children in that order. When constructing from relations or a child-map, the order in the source is preserved.
+- Cycle detection and visited semantics are identity-based. When `detectCycles` is enabled, nodes are tracked by object identity. Separate node instances that wrap the same item are considered distinct for visitation.
+- Equality: In TypeScript, objects compare by reference, so two `HCNode<T>` instances are only equal if they're the same object. Compare IDs (via your `identify` delegate) or items for logical equality. The .NET version behaves differently—see its README for details.
+
+#### Serialization
+
+- Nodes are runtime wrappers with private fields and no custom JSON shape. Serializing an `HCNode<T>` directly won't yield a useful structure. Persist your relations (`Relation<Id>`/`MultiMap<Id>`) or items and rebuild the hierarchy when needed.
+- The .NET version supports direct node serialization with different equality semantics; see its README for specifics.
+
 ### Relations
 
 We support a few representations for relations and provide utilities for converting between them.
