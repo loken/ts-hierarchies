@@ -189,7 +189,12 @@ An essential part of any tree/hierarchy/graph library is traversal. The `travers
 
 Aside from their return type the two pairs behave the same and take the same parameters.
 
-*Performance*: Due to a non-negligible performance overhead with iterators we recommend relying on the `flatten*` variants over the `traverse*` variants unless your application is very sensitive to memory or has HUGE (many millions of nodes) graphs or sequences.
+#### Performance
+- Due to iterator overhead, prefer `flattenGraph`/`flattenSequence` over `traverseGraph`/`traverseSequence` by default—even if you won't keep the array; materializing is often faster than collecting from a generator (see `src/traversal/*.bench.ts`). Use `traverse*` when you truly need lazy streaming, early exit, or to avoid materializing very large results.
+- Use the `next` variant of traversal when you don't need to skip nodes or stop early; the `signal` variant carries extra checks/state.
+- When using `signal`, pass concrete arrays directly, e.g. `signal.next(node.children)`. Avoid creating new arrays or generator wrappers in hot paths.
+- Pass roots/children as plain arrays where possible. Arrays are the fastest `Some<T>` shape for the internal linear store.
+- Disable `detectCycles` when you know the graph is a tree; cycle detection adds a `Set` lookup per node.
 
 #### Traverse next
 For simple node enumeration you simply pass the starting point as `roots` and a `next` delegate describing where to find the next node(s).
