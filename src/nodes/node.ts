@@ -50,9 +50,8 @@ export class HCNode<Item> {
 	}
 
 	/**
-	 * A node is "linked" when it is neither a root nor a child.
-	 *
-	 * A node is "linked" when it has a parent or at least one child.
+	 * A node is "linked" when it has a parent or at least one child,
+	 * which means it's not both a root and a leaf.
 	 */
 	public get isLinked() {
 		return !this.isRoot || !this.isLeaf;
