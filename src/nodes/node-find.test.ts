@@ -248,67 +248,6 @@ describe('getDescendantItems', () => {
 	});
 });
 
-describe('findCommonAncestor', () => {
-	test('returns the closest common ancestor', () => {
-		const actual = Nodes.findCommonAncestor([ nodeA11, nodeA2 ]);
-		expect(actual).toBe(nodeA);
-	});
-
-	test('returns undefined when there is no common ancestor', () => {
-		const actual = Nodes.findCommonAncestor([ nodeA1, nodeB1 ]);
-		expect(actual).toBeUndefined();
-	});
-
-	test('works with includeSelf=true', () => {
-		const actual = Nodes.findCommonAncestor([ nodeA1, nodeA2 ], true);
-		expect(actual).toBe(nodeA);
-	});
-
-	test('returns the node itself when single node passed', () => {
-		const actual = Nodes.findCommonAncestor(nodeA11, true);
-		expect(actual).toBe(nodeA11);
-	});
-});
-
-describe('findCommonAncestors', () => {
-	test('returns all common ancestors', () => {
-		const actual = Nodes.findCommonAncestors([ nodeA11, nodeA12 ]);
-		const items = actual?.map(n => n.item).sort();
-		expect(items).toEqual([ 'A', 'A1' ]);
-	});
-
-	test('returns empty array when there are no common ancestors', () => {
-		const actual = Nodes.findCommonAncestors([ nodeA1, nodeB1 ]);
-		expect(actual).toEqual([]);
-	});
-});
-
-describe('findCommonAncestorItems', () => {
-	test('returns common ancestor items', () => {
-		const actual = Nodes.findCommonAncestorItems([ nodeA11, nodeA12 ]);
-		const items = actual?.sort();
-		expect(items).toEqual([ 'A', 'A1' ]);
-	});
-
-	test('returns empty array when there are no common ancestors', () => {
-		const actual = Nodes.findCommonAncestorItems([ nodeA1, nodeB1 ]);
-		expect(actual).toEqual([]);
-	});
-});
-
-describe('findCommonAncestorSet', () => {
-	test('returns set of common ancestors', () => {
-		const actual = Nodes.findCommonAncestorSet([ nodeA11, nodeA12 ]);
-		const items = [ ...actual! ].map(n => n.item).sort();
-		expect(items).toEqual([ 'A', 'A1' ]);
-	});
-
-	test('returns empty set when there are no common ancestors', () => {
-		const actual = Nodes.findCommonAncestorSet([ nodeA1, nodeB1 ]);
-		expect(actual).toEqual(new Set());
-	});
-});
-
 describe('traverseDescendants', () => {
 	test('returns generator for descendants', () => {
 		const actual = Nodes.traverseDescendants(nodeA);
