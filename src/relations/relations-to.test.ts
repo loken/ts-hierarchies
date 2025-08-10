@@ -42,8 +42,8 @@ const childMap = MultiMap.parse(`
 test('relationsToNodes', () => {
 	const actualRoots = relationsToNodes(relations);
 
-	const expectedIds = Nodes.getDescendantItems(roots);
-	const actualIds = Nodes.getDescendantItems(actualRoots);
+	const expectedIds = Nodes.getDescendants(roots).map(n => n.item);
+	const actualIds = Nodes.getDescendants(actualRoots).map(n => n.item);
 	expect(actualIds).toEqual(expectedIds);
 });
 

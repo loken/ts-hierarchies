@@ -19,6 +19,7 @@ import { nodesFromItemsWithChildMap, nodesFromItemsWithChildren, nodesFromItemsW
 
 export class Nodes {
 
+	//#region Factory methods
 	/**
 	 * Create one or more nodes.
 	 *
@@ -129,7 +130,9 @@ export class Nodes {
 	) {
 		return nodesFromItemsWithParents(leaves, parent);
 	}
+	//#endregion
 
+	//#region Conversion/Mapping
 	/**
 	 * Create a map of ids to child-ids by traversing the graph of the `roots`.
 	 *
@@ -199,13 +202,47 @@ export class Nodes {
 	): Relation<Id>[] {
 		return nodesToRelations(roots, identify);
 	}
+	//#endregion
 
+	//#region Predicates (has*)
+	/** Does a descendant node matching the `search` exist? */
+	public static hasDescendant<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		includeSelf = false, type: TraversalType = 'breadth-first',
+	): boolean {
+		return this.findDescendant(roots, search, includeSelf, type) !== undefined;
+	}
+
+	/** Does an ancestor node matching the `search` exist? */
+	public static hasAncestor<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		includeSelf = false,
+	): boolean {
+		return this.findAncestor(roots, search, includeSelf) !== undefined;
+	}
+	//#endregion
+
+	//#region Retrieval (get*)
+	/** Get descendant nodes by traversing according to the options. */
+	public static getDescendants<Item>(
+		roots: Some<HCNode<Item>>,
+		includeSelf = false,
+		type: TraversalType = 'breadth-first',
+	): HCNode<Item>[] {
+		return flattenGraph({
+			roots: HCNode.getRoots(roots, includeSelf),
+			next:  node => node.children,
+			type,
+		});
+	}
 
 	/** Get unique ancestor nodes. */
 	public static getAncestors<Item>(
 		nodes: Some<HCNode<Item>>,
 		includeSelf = false,
-	) {
+	): HCNode<Item>[] {
 		if (isSomeItem(nodes))
 			return nodes.getAncestors(includeSelf);
 
@@ -235,84 +272,38 @@ export class Nodes {
 
 		return ancestors;
 	}
+	//#endregion
 
-	/** Get ancestor items from unique ancestor nodes. */
-	public static getAncestorItems<Item>(
-		nodes: Some<HCNode<Item>>,
-		includeSelf = false,
-	) {
-		return this.getAncestors(nodes, includeSelf).map(node => node.item);
-	}
-
-
-	/** Get descendant nodes by traversing according to the options. */
-	public static getDescendants<Item>(
+	//#region Search (find*)
+	/** Find the first descendant node matching the `search`. */
+	public static findDescendant<Item>(
 		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
 		includeSelf = false,
 		type: TraversalType = 'breadth-first',
-	) {
-		return flattenGraph({
+	): HCNode<Item> | undefined {
+		return searchGraph({
 			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.children,
+			search,
 			type,
 		});
 	}
 
-	/** Get descendant items by traversing according to the options. */
-	public static getDescendantItems<Item>(
+	/** Find the descendant nodes matching the `search`. */
+	public static findDescendants<Item>(
 		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
 		includeSelf = false,
 		type: TraversalType = 'breadth-first',
-	) {
-		return this.getDescendants(roots, includeSelf, type).map(node => node.item);
-	}
-
-	/** Generate a sequence of descendant nodes by traversing according to the options. */
-	public static traverseDescendants<Item>(
-		roots: Some<HCNode<Item>>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
-	) {
-		return traverseGraph({
+	): HCNode<Item>[] {
+		return searchGraphMany({
 			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.children,
+			search,
 			type,
 		});
 	}
-
-
-	/** Find the common ancestor node which is the closest to the `nodes`. */
-	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
-		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
-
-		return commonAncestors?.values().next().value;
-	}
-
-	/** Find the ancestor nodes common to the `nodes`. */
-	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
-		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
-
-		return commonAncestors ? [ ...commonAncestors ] : undefined;
-	}
-
-	/** Find the ancestor nodes common to the `nodes`. */
-	public static findCommonAncestorItems<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
-		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
-
-		return commonAncestors ? [ ...commonAncestors ].map(n => n.item) : undefined;
-	}
-
-	/** Find the set of ancestor nodes common to the `nodes`. */
-	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
-		const commonAncestors = someToArray(nodes).reduce((acc, curr) => {
-			const ancestors = new Set(curr.getAncestors(includeSelf));
-
-			return !acc ? ancestors : acc.intersection(ancestors);
-		}, undefined as Set<HCNode<Item>> | undefined);
-
-		return commonAncestors;
-	}
-
 
 	/** Find the first ancestor node matching the `search`. */
 	public static findAncestor<Item>(
@@ -388,53 +379,45 @@ export class Nodes {
 		return ancestors;
 	}
 
-	/** Find the first descendant node matching the `search`. */
-	public static findDescendant<Item>(
+	/** Find the common ancestor node which is the closest to the `nodes`. */
+	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, includeSelf = false): HCNode<Item> | undefined {
+		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
+
+		return commonAncestors?.values().next().value;
+	}
+
+	/** Find the ancestor nodes common to the `nodes`. */
+	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, includeSelf = false): HCNode<Item>[] | undefined {
+		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
+
+		return commonAncestors ? [ ...commonAncestors ] : undefined;
+	}
+
+	/** Find the set of ancestor nodes common to the `nodes`. */
+	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, includeSelf = false): Set<HCNode<Item>> | undefined {
+		const commonAncestors = someToArray(nodes).reduce((acc, curr) => {
+			const ancestors = new Set(curr.getAncestors(includeSelf));
+
+			return !acc ? ancestors : acc.intersection(ancestors);
+		}, undefined as Set<HCNode<Item>> | undefined);
+
+		return commonAncestors;
+	}
+	//#endregion
+
+	//#region Traversal (traverse*)
+	/** Generate a sequence of descendant nodes by traversing according to the options. */
+	public static traverseDescendants<Item>(
 		roots: Some<HCNode<Item>>,
-		search: NodePredicate<Item>,
 		includeSelf = false,
 		type: TraversalType = 'breadth-first',
-	): HCNode<Item> | undefined {
-		return searchGraph({
+	): Generator<HCNode<Item>, void, undefined> {
+		return traverseGraph({
 			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.children,
-			search,
 			type,
 		});
 	}
-
-	/** Find the descendant nodes matching the `search`. */
-	public static findDescendants<Item>(
-		roots: Some<HCNode<Item>>,
-		search: NodePredicate<Item>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
-	): HCNode<Item>[] {
-		return searchGraphMany({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.children,
-			search,
-			type,
-		});
-	}
-
-
-	/** Does an ancestor node matching the `search` exist? */
-	public static hasAncestor<Item>(
-		roots: Some<HCNode<Item>>,
-		search: NodePredicate<Item>,
-		includeSelf = false,
-	): boolean {
-		return this.findAncestor(roots, search, includeSelf) !== undefined;
-	}
-
-	/** Does a descendant node matching the `search` exist? */
-	public static hasDescendant<Item>(
-		roots: Some<HCNode<Item>>,
-		search: NodePredicate<Item>,
-		includeSelf = false, type: TraversalType = 'breadth-first',
-	): boolean {
-		return this.findDescendant(roots, search, includeSelf, type) !== undefined;
-	}
+	//#endregion
 
 }

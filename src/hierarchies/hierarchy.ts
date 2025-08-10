@@ -627,7 +627,7 @@ export class Hierarchy<Item, Id = Item> {
 	public findCommonAncestorItems(ids: Some<Id>, includeSelf = false): Item[] | undefined {
 		const nodes = this.getSome(ids);
 
-		return Nodes.findCommonAncestorItems(nodes, includeSelf);
+		return Nodes.findCommonAncestors(nodes, includeSelf)?.map(n => n.item);
 	}
 
 	/** Find the IDs of ancestor nodes common to the `ids`. */
