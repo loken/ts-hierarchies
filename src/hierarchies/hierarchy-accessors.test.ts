@@ -57,10 +57,17 @@ test('hierarchy.get() non-existent ID throws with helpful message', () => {
 	);
 });
 
-test('hierarchy.getSome() returns only existing nodes', () => {
-	const nodes = testHierarchy.getSome([ 'A', 'NonExistent', 'B' ]);
+test('hierarchy.getSome() returns existing nodes', () => {
+	const nodes = testHierarchy.getSome([ 'A', 'B' ]);
 	expect(nodes).toHaveLength(2);
 	expect(nodes.map(n => n.item)).toEqual([ 'A', 'B' ]);
+});
+
+test('hierarchy.getSome() throws for non-existent ID', () => {
+	assert.throws(
+		() => testHierarchy.getSome([ 'A', 'NonExistent', 'B' ]),
+		/Node with ID 'NonExistent' not found in hierarchy/,
+	);
 });
 
 test('hierarchy.getSome() with empty array returns empty array', () => {
@@ -86,9 +93,16 @@ test('hierarchy.getItems() non-existent ID throws', () => {
 	);
 });
 
-test('hierarchy.getSomeItems() returns only existing items', () => {
-	const items = testHierarchy.getSomeItems([ 'A', 'NonExistent', 'B' ]);
+test('hierarchy.getSomeItems() returns existing items', () => {
+	const items = testHierarchy.getSomeItems([ 'A', 'B' ]);
 	expect(items).toEqual([ 'A', 'B' ]);
+});
+
+test('hierarchy.getSomeItems() throws for non-existent ID', () => {
+	assert.throws(
+		() => testHierarchy.getSomeItems([ 'A', 'NonExistent', 'B' ]),
+		/Node with ID 'NonExistent' not found in hierarchy/,
+	);
 });
 
 test('hierarchy.getSomeItems() with empty array returns empty array', () => {

@@ -14,6 +14,23 @@ B1:B11,B12
 
 // Tests for hierarchy-specific find behavior (ID-based search conversion)
 
+test('find() with existing IDs returns matching nodes', () => {
+	const foundNodes = hierarchy.find([ 'A', 'B' ]);
+	expect(foundNodes).toHaveLength(2);
+	expect(foundNodes.map(n => n.item)).toEqual([ 'A', 'B' ]);
+});
+
+test('find() with mix of existing and non-existing IDs returns only existing', () => {
+	const foundNodes = hierarchy.find([ 'A', 'NonExistent', 'B' ]);
+	expect(foundNodes).toHaveLength(2);
+	expect(foundNodes.map(n => n.item)).toEqual([ 'A', 'B' ]);
+});
+
+test('find() with all non-existing IDs returns empty array', () => {
+	const foundNodes = hierarchy.find([ 'NonExistent1', 'NonExistent2' ]);
+	expect(foundNodes).toHaveLength(0);
+});
+
 test('findAncestorId() with single ID search', () => {
 	// Find ancestor A1 starting from A11, searching for A
 	const ancestorId = hierarchy.findAncestorId([ 'A11' ], 'A');

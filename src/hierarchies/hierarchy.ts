@@ -111,14 +111,17 @@ export class Hierarchy<Item, Id = Item> {
 	 * Get nodes by their `Id`s.
 	 * @param ids The IDs of nodes to retrieve.
 	 * @returns An array of nodes.
+	 * @throws Node with ID not found in hierarchy.
 	 */
 	public getSome(ids: Some<Id>): HCNode<Item>[] {
 		const nodes: HCNode<Item>[] = [];
 
 		for (const id of someToIterable(ids)) {
 			const node = this.#nodes.get(id);
-			if (node)
-				nodes.push(node);
+			if (!node)
+				throw new Error(`Node with ID '${ id }' not found in hierarchy. Use 'has()' to check existence before calling 'getSome()'.`);
+
+			nodes.push(node);
 		}
 
 		return nodes;
@@ -150,6 +153,19 @@ export class Hierarchy<Item, Id = Item> {
 			throw new Error(`Node with ID '${ id }' not found in hierarchy. Use 'has()' to check existence before calling 'get()'.`);
 
 		return node;
+	}
+
+	/** Helper method to get existing nodes without throwing for missing IDs. */
+	#getSomeExisting(ids: Some<Id>): HCNode<Item>[] {
+		const nodes: HCNode<Item>[] = [];
+
+		for (const id of someToIterable(ids)) {
+			const node = this.#nodes.get(id);
+			if (node)
+				nodes.push(node);
+		}
+
+		return nodes;
 	}
 	//#endregion
 
@@ -395,8 +411,23 @@ export class Hierarchy<Item, Id = Item> {
 
 			return result;
 		}
+		else if (Array.isArray(search) || search instanceof Set) {
+			const nodes: HCNode<Item>[] = [];
+			for (const id of search) {
+				const node = this.#nodes.get(id);
+				if (node)
+					nodes.push(node);
+			}
 
-		return this.getSome(search);
+			return nodes;
+		}
+		else {
+			const node = this.#nodes.get(search);
+			if (node)
+				return [ node ];
+
+			return [];
+		}
 	}
 
 	/**
