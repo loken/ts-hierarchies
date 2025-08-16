@@ -402,32 +402,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @returns An array of matching nodes.
 	 */
 	public find(search: Some<Id> | NodePredicate<Item>): HCNode<Item>[] {
-		if (typeof search === 'function') {
-			const result: HCNode<Item>[] = [];
-			for (const node of this.#nodes.values()) {
-				if ((search as NodePredicate<Item>)(node))
-					result.push(node);
-			}
-
-			return result;
-		}
-		else if (Array.isArray(search) || search instanceof Set) {
-			const nodes: HCNode<Item>[] = [];
-			for (const id of search) {
-				const node = this.#nodes.get(id);
-				if (node)
-					nodes.push(node);
-			}
-
-			return nodes;
-		}
-		else {
-			const node = this.#nodes.get(search);
-			if (node)
-				return [ node ];
-
-			return [];
-		}
+		return this.#findInternal(search, (_id, node) => node);
 	}
 
 	/**
@@ -436,7 +411,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @returns An array of matching items.
 	 */
 	public findItems(search: Some<Id> | NodePredicate<Item>): Item[] {
-		return this.find(search).map(n => n.item);
+		return this.#findInternal(search, (_id, node) => node.item);
 	}
 
 	/**
@@ -445,22 +420,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @returns An array of matching IDs.
 	 */
 	public findIds(search: Some<Id> | NodePredicate<Item>): Id[] {
-		const result: Id[] = [];
-
-		if (typeof search === 'function') {
-			for (const [ id, node ] of this.#nodes) {
-				if ((search as NodePredicate<Item>)(node))
-					result.push(id);
-			}
-		}
-		else {
-			for (const id of someToIterable(search)) {
-				if (this.#nodes.has(id))
-					result.push(id);
-			}
-		}
-
-		return result;
+		return this.#findInternal(search, (id, node) => id ?? this.#identify(node.item));
 	}
 
 	/**
@@ -469,23 +429,39 @@ export class Hierarchy<Item, Id = Item> {
 	 * @returns An array of matching entries (tuples of [id, item, node]).
 	 */
 	public findEntries(search: Some<Id> | NodePredicate<Item>): HierarchyEntry<Item, Id>[] {
-		const result: HierarchyEntry<Item, Id>[] = [];
+		return this.#findInternal(search, (id, node) => [ id ?? this.#identify(node.item), node.item, node ]);
+	}
 
+	#findInternal<T>(
+		search: Some<Id> | NodePredicate<Item>,
+		project: (id: Id | undefined, node: HCNode<Item>) => T,
+	): T[] {
 		if (typeof search === 'function') {
+			const result: T[] = [];
 			for (const node of this.#nodes.values()) {
 				if ((search as NodePredicate<Item>)(node))
-					result.push([ this.#identify(node.item), node.item, node ]);
+					result.push(project(undefined, node));
 			}
+
+			return result;
 		}
-		else {
-			for (const id of someToIterable(search)) {
+		else if (Array.isArray(search) || search instanceof Set) {
+			const results: T[] = [];
+			for (const id of search) {
 				const node = this.#nodes.get(id);
 				if (node)
-					result.push([ id, node.item, node ]);
+					results.push(project(id, node));
 			}
-		}
 
-		return result;
+			return results;
+		}
+		else {
+			const node = this.#nodes.get(search);
+			if (node)
+				return [ project(search, node) ];
+
+			return [];
+		}
 	}
 
 
