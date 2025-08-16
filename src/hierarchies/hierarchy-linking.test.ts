@@ -1,7 +1,6 @@
 import { MultiMap } from '@loken/utilities';
 import { assert, expect, test } from 'vitest';
 
-import { nodesToIds } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { Hierarchies } from './hierarchies.js';
 
@@ -17,7 +16,7 @@ test('Can attach nodes from roots down', () => {
 	hc.attach('B1', Nodes.create('B11'));
 
 	expect(hc.roots.length).toEqual(2);
-	expect(nodesToIds(hc.roots)).toEqual([ 'A', 'B' ]);
+	expect(hc.rootIds).toEqual([ 'A', 'B' ]);
 });
 
 test('hc.attach() to non-existent parent throws', () => {
@@ -31,7 +30,7 @@ test('hc.attach() to pre-built root', () => {
 
 	const hc = Hierarchies.createForIds<string>().attachRoot(node);
 
-	expect(nodesToIds(hc.roots)).toEqual([ 'A' ]);
+	expect(hc.rootIds).toEqual([ 'A' ]);
 });
 
 test('hc.attach() to multiple hierarchies throws', () => {

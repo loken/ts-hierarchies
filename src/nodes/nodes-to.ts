@@ -2,7 +2,7 @@ import { MultiMap, Queue, someToArray, someToIterable, type Some } from '@loken/
 import type { Relation } from '../relations/relation.types.ts';
 import { flattenGraphNext } from '../traversal/graph-flatten.ts';
 import type { Identify } from '../utilities/identify.ts';
-import { nodeToId, nodesToIds } from './node-conversion.ts';
+import { nodeToIdProjection } from './node-conversion.ts';
 import type { HCNode } from './node.ts';
 
 
@@ -12,14 +12,16 @@ export const nodesToChildMap = <Item, Id = Item>(
 	identify?: Identify<Item, Id>,
 	childMap = new MultiMap<Id>(),
 ): MultiMap<Id> => {
+	const toId = nodeToIdProjection(identify);
+
 	for (const root of someToIterable(roots)) {
-		const nodeId = nodeToId(root, identify);
+		const nodeId = toId(root);
 		if (root.isInternal) {
-			const childIds = nodesToIds(root.children, identify);
+			const childIds = root.children.map(toId);
 			childMap.add(nodeId, childIds);
 		}
 		else {
-			childMap.addEmpty(nodeToId(root, identify));
+			childMap.addEmpty(nodeId);
 		}
 	}
 
@@ -30,8 +32,8 @@ export const nodesToChildMap = <Item, Id = Item>(
 
 	for (const node of nodes) {
 		const childNodes = node.children;
-		const nodeId = nodeToId(node, identify);
-		const childIds = nodesToIds(childNodes, identify);
+		const nodeId = toId(node);
+		const childIds = childNodes.map(toId);
 		childMap.add(nodeId, childIds);
 	}
 
@@ -47,15 +49,16 @@ export const nodesToDescendantMap = <Item, Id = Item>(
 	roots = someToArray(roots);
 
 	type Stored = [ node: HCNode<Item>, ancestors: Set<Id>[] ];
+	const toId = nodeToIdProjection(identify);
 	const store = new Queue<Stored>();
 	store.enqueue(roots.map(node => [ node, [] ] as Stored));
 
 	for (const root of roots)
-		descendantMap.addEmpty(nodeToId(root, identify));
+		descendantMap.addEmpty(toId(root));
 
 	while (store.count > 0) {
 		const [ node, ancestors ] = store.dequeue()!;
-		const nodeId = nodeToId(node, identify);
+		const nodeId = toId(node);
 
 		for (const ancestor of ancestors)
 			ancestor.add(nodeId);
@@ -80,17 +83,18 @@ export const nodesToAncestorMap = <Item, Id = Item>(
 	roots = someToArray(roots);
 
 	type Stored = [ node: HCNode<Item>, ancestors?: Id[] ];
+	const toId = nodeToIdProjection(identify);
 	const store = new Queue<Stored>();
 	store.enqueue(roots.map(node => [ node ] as Stored));
 
 	for (const root of roots) {
 		if (root.isLeaf)
-			ancestorMap.addEmpty(nodeToId(root, identify));
+			ancestorMap.addEmpty(toId(root));
 	}
 
 	while (store.count > 0) {
 		const [ node, ancestors ] = store.dequeue()!;
-		const nodeId = nodeToId(node, identify);
+		const nodeId = toId(node);
 
 		if (ancestors)
 			ancestorMap.add(nodeId, ancestors);
@@ -111,6 +115,7 @@ export const nodesToRelations = <Item, Id = Item>(
 	identify?: Identify<Item, Id>,
 ): Relation<Id>[] => {
 	const relations: Relation<Id>[] = [];
+	const toId = nodeToIdProjection(identify);
 
 	flattenGraphNext({
 		roots,
@@ -118,7 +123,7 @@ export const nodesToRelations = <Item, Id = Item>(
 			const { isLeaf, isRoot } = node;
 
 			if (isLeaf && isRoot) {
-				const nodeId = nodeToId(node, identify);
+				const nodeId = toId(node);
 				relations.push([ nodeId ]);
 
 				return;
@@ -127,9 +132,9 @@ export const nodesToRelations = <Item, Id = Item>(
 			if (isLeaf)
 				return;
 
-			const nodeId = nodeToId(node, identify);
+			const nodeId = toId(node);
 			const children = node.children;
-			const childIds = nodesToIds(children, identify);
+			const childIds = children.map(toId);
 			for (const childId of childIds)
 				relations.push([ nodeId, childId ]);
 

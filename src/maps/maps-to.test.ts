@@ -4,7 +4,6 @@ import { expect, test } from 'vitest';
 import type { Relation } from '../relations/relation.types.js';
 import { childMapToParentMap, childMapToDescendantMap, childMapToAncestorMap, childMapToRelations, childMapToRootIds, childMapToNodes } from './maps-to.js';
 import { relationsToChildMap } from '../relations/relations-to.js';
-import { nodesToIds } from '../nodes/node-conversion.js';
 import { nodesToChildMap } from '../nodes/nodes-to.js';
 
 const sep: MultiMapSeparators = {
@@ -74,7 +73,7 @@ test('childMapToAncestorMap', () => {
 test('childMapToNodes', () => {
 	const roots = childMapToNodes(childMap);
 
-	expect(rootIds).toEqual(nodesToIds(roots));
+	expect(rootIds).toEqual(roots.map(node => node.item));
 });
 
 test('childMapToNodes -> nodesToChildMap round-trip', () => {

@@ -4,7 +4,6 @@ import { traverseGraphNext } from '../traversal/graph-traverse.js';
 import { traverseSequence } from '../traversal/sequence-traverse.js';
 import type { TraversalType } from '../traversal/graph.types.js';
 import type { DeBrand, NodePredicate } from './node.types.js';
-import { nodesToItems } from './node-conversion.js';
 import { flattenGraph } from '../traversal/graph-flatten.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
 import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
@@ -212,7 +211,7 @@ export class HCNode<Item> {
 
 	/** Get all child items. */
 	public get childItems() {
-		return this.#children ? nodesToItems(this.#children.values()) : [];
+		return this.#children ? Array.from(this.#children, node => node.item) : [];
 	}
 
 	/** Get ancestor nodes by traversing according to the options. */

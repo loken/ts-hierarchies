@@ -31,3 +31,8 @@ export const nodesToIds = <Item, Id = Item>(nodes: Multiple<HCNode<Item>>, ident
 
 	return [ identify?.(nodes.item) ?? nodes.item as unknown as Id ]; // single node
 };
+
+/** Create a projection function to extract `Id` from `node.item`. */
+export const nodeToIdProjection = <Item, Id = Item>(identify?: (item: Item) => Id): (node: HCNode<Item>) => Id => {
+	return (node: HCNode<Item>) => identify?.(node.item) ?? node.item as unknown as Id;
+};

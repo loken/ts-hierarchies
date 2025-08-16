@@ -1,7 +1,6 @@
 import { MultiMap, type MultiMapSeparators, splitBy } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
-import { nodesToIds } from './node-conversion.js';
 import { nodesFromItemsWithChildMap, nodesFromItemsWithChildren, nodesFromItemsWithParents } from './nodes-from-items.js';
 import { nodesToChildMap } from './nodes-to.js';
 
@@ -27,7 +26,7 @@ test('nodesFromItemsWithChildMap', () => {
 
 	const roots = nodesFromItemsWithChildMap(items, item => item.id, inputMap);
 
-	expect(inputRoots).toEqual(nodesToIds(roots, item => item.id));
+	expect(inputRoots).toEqual(roots.map(node => node.item.id));
 
 	const output = nodesToChildMap(roots, item => item.id).render(sep);
 
@@ -40,7 +39,7 @@ test('nodesFromItemsWithChildMap ignores items that are not in the child map', (
 
 	const roots = nodesFromItemsWithChildMap(items, item => item.id, inputMap);
 
-	expect(inputRoots).toEqual(nodesToIds(roots, item => item.id));
+	expect(inputRoots).toEqual(roots.map(node => node.item.id));
 
 	const output = nodesToChildMap(roots, item => item.id).render(sep);
 
@@ -85,7 +84,7 @@ test('nodesFromItemsWithChildren()', () => {
 
 	const roots = nodesFromItemsWithChildren(itemsWithChildren, item => item.children);
 
-	expect(inputRoots).toEqual(nodesToIds(roots, item => item.id));
+	expect(inputRoots).toEqual(roots.map(node => node.item.id));
 
 	const actual = nodesToChildMap(roots, item => item.id).render(sep);
 

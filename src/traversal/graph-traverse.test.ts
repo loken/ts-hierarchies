@@ -1,7 +1,6 @@
 import { iterateAll } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
-import { nodesToItems } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { traverseGraph } from './graph-traverse.js';
 
@@ -31,9 +30,9 @@ test('traverseGraph (next, breadth-first) yields in correct order', () => {
 		type:  'breadth-first',
 		roots: intRoot,
 		next:  n => n.children,
-	});
+	}).map(n => n.item).toArray();
 
-	expect(nodesToItems(actual)).toEqual(expected);
+	expect(actual).toEqual(expected);
 });
 
 test('traverseGraph (next, depth-first) yields in correct order', () => {
@@ -43,9 +42,9 @@ test('traverseGraph (next, depth-first) yields in correct order', () => {
 		type:  'depth-first',
 		roots: intRoot,
 		next:  n => n.children,
-	});
+	}).map(n => n.item).toArray();
 
-	expect(nodesToItems(actual)).toEqual(expected);
+	expect(actual).toEqual(expected);
 });
 
 test('traverseGraph (signal, breadth-first) yields in correct order', () => {
@@ -55,9 +54,9 @@ test('traverseGraph (signal, breadth-first) yields in correct order', () => {
 		type:   'breadth-first',
 		roots:  intRoot,
 		signal: (n, s) => s.next(n.children),
-	});
+	}).map(n => n.item).toArray();
 
-	expect(nodesToItems(actual)).toEqual(expected);
+	expect(actual).toEqual(expected);
 });
 
 test('traverseGraph (signal, depth-first) yields in correct order', () => {
@@ -67,9 +66,9 @@ test('traverseGraph (signal, depth-first) yields in correct order', () => {
 		type:   'depth-first',
 		roots:  intRoot,
 		signal: (n, s) => s.next(n.children),
-	});
+	}).map(n => n.item).toArray();
 
-	expect(nodesToItems(actual)).toEqual(expected);
+	expect(actual).toEqual(expected);
 });
 
 test('traverseGraph (signal) with skip yields in correct order', () => {
@@ -86,9 +85,9 @@ test('traverseGraph (signal) with skip yields in correct order', () => {
 			if (node.parent?.item === 1)
 				signal.skip();
 		},
-	});
+	}).map(n => n.item).toArray();
 
-	expect(nodesToItems(actual)).toEqual(expected);
+	expect(actual).toEqual(expected);
 });
 
 test('traverseGraph (signal) with skip and end yields wanted node', () => {
@@ -106,12 +105,10 @@ test('traverseGraph (signal) with skip and end yields wanted node', () => {
 			else
 				signal.skip();
 		},
-	});
+	}).map(n => n.item).toArray();
 
-	const items = nodesToItems(actual);
-
-	expect(items.length).toEqual(1);
-	expect(items[0]).toEqual(expected);
+	expect(actual.length).toEqual(1);
+	expect(actual[0]).toEqual(expected);
 });
 
 test('traverseGraph (next) on circular graph breaks on visited', () => {
@@ -129,9 +126,9 @@ test('traverseGraph (next) on circular graph breaks on visited', () => {
 		roots:        first,
 		detectCycles: true,
 		next:         node => node.children,
-	});
+	}).map(n => n.item).toArray();
 
-	expect(nodesToItems(actual)).toEqual([ 1, 2, 3, 4 ]);
+	expect(actual).toEqual([ 1, 2, 3, 4 ]);
 });
 
 test('traverseGraph (signal) on circular graph breaks on visited', () => {
@@ -151,9 +148,9 @@ test('traverseGraph (signal) on circular graph breaks on visited', () => {
 		signal:       (node, signal) => {
 			signal.next(node.children);
 		},
-	});
+	}).map(n => n.item).toArray();
 
-	expect(nodesToItems(actual)).toEqual([ 1, 2, 3, 4 ]);
+	expect(actual).toEqual([ 1, 2, 3, 4 ]);
 });
 
 
