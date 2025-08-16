@@ -31,6 +31,17 @@ test('find() with all non-existing IDs returns empty array', () => {
 	expect(foundNodes).toHaveLength(0);
 });
 
+test('find() with single existing ID returns matching node', () => {
+	const foundNodes = hierarchy.find('A');
+	expect(foundNodes).toHaveLength(1);
+	expect(foundNodes[0]?.item).toEqual('A');
+});
+
+test('find() with single non-existing ID returns empty array', () => {
+	const foundNodes = hierarchy.find('NonExistent');
+	expect(foundNodes).toHaveLength(0);
+});
+
 test('findAncestorId() with single ID search', () => {
 	// Find ancestor A1 starting from A11, searching for A
 	const ancestorId = hierarchy.findAncestorId([ 'A11' ], 'A');
