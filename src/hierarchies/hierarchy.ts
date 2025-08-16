@@ -765,7 +765,40 @@ export class Hierarchy<Item, Id = Item> {
 	}
 	//#endregion
 
-	//#region MultiMaps
+	//#region Transform
+	/**
+	 * Create a clone of an existing item hierarchy with the same structure and items, but new node instances.
+	 * This is a fast alternative to complex search operations for simple cloning scenarios.
+	 *
+	 * @template Item The type of item.
+	 * @template Id The type of IDs.
+	 * @param hierarchy The hierarchy to clone.
+	 * @returns A new `Hierarchy<Item, Id>` with the same structure and items but new nodes.
+	 */
+	public static clone<Item, Id>(hierarchy: Hierarchy<Item, Id>): Hierarchy<Item, Id> {
+		const roots = Nodes.fromItemsWithChildMap(
+			hierarchy.nodeItems,
+			hierarchy.identify,
+			hierarchy.toChildMap(),
+		);
+
+		return new Hierarchy<Item, Id>(hierarchy.identify).attachRoot(roots);
+	}
+
+	/**
+	 * Create a clone of an existing hierarchy with the same structure but new node instances for IDs.
+	 *
+	 * @template Item The type of item.
+	 * @template Id The type of IDs.
+	 * @param hierarchy The hierarchy to clone.
+	 * @returns A new `Hierarchy<Id>` with the same structure but new nodes.
+	 */
+	public static cloneIds<Item, Id>(hierarchy: Hierarchy<Item, Id>): Hierarchy<Id> {
+		const roots = Nodes.fromChildMap(hierarchy.toChildMap());
+
+		return Hierarchies.createForIds<Id>().attachRoot(roots);
+	}
+
 	/** Create a map of ids to child-ids by traversing the `hierarchy`. */
 	public toChildMap(): MultiMap<Id> {
 		return nodesToChildMap(this.roots, this.#identify);

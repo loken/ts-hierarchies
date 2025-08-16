@@ -2,6 +2,7 @@ import { MultiMap } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import { type Relation } from '../relations/relation.types.js';
+import { Hierarchy } from './hierarchy.js';
 import { Hierarchies } from './hierarchies.js';
 
 const childMap = new MultiMap();
@@ -167,4 +168,72 @@ test('Hierarchies.createWithItems() from items with parents', () => {
 
 	const actualFromLeaves = hcFromLeaves.toRelations();
 	expect(actualFromLeaves).toEqual(relations);
+});
+
+test('Hierarchy.clone() with item hierarchy preserves items', () => {
+	// Create hierarchy with complex items
+	const complexItems = [
+		{ id: 'A', name: 'Item A', value: 100 },
+		{ id: 'A1', name: 'Item A1', value: 50 },
+		{ id: 'A2', name: 'Item A2', value: 75 },
+		{ id: 'B', name: 'Item B', value: 200 },
+	];
+
+	const childMap = new MultiMap<string>();
+	childMap.add('A', [ 'A1', 'A2' ]);
+
+	const originalWithItems = Hierarchies.createWithItems({
+		items:    complexItems,
+		identify: item => item.id,
+		spec:     childMap,
+	});
+
+	// Clone it
+	const cloneWithItems = Hierarchy.clone(originalWithItems);
+
+	// Verify all items are preserved
+	expect(cloneWithItems.nodeItems).toEqual(originalWithItems.nodeItems);
+
+	// Verify nodes are new but items are same references
+	const originalItem = originalWithItems.get('A').item;
+	const clonedItem = cloneWithItems.get('A').item;
+	expect(originalItem).toBe(clonedItem); // Same item reference
+});
+
+test('Hierarchy.cloneIds() creates ID hierarchy from item hierarchy', () => {
+	// Create hierarchy with complex items
+	const originalItems = [
+		{ id: 'A', name: 'Root A' },
+		{ id: 'A1', name: 'Child A1' },
+		{ id: 'A2', name: 'Child A2' },
+		{ id: 'B', name: 'Root B' },
+	];
+
+	const originalWithItems = Hierarchies.createWithItems({
+		items:    originalItems,
+		identify: item => item.id,
+		spec:     [
+			[ 'A', 'A1' ],
+			[ 'A', 'A2' ],
+		],
+	});
+
+	// Clone to ID hierarchy
+	const idClone = Hierarchy.cloneIds(originalWithItems);
+
+	// Verify structure is identical
+	expect(idClone.toChildMap()).toEqual(originalWithItems.toChildMap());
+
+	// Verify root structure
+	expect(idClone.roots.length).toBe(originalWithItems.roots.length);
+	expect(idClone.rootItems).toEqual(originalWithItems.rootIds);
+
+	// Verify all IDs are preserved
+	expect(idClone.nodeItems).toEqual(originalWithItems.nodeIds);
+
+	// Verify nodes are new instances
+	const originalItem = originalWithItems.get('A');
+	const clonedId = idClone.get('A');
+	expect(originalItem).not.toBe(clonedId); // Different node instances
+	expect(originalItem.item.id).toBe(clonedId.item); // Item's ID becomes the cloned item
 });
