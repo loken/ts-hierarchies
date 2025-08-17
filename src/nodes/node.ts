@@ -24,9 +24,10 @@ export class HCNode<Item> {
 	}
 
 	//#region backing fields
-	#item:      Item;
-	#parent?:   HCNode<Item>;
-	#children?: Set<HCNode<Item>>;
+	#item:        Item;
+	#parent?:     HCNode<Item>;
+	#children?:   Set<HCNode<Item>>;
+	#childCache?: readonly HCNode<Item>[];
 
 	/** The brand is used to lock the node to a specific owner. */
 	#brand?: any;
@@ -116,6 +117,8 @@ export class HCNode<Item> {
 			child.#parent = this;
 		}
 
+		this.#childCache = undefined;
+
 		return this;
 	}
 
@@ -140,6 +143,8 @@ export class HCNode<Item> {
 		if (this.isLeaf)
 			this.#children = undefined;
 
+		this.#childCache = undefined;
+
 		return this;
 	}
 
@@ -159,6 +164,7 @@ export class HCNode<Item> {
 		if (this.#parent!.isLeaf)
 			this.#parent!.#children = undefined;
 
+		this.#parent!.#childCache = undefined;
 		this.#parent = undefined;
 
 		return this;
@@ -204,9 +210,20 @@ export class HCNode<Item> {
 		return this.#parent?.item;
 	}
 
-	/** Get all child nodes. */
-	public get children() {
-		return this.#children ? [ ...this.#children ] : [];
+	/**
+	 * Get all child nodes.
+	 *
+	 * @remarks
+	 * The returned array is frozen and must not be mutated. Do not push, pop, or modify its contents.
+	 * This is for performance and security: always treat the result as immutable.
+	 */
+	public get children(): HCNode<Item>[] {
+		if (!this.#childCache) {
+			const arr = this.#children ? Array.from(this.#children) : [];
+			this.#childCache = Object.freeze(arr);
+		}
+
+		return this.#childCache as HCNode<Item>[];
 	}
 
 	/** Get all child items. */
