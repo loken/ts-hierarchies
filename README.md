@@ -1,370 +1,451 @@
-# @loken/hierarchies
+# @loken/hierarchies ![Published on npm](https://img.shields.io/npm/v/@loken/hierarchies.svg?logo=npm)
 
-[![Published on npm](https://img.shields.io/npm/v/@loken/hierarchies.svg?logo=npm)](https://www.npmjs.com/package/@loken/hierarchies)
+TypeScript library for working with hierarchies of identifiers and identifiable items.
 
-Library for working with hierarchies of identifiers and identifiable objects.
-
-The idea is that quite often you have a list of items, usually from a database that form a tree hierarchy and you want to traverse it, search it and reason about the parents, children, ancestors and descendants. `@loken/hierarchies` is built to solve that.
+Traverse, search, and reason about hierarchical data with deterministic order, identity-aware traversal, and fast enumeration.
 
 
-## Prerequisites
+## Quick start
 
-A common set of tools we use rely on the concept of a set of `Relation<T>`s and a child-map implemented as a `MultiMap<T>` (from `@loken/utilities`). We use these data structures to represent parent-to-child relationships and a map of item IDs to child IDs, respectively.
+Install the package into your TypeScript project:
 
-A `Relation<number>` is simply a tuple and can be made like this:
-
-```typescript
-const relations: Relation<number> = [
-	[1, 11, 12],
-	[2, 21],
-	[21, 211]
-];
+```shell
+pnpm add @loken/hierarchies @loken/utilities
 ```
 
-A `MultiMap<number>` representing the same relations can be created like this:
+Create a hierarchy from items with a parent ID or externalized relations, traverse and search:
 
 ```typescript
-const childMap = new MultiMap<number>();
-childMap.add(1, [ 11, 12 ]);
-childMap.add(2, [ 21 ]);
-childMap.add(21, [ 211 ]);
+const hierarchy1 = Hierarchies.fromParentIds(items, i => i.id, i => i.parentId ?? undefined);
+const hierarchy2 = Hierarchies.fromRelationsWithItems(items, i => i.id, [
+    [ 'r', 'a' ],
+    [ 'r', 'b' ],
+]);
+
+// Retrieve and project descendants or ancestors.
+const getNodes = hierarchy1.getDescendants('a', true);
+const getItems = hierarchy1.getDescendantItems('a', true);
+const getIds   = hierarchy1.getDescendantIds('a', true);
+
+// Find matches by predicate
+const foundNodes = hierarchy1.find(n => n.item.name === 'a');
+const foundItems = hierarchy1.findItems(n => n.item.name === 'a');
+const foundIds   = hierarchy1.findIds(n => n.item.name === 'a');
+
+// Search to create a pruned clone of the hierarchy.
+const prunedHierarchy = hierarchy1.search([ 'a' ], { matches: true, ancestors: false, descendants: true });
+
+// Clone the entire hierarchy.
+const clonedHierarchy = hierarchy1.clone();
 ```
 
-Alternatively, you can make a `MultiMap<number>` by using it's static `parse` function like this:
-
-```typescript
-const childMap = MultiMap.parse<number>(`
-1:11,12
-2:21
-21:211
-`, {transform: parseInt})
-```
-
-You can also serialize the `MultiMap` back to a string using its static `render` function. Both of these support various options to use as much or little padding and whatever separators you prefer.
-
-When we use a `relations` or `childMap` symbol in the following examples, you can assume it's one of these.
+*Next*: Jump to [Building hierarchies](#building-hierarchies).
 
 
-## Hierarchy of Items
+## Features
 
-Sometimes the items are small, your list short and you can hold all of the items in memory at the same time. In such cases you can create a `Hierarchy<Item, Id>`, a hierarchy of items, by passing the items along with an `identify(item)`delegate and a specification of the parent-child relations.
-
-### By `IdSpec<Id>`
-
-The specification can be a list of `Relation<Id>`s, a `MultiMap<Id>` representing a map of item to child items or another `Hierarchy` with the same type of IDs.
-
-```typescript
-// With relations:
-const hierarchy = Hierarchies.createWithItems({
-	items,
-	identify: item => item.id,
-	spec:     relations,
-});
-// With other hierarchy:
-var hierarchy = Hierarchies.createWithItems({
-		items,
-		identify: item => item.id,
-		spec:     otherHierarchy,
-	});
-// With child map:
-var hierarchy = Hierarchies.createWithItems({
-	items,
-	identify: item => item.id,
-	spec:     childMap,
-});
-```
-
-### By contained parent information
-
-If your `Item`s contains information about its parent, either as a reference or as a foreign key, you can create the `Hierarchy<Item, Id>` by specifying this information:
-
-```typescript
-// With a delegate retrieving a foreign key to the parent:
-var hierarchy = Hierarchies.createWithItems({
-	items,
-	identify: item => item.id,
-	parentId: item => item.parentId,
-});
-// With a delegate retrieving a the parent directly:
-var hierarchy = Hierarchies.createWithItems({
-	items,
-	identify: item => item.id,
-	parent: item => item.parent,
-});
-```
-
-### By contained child information
-
-Similarly, if you your `Item` contains information about its children, either as references or as a list of foreign keys, you can create the `Hierarchy<Item, Id>` by specifying this information:
-
-**NB!** If you provide the `children` delegate, the items should be only the roots and not all items.
-
-```typescript
-// With a delegate retrieving foreign keys to the child IDs:
-var hierarchy = Hierarchies.createWithItems({
-	items,
-	identify: item => item.id,
-	childIds: item => item.childIds,
-});
-// With a delegate retrieving a the child items directly:
-var hierarchy = Hierarchies.createWithItems({
-	items,
-	identify: item => item.id,
-	children: item => item.children,
-});
-```
-
-
-## Hierarchy of IDs
-
-Other times holding all items in memory is not feasible, but you still need to reason around the hierarchical relations so that you can retrieve a parent, ancestors, children or descendants of an entity.
-
-In such cases you can build a `Hierarchy<Id>`, a hierarchy of IDs, based on known relations and then traverse that hierarchy of IDs to find the IDs of a parent, ancestors, children or descendants of an ID. Those IDs can then be used to retrieve the items from an API or a database.
-
-> "How do you know know what the relationships are?"
-
-If you can't or don't want to store your relations separate from your entities, chances are your entities have a foreign key to the ID of its parent. In such cases, you query the entities for a projection of `Relation<Id>` instances, which contains only the ID of a parent and child and create the hierarchy of IDs from that.
-
-If you have a one-to-many parent-to-children relationship table to work with you can retrieve its records and easily map the `Relation<Id>`s and then create the hierarchy of IDs from that.
-
-We can make a hierarchy of IDs similarly to how we make a hierarchy of items. The main difference is that for a hierarchy of IDs we only need to pass the specification since the item is the ID and hence the `identify` delegate is the identity function.
-
-```typescript
-// With relations:
-var hierarchy = Hierarchies.createWithIds(relations);
-// With other hierarchy:
-var hierarchy = Hierarchies.createWithIds(otherHierarchy);
-// With child map:
-var hierarchy = Hierarchies.createWithIds(childMap);
-```
-
-
-## Identity delegates?
-
-> "Why the delegates to identify items?"
-
-We didn't want to enforce applying a particular interface or use reflection to access the primary key of an item. By instead using delegates you can use whatever you like to identify an item.
-
-This opens up scenarios such as not having a database at all, and using the hash code or an index in a global list or some other madness. You can have a primary key that consists of multiple fields, by using a delegate you can combine those two fields into a tuple and use that as an identifier.
+- Build hierarchies from items, relations, or child maps with simple factory methods
+- Deterministic sibling order and stable traversal (preserves source order)
+- Fast breadth- or depth first traversal with optional cycle detection
+- Advanced traversal with a `signal` delegate for pruning/early stop
+- Powerful search: find by predicate or produce pruned hierarchies (matches/ancestors/descendants)
+- Convenient mapping: convert between relations, child maps, nodes and text
+- Serialization helpers for fixtures, tests and persistence
+- Node branding to prevent cross-hierarchy contamination
+- Optimized for speed and low memory overhead
+- .NET sibling with near-identical APIs: https://www.nuget.org/packages/Loken.Hierarchies
 
 
 ## Concepts
 
-Let's describe the conceptually different things included in the package.
+### Preamble: Prepare items and relations
 
-### Data structures
+A hierarchy can hold IDs or Items represented by IDs.
 
-1. **Hierarchy**: Above we've discussed how to create the main data structures: `Hierarchy<Item, Id>` and `Hierarchy<Id>`, hierarchy of items and hierarchy of IDs, respectively.
+Let's prepare some items and relations to use for our examples.
 
-	A hierarchy contains a tree of `HCNode<Item>`'s. It holds a dictionary of the nodes and roots so that it provides O(1) time complexity for looking them up by ID.
+When the Item contains a parent ID, we can derive relations from the items.
 
-1. **Node**: A `HCNode<Item>` is double-linked wrapper for an `Item`. The double-link allow us to easily and efficiently traverse both up through the ancestry and down through descendants following links.
+```typescript
+import { Hierarchies, Nodes, type Relation } from '@loken/hierarchies';
+import { MultiMap } from '@loken/utilities';
 
-	You can create or assemble nodes or extract the relations of linked nodes using the static members of the `Nodes` class.
+interface Item { parentId?: string | null; id: string; name: string }
 
-	_Note_: It is using a HC prefix to avoid a naming collision with NodeJS and keep it short.
+const root: Item = { parentId: null, id: 'r', name: 'root' };
+const a:    Item = { parentId: 'r', id: 'a', name: 'branch-A' };
+const b:    Item = { parentId: 'r', id: 'b', name: 'branch-B' };
+const a1:   Item = { parentId: 'a', id: 'a1', name: 'leaf-A1' };
+const a2:   Item = { parentId: 'a', id: 'a2', name: 'leaf-A2' };
+const items = [ root, a, b, a1, a2 ];
+```
 
+When it does not, we must provide the structure through other means such as relations or a child map. Let's prepare both.
 
-#### Memory
-Of course, double-linking comes at the cost of memory. We assume that you don't have a huge amount of nodes, and as such we've not optimized for minimal memory consumption. So if you do have a *lot* of nodes, you should check that we don't consume more memory than you can afford. (We've tried to be efficient in not realizing `IterableIterator<T>`s to collections as much as possible, though, so don't think we didn't consider memory at all!)
+```typescript
+const relations: Relation<string>[] = [
+    [ 'r' ],
+    [ 'r', 'a' ],
+    [ 'r', 'b' ],
+    [ 'a', 'a1' ],
+    [ 'a', 'a2' ],
+];
 
-#### Branding
-A node can be "branded" so that it cannot be attached to another node with a different brand. A node held by a hierarchy is automatically branded. This means that unless you want to intentionally break things by using reflection to break the branding protection, each node in a hierarchy can only belong to that hierarchy. Because of this we expose the nodes in the hierarchy.
+const childMap = MultiMap.parse<string>(`
+    r:a,b
+    a:a1,a2
+    `);
+```
 
-If you want to use this API yourself, know that when you brand a node, you get a `DeBrand` delegate back. Calling this is the only way to debrand the node, so make sure you keep track of it!
+### Item vs ID hierarchies
 
-#### Ordering and identity
+- Use a hierarchy of items when the dataset is small enough to keep in memory and you want to traverse and query rich objects directly.
+- Use a hierarchy of IDs when items are too large, numerous or remote; traverse IDs first, then fetch the matching entities from your data source.
 
-- Sibling order is deterministic. Children are kept in insertion order, and traversals enumerate children in that order. When constructing from relations or a child-map, the order in the source is preserved.
-- Cycle detection and visited semantics are identity-based. When `detectCycles` is enabled, nodes are tracked by object identity. Separate node instances that wrap the same item are considered distinct for visitation.
-- Equality: In TypeScript, objects compare by reference, so two `HCNode<T>` instances are only equal if they're the same object. Compare IDs (via your `identify` delegate) or items for logical equality. The .NET version behaves differently—see its README for details.
+### Identification delegates
 
-#### Serialization
-
-- Nodes are runtime wrappers with private fields and no custom JSON shape. Serializing an `HCNode<T>` directly won't yield a useful structure. Persist your relations (`Relation<Id>`/`MultiMap<Id>`) or items and rebuild the hierarchy when needed.
-- The .NET version supports direct node serialization with different equality semantics; see its README for specifics.
+Why delegates to identify items? We don't force an interface or base class. Passing `identify(item)` (and `identifyParent(item)`) lets you pick any key shape, including composites, hashes, or adapters over legacy models, without changing your types.
 
 ### Relations
 
-We support a few representations for relations and provide utilities for converting between them.
+We support several representations and conversions:
 
-1. `Relation<Id>` holds a parent-to-child relation as a `readonly [parentId, childId]` tuple.
-2. `MultiMap<Id>` can be used as another representation of `Relation<Id>`s by holding a parent-to-child map. The structure is from `@loken/utilities` and there are some convenient helpers in there for parsing a string into a MultiMap or rendering a MultiMap into a string. This means you could store your relations in a file using these extensions. We don't necessarily suggest that you do this, but it's an option for some quick prototyping etc.
+Use `Relation<TId>` for portable storage and diffs, `MultiMap<TId>` for fast in-memory graph construction
 
-### Traversal
+1. `Relation<TId>` holds a parent-to-child relation.
+2. `MultiMap<TId>` is used for representing a child map for ID relations. You can build it directly, or use helpers like `MultiMap.Parse<TId>(text)` and `map.Render()` to serialize as text.
+> **NB!** There is no `HierarchyRelation<TId>` like we have for .NET as a database storage format.
 
-An essential part of any tree/hierarchy/graph library is traversal. The `traverseGraph`, `traverseSequence`, `flattenGraph` and `flattenSequence` utility functions provide ways to traverse or flatten a graph (tree) or sequence (list) starting with one or more nodes, called `Some<Node<Item>>`.
+Use extension methods to map or convert between structure representations for IDs: nodes, relations, child maps, and text.
 
-- The former pair both provide options for simple and more complex, yet more flexible, traversal using an `IterableIterator<>`.
-- The latter pair both provide options for simple and more complex, yet more flexible, flattening of of nodes into an array.
-
-Aside from their return type the two pairs behave the same and take the same parameters.
-
-#### Performance
-- Due to iterator overhead, prefer `flattenGraph`/`flattenSequence` over `traverseGraph`/`traverseSequence` by default—even if you won't keep the array; materializing is often faster than collecting from a generator (see `src/traversal/*.bench.ts`). Use `traverse*` when you truly need lazy streaming, early exit, or to avoid materializing very large results.
-- Use the `next` variant of traversal when you don't need to skip nodes or stop early; the `signal` variant carries extra checks/state.
-- When using `signal`, pass concrete arrays directly, e.g. `signal.next(node.children)`. Avoid creating new arrays or generator wrappers in hot paths.
-- Pass roots/children as plain arrays where possible. Arrays are the fastest `Some<T>` shape for the internal linear store.
-- Disable `detectCycles` when you know the graph is a tree; cycle detection adds a `Set` lookup per node.
-
-#### Traverse next
-For simple node enumeration you simply pass the starting point as `roots` and a `next` delegate describing where to find the next node(s).
-
-Here is an example of what simple traversal might look like for both Graph and Sequence:
-
-```typescript
-// Traverse a graph of objects which has a children property with an array of other nodes.
-var nodeIterator = traverseGraph({
-		roots: oneOrMoreNodes,
-		next:  n => n.children,
-	});
+```csharp
+// Mapping between structure representations
+const relationsFromHierarchy = hierarchy1.toRelations();
+const childMapFromHierarchy  = hierarchy1.toChildMap();
+const nodesFromRelations     = Nodes.fromRelations(relationsFromHierarchy);
+const nodesFromChildMap      = Nodes.fromChildMap(childMapFromHierarchy);
+// Serialize between child map and text
+const textChildMap           = childMapFromHierarchy.render();
+const parsedChildMap         = MultiMap.parse(textChildMap);
+const parsedIntChildMap      = MultiMap.parse('0:1,2', { transform: parseInt });
 ```
+
+### Discoverability and API surface
+
+Functionality is provided on the "static" `Nodes` and `Hierarchies` classes serving as both factory classes and discovery containers for querying, traversal and mapping/conversion through methods like `get*`, `find*`, `to*` and `from*`.
+
+*Next*: See [Building hierarchies](#building-hierarchies) to construct graphs, or jump to [Query and traversal](#query-and-traversal) to work with existing ones.
+
+
+## Building hierarchies
+
+There are many ways of creating a hierarchy. We can build it imperatively, use known relations encoded into the items as a parent-child relationship or use an external list of relations or a child-map.
+
+### Build imperatively
+
+Create an empty hierarchy, then create nodes and attach them to each other or to the hierarchy directly.
+
 ```typescript
-// Create an iterable iterator of numbers (linked list) using a utility from @loken/utilities.
-const sequence = traverseRange(0, 5);
+const hierarchy = Hierarchies.createForItems<Item, string>(i => i.id);
 
-const numberIterator = traverseSequence({
-	first: sequence.next().value,
-	next:  () => {
-		const next = sequence.next();
+// Create nodes and attach them to each other
+const branchNodes = Nodes.create(a, b);
+const rootNode    = Nodes.create(root).attach(branchNodes);
 
-		return next.done ? undefined : next.value;
-	},
+// Attach the root node as a hierarchy root. (Yes we can have multiple roots.)
+hierarchy.attachRoot(rootNode);
+
+// Create some leaf nodes and attach them to the "a" branch of the hierarchy directly.
+const leafNodes = Nodes.create(a1, a2);
+hierarchy.attach('a', leafNodes);
+```
+
+### Create from items with parents
+
+We can provide the structure implicitly by providing a mapping delegate. The delegate may provide the parent ID from a property, as shown below, or though any other means such as another data structure.
+
+```typescript
+const parentedHc = Hierarchies.fromParentIds(items, i => i.id, i => i.parentId);
+```
+
+Related variants exist when your models expose other shapes:
+- Children by ID list: `Hierarchies.fromChildIds(items, identify, identifyChildren)`.
+- Root items with children references: `Hierarchies.fromChildItems(roots, identify, children)`.
+- Leaf items with parent reference: `Hierarchies.fromParentItems(leaves, identify, parent)`.
+
+### Create from relations or child map
+
+You can create a hierarchy of IDs or items from other relational structures such as relations or a child map.
+
+```typescript
+const idHierarchyFromRelations   = Hierarchies.fromRelations(relations);
+const itemHierarchyFromRelations = Hierarchies.fromRelationsWithItems(items, i => i.id, relations);
+
+const idHierarchyFromMap         = Hierarchies.fromChildMap(childMap);
+const itemHierarchyFromMap       = Hierarchies.fromChildMapWithItems(items, i => i.id, childMap);
+```
+
+For item hierarchies with a child map, use `Hierarchies.fromChildMapWithItems(items, identify, childMap)`.
+
+### Create from hierarchy
+
+Create a hierarchy that matches the structure of another hierarchy but with different content.
+
+Common scenarios:
+1. **Memory optimization** - Convert an item-hierarchy to an ID-hierarchy when you only need structural reasoning
+2. **Data hydration** - Build an item-hierarchy from database items matching an existing ID-hierarchy
+3. **Multiple representations** - Create hierarchies for different data views of the same conceptual structure
+
+```typescript
+// Create ID-hierarchy matching an item-hierarchy's structure
+const matchingIdHc = Hierarchies.fromHierarchy(parentedHc);
+
+// Create item-hierarchy matching an ID-hierarchy's structure
+const matchingItemHc = Hierarchies.fromHierarchyWithItems(items, i => i.id, matchingIdHc);
+```
+
+
+## Query and traversal
+
+Query and traverse hierarchies using the high-level `Hierarchy<Item, Id>` API.
+
+- `get*` methods will throw if you pass an ID which does not exist in the hierarchy. If you don't know, use `find*` instead!
+- For methods traversing ancestors or descendants, you can provide an optional `includeSelf` flag to specify whether the provided IDs should be included in the retrieval or search.
+- For methods traversing descendants you may also specify `depth-first` if you don't want the default `breadth-first` traversal type.
+
+### Get by ID
+
+Check existence and retrieve specific nodes or items by their IDs.
+
+```typescript
+// Check existence
+hierarchy.has('a');
+hierarchy.hasSome([ 'a', 'b' ]);
+hierarchy.hasEvery([ 'a', 'b' ]);
+
+// Get a single item
+hierarchy.get('a');
+hierarchy.getItems('a');
+
+// Get multiple items
+hierarchy.getSome([ 'a', 'b' ]);
+hierarchy.getSomeItems([ 'a', 'b' ]);
+```
+
+### Find by predicate
+
+Lookup all nodes, items or IDs matching a predicate.
+
+```typescript
+hierarchy.find(n => n.item.name === 'a');
+hierarchy.findItems(n => n.item.name === 'a');
+hierarchy.findIds(n => n.item.name === 'a');
+```
+
+### Get descendants and ancestors
+
+Retrieve all descendants or ancestors of one or more IDs.
+
+```typescript
+// Get descendants/ancestors by ID
+hierarchy.getDescendants('a');
+hierarchy.getDescendantItems('a');
+hierarchy.getDescendantIds('a');
+// Get descendants/ancestors by IDs
+hierarchy.getDescendants([ 'a', 'b' ]);
+hierarchy.getDescendantItems([ 'a', 'b' ]);
+hierarchy.getDescendantIds([ 'a', 'b' ]);
+```
+> **NB!** Similar methods exist for ancestors: GetAncestors, GetAncestorItems, GetAncestorIds
+
+### Find descendants and ancestors
+
+Search within descendants or ancestors of nodes matching the ID(s) of the first parameter, looking for nodes matching the ID(s) or predicate of the second parameter.
+
+```typescript
+// Find the first matching descendant of a single starting node.
+hierarchy.findDescendant('a', 'a2');
+hierarchy.findDescendant('a', [ 'a1', 'a2' ]);
+hierarchy.findDescendant('a', n => n.item.id.endsWith('2'));
+
+// Find the first matching descendant of multiple starting nodes.
+hierarchy.findDescendant([ 'a', 'b' ], 'a2');
+hierarchy.findDescendant([ 'a', 'b' ], [ 'a1', 'a2' ]);
+hierarchy.findDescendant([ 'a', 'b' ], n => n.item.id.endsWith('2'));
+
+// Find all matching descendants of a single starting node.
+hierarchy.findDescendants('a', [ 'a1', 'a2' ]);
+hierarchy.findDescendants('a', n => n.item.id.endsWith('2'));
+hierarchy.findDescendantIds('a', [ 'a1', 'a2' ]);
+hierarchy.findDescendantIds('a', n => n.item.id.endsWith('2'));
+hierarchy.findDescendantItems('a', [ 'a1', 'a2' ]);
+hierarchy.findDescendantItems('a', n => n.item.id.endsWith('2'));
+
+// Find all matching descendants of multiple starting nodes.
+hierarchy.findDescendants([ 'a', 'b' ], [ 'a1', 'a2' ]);
+hierarchy.findDescendants([ 'a', 'b' ], n => n.item.id.endsWith('2'));
+hierarchy.findDescendantIds([ 'a', 'b' ], [ 'a1', 'a2' ]);
+hierarchy.findDescendantIds([ 'a', 'b' ], n => n.item.id.endsWith('2'));
+hierarchy.findDescendantItems([ 'a', 'b' ], [ 'a1', 'a2' ]);
+hierarchy.findDescendantItems([ 'a', 'b' ], n => n.item.id.endsWith('2'));
+```
+> **NB!** Similar methods exist for ancestors: findAncestor, findAncestors, findAncestorItems, findAncestorIds
+
+### Search for sub-hierarchy
+
+Create a new hierarchy with nodes for a subset of matching nodes.
+
+The included nodes are controlled by the flags of the `include` parameter:
+- `matches`: Include the match itself.
+- `ancestors`: Include all ancestors of a match.
+- `descendants`: Include all descendants of a match.
+
+The result is effectively a pruned clone of the original hierarchy.
+
+```typescript
+// Create a hierarchy consisting of the root, "a", "a1" and "a2", effectively excluding branch "b".
+hierarchy.search('a', { matches: true, ancestors: true, descendants: true });
+// Create a hierarchy consisting of the node "a" and its ancestors "r".
+hierarchy.search('a', { matches: true, ancestors: true });
+// Create a hierarchy consisting of the branch "a" as its root.
+hierarchy.search('a', { matches: true, descendants: true });
+// Create a hierarchy consisting of the branches "a" and "b" as its roots.
+hierarchy.search([ 'a', 'b' ], { matches: true, descendants: true });
+// Create a hierarchy consisting of nodes with a single letter ID; "r", "a", "b".
+hierarchy.search(n => n.item.id.length === 1, { matches: true, descendants: false });
+```
+
+### Node APIs
+
+When you need fine-grained control or are working directly with nodes, use these lower-level APIs.
+
+#### Node retrieval
+
+```typescript
+branchNodes[0].getDescendants(true, 'depth-first');
+branchNodes[0].getAncestors(true);
+```
+
+#### Graph traversal
+
+For advanced scenarios where you need custom traversal logic with pruning or early termination.
+
+```typescript
+// Simple traversal
+traverseGraph({
+    roots: rootNode,
+    next:  node => node.children,
+});
+
+// Advanced traversal with signal controller (prune/skip/early stop)
+traverseGraph({
+    roots:  rootNode,
+    signal: (node, signal) => {
+        // Don't traverse into the children of "a1"
+        if (node.item.id !== 'a1')
+            signal.next(node.children);
+        // Don't yield for "a"
+        if (node.parent?.item.id === 'a')
+            signal.skip();
+        // If you reach "x", stop the traversal
+        if (node.item.id === 'x')
+            signal.end();
+    },
+});
+// Also provides options for detectCycles and traversal type.
+```
+
+#### Sequence traversal
+
+For traversing non-hierarchy sequences with similar control patterns.
+
+```typescript
+interface El { value: number; next?: El }
+const el4: El = { value: 4 };
+const el3: El = { value: 3, next: el4 };
+const el2: El = { value: 2, next: el3 };
+const el1: El = { value: 1, next: el2 };
+
+const elements = traverseSequence({
+    first:  el1,
+    signal: (el, signal) => {
+        // Skip odd numbers
+        if (el.value % 2 === 1)
+            signal.skip();
+        // Provide next when continuing
+        if (el.next)
+            signal.next(el.next);
+    },
 });
 ```
 
-#### Traverse with signal
-If you want to stop traversal at some condition like a certain depth or the contents of a node or skip some nodes from the output you can provide a `signal` delegate instead of the `next` delegate. You call members on the `signal` provided to that delegate to signal what to do. In the case of the graph traversal the `signal` exposes the current `depth` as a property.
 
-Here is an example of what complex traversal using signal might look like for both Graph and Sequence:
+## Performance
 
-```typescript
-// Traverse a graph of objects which has a children property with an array of other nodes.
-const nodeIterator = traverseGraph({
-	roots:  oneOrMoreNodes,
-	signal: (node, signal) => {
-		// Exclude children of 21 which is 211.
-		if (node.item !== 21)
-			signal.next(node.children);
-
-		// Skip children of 1 which is 11 and 12.
-		if (node.parent?.item === 1)
-			signal.skip();
-	},
-});
-```
-```typescript
-// Create an iterable iterator of numbers (linked list) using a utility from @loken/utilities.
-const sequence = traverseRange(1, 4);
-
-const numberIterator = traverseSequence({
-	first:  sequence.next(),
-	signal: (element, signal) => {
-		// Skip odd numbers.
-		if (element.value! % 2 == 1)
-			signal.skip();
-
-		// By not providing the next value at el 3
-		// we don't iterate into el 4 which would otherwise not be skipped.
-		if (element.value === 3)
-			return;
-
-		// Signal the next element unless we're done.
-		const next = sequence.next();
-		if (!next.done)
-			signal.next(next);
-	},
-});
-```
-
-#### Options
-By default traversal type is `'breadth-first'`. But you can specify `'depth-first'` though the optional `type` option.
-
-It is assumed that the graph is a tree, but if there can be cycles in your nodes, you can enable cycle detection through the optional `detectCycles` option (`false` by default).
-
-#### Traverse a `Hierarchy` or `HCNode`
-We provide some methods for traversal of a `Hierarchy` or a `Node` as a slightly higher abstraction than the `flattenGraph` and `flattenSequence` utilities.
-
-These don't give you the option of breaking cycles, but they do give you the option of deciding whether to includeSelf, meaning include the node, id or ids you're starting at.
-
-These are some of the relevant signatures:
-
-```typescript
-node.getDescendants(includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[];
-node.traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first'): Generator<HCNode<Item>>[];
-
-node.getAncestors(includeSelf = false): HCNode<Item>[];
-node.traverseAncestors(includeSelf = false): Generator<HCNode<Item>>[];
-
-hierarchy.getDescendants(ids: Some<Id>, includeSelf = false);
-hierarchy.getDescendantIds(ids: Some<Id>, includeSelf = false);
-hierarchy.getDescendantItems(ids: Some<Id>, includeSelf = false);
-hierarchy.getDescendantEntries(ids: Some<Id>, includeSelf = false);
-
-hierarchy.getAncestors(id: Id, includeSelf = false);
-hierarchy.getAncestorIds(id: Id, includeSelf = false);
-hierarchy.getAncestorItems(id: Id, includeSelf = false);
-hierarchy.getAncestorEntries(id: Id, includeSelf = false);
-```
-
-### Search
-
-A `Hierarchy<Item, Id>` provides some `find*` generator functions for finding nodes, items or ids matching a search.
-
-We also provide a `search` member function which finds nodes and creates a new `Hierarchy<Item, Id>` with new nodes but the same items as in the original hierarchy. You can specify whether to include the node matches and/or ancestors and descendants of those matches.
-
-All of these members take a search parameter which can either be a list of IDs or a node predicate.
-
-The `get*` member functions will throw if you ask it to retrieve an ID which is not in the hierarchy. The `find*`- and `search` members will just ignore that ID and return the ones it finds.
-
-Here's what that looks like if you pass a list of IDs:
-
-```typescript
-const nodeIterator  = hierarchy.find(['A', 'B']);
-const idIterator    = hierarchy.findIds(['A', 'B']);
-const itemIterator  = hierarchy.findItems(['A', 'B']);
-const entryIterator = hierarchy.findEntries(['A', 'B']);
-
-const prunedHierarchy = hierarchy.search(['A', 'B']);
-const prunedHierarchy = hierarchy.search(['A', 'B'], {
-	matches:     true,
-	ancestors:   false,
-	descendants: false,
-});
-```
-
-Let's say your items have a description property. In that case you can search for certain matches in the description like this:
-
-```typescript
-const searchExpression = /\bword\b/i;
-const predicate = (node: HCNode<Item>) => searchExpression.test(node.item.description);
-
-const nodeIterator  = hierarchy.find(predicate);
-const idIterator    = hierarchy.findIds(predicate);
-const itemIterator  = hierarchy.findItems(predicate);
-const entryIterator = hierarchy.findEntries(predicate);
-
-const prunedHierarchy = hierarchy.search(predicate);
-const prunedHierarchy = hierarchy.search(predicate, {
-	matches:     true,
-	ancestors:   false,
-	descendants: false,
-});
-```
+- For `traverse*`, prefer the simple `next` delegate and use `signal` only when you need pruning or early stop.
+- Enable cycle detection only when you expect cycles; it adds hashing per node.
+- Nodes are double-linked for fast up/down traversal. This trades a small memory overhead for speed; be mindful with very large graphs.
+- Eager vs. lazy choices:
+   - Results are often eager arrays to avoid iterator overhead.
+   - Passing one method's result into another typically avoids extra allocations.
+   - Some properties like `HCNode.children` are lazy and cached to keep edits and repeated access cheap.
 
 
-### Mapping
+## Semantics
 
-There are quite a few utilities and class member functions for mapping between relations, mapping from items to nodes, mapping items to IDs etc. Please explore the tests!
+### Ordering and identity
+
+- Sibling order is deterministic. Children are kept in insertion order, and traversals enumerate children in that order. When constructing from relations or a child map, the source order is preserved.
+- Cycle detection and visited semantics are identity-based. When cycle detection is enabled, traversal tracks visited nodes by reference. Separate `HCNode<Item>` instances that wrap the same `item` are considered distinct for visitation.
+- Equality: In JavaScript/TypeScript, objects are compared by reference. Compare values like `node.item.id` when you need value equality.
+
+### Serialization
+
+Nodes are runtime wrappers and not designed for direct JSON serialization. Persist your relations (`Relation<Id>`/`MultiMap<Id>`) or items and rebuild the hierarchy when needed.
 
 
-## .NET implementation
+## Persistence
 
-If you are a .NET enjoyer, like me, there is a nuget package for a similar feature set for .NET: [`Loken.Hierarchies`](https://github.com/loken/net-hierarchies)
+Persist structure, not nodes. Store relations or a child map next to your items and rebuild hierarchies when needed.
+
+- Recommended representations:
+    - Relations: `Relation<Id>[]` (portable, append-friendly; produce with `hierarchy.toRelations()`).
+    - Child map: `MultiMap<Id>` (compact text for fixtures/tests or text file storage via `map.render()`, parse with `MultiMap.parse(text)`).
+- Rebuild as needed:
+    - ID hierarchy from a child map: `Hierarchies.fromChildMap(map)`.
+    - Item hierarchy from relations: `Hierarchies.fromRelationsWithItems(items, identify, relations)`.
+- Note: This TS package does not include database tagging types (like `.NET`'s `HierarchyRelation<TId>`) or diff helpers. Do diffs and persistence wiring in your app layer using the structures above.
+
+
+## Branding
+
+Nodes can be branded with ownership tokens to prevent cross-hierarchy contamination. Hierarchies automatically brand and debrand their nodes when you attach or detach a node, respectively. Since the hierarchy brand is internal, you cannot attach a node to more than one hierarchy at a time.
+
+Branding is not serialized, but a new brand is created when you create a new hierarchy.
+
+Manual branding is only needed if you're working with `HCNode`s that are not part of a `Hierarchy`. In short, it's a low-level node feature you usually don't need to know about.
+
+> **NB!** Just don't try to add a node from one hierarchy to another without first detaching it!
+
+
+## Docs and snippets
+
+README code snippets are compile-verified in `src/hierarchies/readme-snippets.test.ts`.
+Section headings mirror region names in that test to keep docs and examples in sync.
+
+
+## .NET sibling library
+
+Prefer .NET? The sibling package `Loken.Hierarchies` exposes the same core constructs and near-identical APIs:
+
+- Shared concepts: `Hierarchies`, `Nodes`, `Relations`, `MultiMap`
+- Parity: Similar method names and shapes across languages
+- Differences: TypeScript prefers static factory methods; .NET emphasizes extension methods for discoverability
+
+Get it on NuGet: https://www.nuget.org/packages/Loken.Hierarchies
 
 
 ## Feedback & Contribution
 
-If you like what you see so far or would like to suggest changes to improve or extend what the library does, please don't hesitate to leave a comment in an issue or even a PR.
-
-You can run the tests by cloning the repo, restoring packages using `pnpm` and running the `vitest` tests.
+If you like what you see or want to suggest changes, please open an issue or PR.
+Run tests with `pnpm install` and `pnpm test`.
