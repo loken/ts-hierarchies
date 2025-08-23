@@ -147,7 +147,7 @@ export class Hierarchy<Item, Id = Item> {
 		return this.getSome(ids).map(n => n.item);
 	}
 
-	#get(id: Id) {
+	#get(id: Id): HCNode<Item> {
 		const node = this.#nodes.get(id);
 		if (node === undefined)
 			throw new Error(`Node with ID '${ id }' not found in hierarchy. Use 'has()' to check existence before calling 'get()'.`);
@@ -223,7 +223,7 @@ export class Hierarchy<Item, Id = Item> {
 		return this;
 	}
 
-	#addNodes(nodes: Some<HCNode<Item>>, asRoot = false) {
+	#addNodes(nodes: Some<HCNode<Item>>, asRoot = false): void {
 		for (const node of Nodes.getDescendants(nodes, true)) {
 			const id = this.#identify(node.item);
 			this.#debrand.set(id, node.brand(this));
@@ -468,7 +468,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find a node matching the `search` which is an ancestor of a node with one of the `ids`.
 	 */
-	public findAncestor(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HCNode<Item> | undefined {
+	public findAncestor(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): HCNode<Item> | void {
 		const roots = this.getSome(ids);
 
 		return Nodes.findAncestor(roots, this.normalizeSearch(search), includeSelf);
@@ -477,7 +477,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find an item matching the `search` which is an ancestor of a node with one of the `ids`.
 	 */
-	public findAncestorItem(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Item | undefined {
+	public findAncestorItem(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false): Item | void {
 		const ancestor = this.findAncestor(ids, search, includeSelf);
 
 		return ancestor?.item;
@@ -536,7 +536,7 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find a node matching the `search` which is a descendant of a node with one of the `ids`.
 	 */
-	public findDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item> | undefined {
+	public findDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item> | void {
 		const roots = this.getSome(ids);
 
 		return Nodes.findDescendant(roots, this.normalizeSearch(search), includeSelf, type);

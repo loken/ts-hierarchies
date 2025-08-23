@@ -174,7 +174,7 @@ export class ChildMap {
 	}
 
 	/** Get the set of IDs representing the roots of the `childMap`. */
-	public static getRootsIds<Id>(childMap: MultiMap<Id>) {
+	public static getRootsIds<Id>(childMap: MultiMap<Id>): Set<Id> {
 		return childMapToRootIds(childMap);
 	}
 

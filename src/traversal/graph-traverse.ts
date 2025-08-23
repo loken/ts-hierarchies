@@ -7,7 +7,9 @@ import { type GraphTraversal, type NextNodes, type SignalNodes, type TraversalTy
 /**
  * Generate a sequence of nodes by traversing the provided `roots` according to the options.
  */
-export const traverseGraph = <TNode>(options: GraphTraversal<TNode>): Generator<TNode, void, undefined> => {
+export const traverseGraph = <TNode>(
+	options: GraphTraversal<TNode>,
+): Generator<TNode, void, undefined> => {
 	if (options.signal !== undefined)
 		return traverseGraphSignal(options);
 	else
@@ -22,7 +24,7 @@ export function* traverseGraphSignal<TNode>(
 		type?:         TraversalType
 		detectCycles?: boolean,
 	},
-) {
+): Generator<TNode, void, unknown> {
 	const signal = new GraphSignal<TNode>(options);
 	const signalFn = options.signal;
 	let res = signal.tryGetNext();
@@ -47,7 +49,7 @@ export function* traverseGraphNext<TNode>(
 		type?:         TraversalType,
 		detectCycles?: boolean,
 	},
-) {
+): Generator<NonNullable<TNode>, void, unknown> {
 	const visited = options.detectCycles ? new Set<TNode>() : undefined;
 	const store = options.type === 'depth-first'
 		? new LinearStack<TNode>()

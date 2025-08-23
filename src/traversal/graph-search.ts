@@ -15,7 +15,7 @@ export const searchGraph = <TNode>(
 		type?:         TraversalType,
 		detectCycles?: boolean,
 	},
-): TNode | undefined => {
+): TNode | void => {
 	const visited = options.detectCycles ? new Set<TNode>() : undefined;
 	const store = options.type === 'depth-first'
 		? new LinearStack<TNode>()

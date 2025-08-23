@@ -16,19 +16,19 @@ export class SequenceSignal<TEl> implements ISequenceSignal<TEl> {
 	//#endregion
 
 	//#region ISequenceSignal
-	public get index() {
+	public get index(): number {
 		return this.#index;
 	}
 
-	public get count() {
+	public get count(): number {
 		return this.#count;
 	}
 
-	public next(element?: TEl) {
+	public next(element?: TEl): void {
 		this.#element = element;
 	}
 
-	public skip() {
+	public skip(): void {
 		this.#skipped = true;
 	}
 	//endregion

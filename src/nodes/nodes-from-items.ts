@@ -47,12 +47,12 @@ export const nodesFromChildMapWithItems = <Item, Id>(
 export const nodesFromChildItems = <Item>(
 	roots: Some<Item>,
 	children: GetChildren<Item>,
-) => {
+): HCNode<Item>[] => {
 	const rootNodes = someToArray(roots).map(item => new HCNode(item));
 
 	flattenGraphNext({
 		roots: rootNodes,
-		next:  node => {
+		next:  (node) => {
 			const childItems = children(node.item);
 			if (childItems?.length) {
 				const childNodes = childItems.map(childItem => new HCNode(childItem));
@@ -71,7 +71,7 @@ export const nodesFromChildItems = <Item>(
 export const nodesFromParentItems = <Item>(
 	leaves: Some<Item>,
 	parent: GetParent<Item>,
-) => {
+): HCNode<Item>[] => {
 	const nodes = new Map<Item, HCNode<Item>>();
 	const roots: HCNode<Item>[] = [];
 
@@ -102,7 +102,7 @@ export const nodesFromParentItems = <Item>(
 
 	return roots;
 
-	function getNode(item: Item) {
+	function getNode(item: Item): HCNode<Item> {
 		let node = nodes.get(item);
 		if (!node) {
 			node = new HCNode(item);

@@ -35,17 +35,17 @@ export class HCNode<Item> {
 
 	//#region predicates
 	/** A node is a "root" when there is no `parent`. */
-	public get isRoot() {
+	public get isRoot(): boolean {
 		return this.#parent === undefined;
 	}
 
 	/** A node is a "leaf" when there are no `children`. */
-	public get isLeaf() {
+	public get isLeaf(): boolean {
 		return this.#children === undefined || this.#children.size === 0;
 	}
 
 	/** A node is "internal" when it has `children`, meaning it's either "internal" or a "leaf". */
-	public get isInternal() {
+	public get isInternal(): boolean {
 		return !this.isLeaf;
 	}
 
@@ -53,7 +53,7 @@ export class HCNode<Item> {
 	 * A node is "linked" when it has a parent or at least one child,
 	 * which means it's not both a root and a leaf.
 	 */
-	public get isLinked() {
+	public get isLinked(): boolean {
 		return !this.isRoot || !this.isLeaf;
 	}
 
@@ -196,17 +196,17 @@ export class HCNode<Item> {
 
 	//#region accessors
 	/** The item is the subject/content of the node. */
-	public get item() {
+	public get item(): Item {
 		return this.#item;
 	}
 
 	/** Get the parent node, if any. */
-	public get parent() {
+	public get parent(): HCNode<Item> | undefined {
 		return this.#parent;
 	}
 
 	/** Get the parent item, if any. */
-	public get parentItem() {
+	public get parentItem(): Item | undefined {
 		return this.#parent?.item;
 	}
 
@@ -227,12 +227,12 @@ export class HCNode<Item> {
 	}
 
 	/** Get all child items. */
-	public get childItems() {
+	public get childItems(): Item[] {
 		return this.#children ? Array.from(this.#children, node => node.item) : [];
 	}
 
 	/** Get ancestor nodes by traversing according to the options. */
-	public getAncestors(includeSelf = false) {
+	public getAncestors(includeSelf = false): HCNode<Item>[] {
 		return flattenSequence({
 			first: includeSelf ? this : this.#parent,
 			next:  node => node?.parent,
@@ -240,12 +240,12 @@ export class HCNode<Item> {
 	}
 
 	/** Get ancestor items by traversing according to the options. */
-	public getAncestorItems(includeSelf = false) {
+	public getAncestorItems(includeSelf = false): Item[] {
 		return this.getAncestors(includeSelf).map(node => node.item);
 	}
 
 	/** Get descendant nodes by traversing according to the options. */
-	public getDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
+	public getDescendants(includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[] {
 		return flattenGraph({
 			roots: this.#getRoots(includeSelf),
 			next:  node => node.#children,
@@ -254,13 +254,13 @@ export class HCNode<Item> {
 	}
 
 	/** Get descendant items by traversing according to the options. */
-	public getDescendantItems(includeSelf = false, type: TraversalType = 'breadth-first') {
+	public getDescendantItems(includeSelf = false, type: TraversalType = 'breadth-first'): Item[] {
 		return this.getDescendants(includeSelf, type).map(node => node.item);
 	}
 
 
 	/** Find the first ancestor node matching the `search`. */
-	public findAncestor(search: NodePredicate<Item>, includeSelf = false) {
+	public findAncestor(search: NodePredicate<Item>, includeSelf = false): HCNode<Item> | void {
 		return searchSequence({
 			first: includeSelf ? this : this.#parent,
 			next:  node => node.parent,
@@ -269,7 +269,7 @@ export class HCNode<Item> {
 	}
 
 	/** Find the ancestor nodes matching the `search`. */
-	public findAncestors(search: NodePredicate<Item>, includeSelf = false) {
+	public findAncestors(search: NodePredicate<Item>, includeSelf = false): HCNode<Item>[] {
 		return searchSequenceMany({
 			first: includeSelf ? this : this.#parent,
 			next:  node => node.parent,
@@ -278,7 +278,7 @@ export class HCNode<Item> {
 	}
 
 	/** Find the first descendant node matching the `search`. */
-	public findDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+	public findDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item> | void {
 		return  searchGraph({
 			roots: this.#getRoots(includeSelf),
 			next:  node => node.#children,
@@ -288,7 +288,7 @@ export class HCNode<Item> {
 	}
 
 	/** Find the descendant nodes matching the `search`. */
-	public findDescendants(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+	public findDescendants(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[] {
 		return  searchGraphMany({
 			roots: this.#getRoots(includeSelf),
 			next:  node => node.#children,
@@ -299,19 +299,19 @@ export class HCNode<Item> {
 
 
 	/** Does an ancestor node matching the `search` exist? */
-	public hasAncestor(search: NodePredicate<Item>, includeSelf = false) {
+	public hasAncestor(search: NodePredicate<Item>, includeSelf = false): boolean {
 		return this.findAncestor(search, includeSelf) !== undefined;
 	}
 
 	/** Does a descendant node matching the `search` exist? */
-	public hasDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+	public hasDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): boolean {
 		return this.findDescendant(search, includeSelf, type) !== undefined;
 	}
 	//#endregion
 
 	//#region traversal
 	/** Generate a sequence of ancestor nodes by traversing according to the options. */
-	public traverseAncestors(includeSelf = false) {
+	public traverseAncestors(includeSelf = false): Generator<HCNode<Item>> {
 		return traverseSequence({
 			first: includeSelf ? this : this.#parent,
 			next:  node => node?.parent,
@@ -319,7 +319,7 @@ export class HCNode<Item> {
 	}
 
 	/** Generate a sequence of descendant nodes by traversing according to the options. */
-	public traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
+	public traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first'): Generator<HCNode<Item>> {
 		return traverseGraphNext({
 			roots: this.#getRoots(includeSelf),
 			next:  node => node.#children,

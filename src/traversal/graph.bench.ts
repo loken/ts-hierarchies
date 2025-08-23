@@ -112,7 +112,7 @@ counts.forEach(count => {
 counts.forEach(count => {
 	describe(`search graph of ${ count } nodes`, () => {
 		const { roots, searchId } = infos.get(count)!;
-		const search = (node: HCNode<string>) => node.item === searchId;
+		const search = (node: HCNode<string>): boolean => node.item === searchId;
 
 		bench('searchGraph', () => {
 			const found = searchGraph({

@@ -5,7 +5,9 @@ import type { NextElement, SequenceTraversal, SignalElement } from './sequence.t
 /**
  * Flatten a sequence of elements starting with the `first` element and traversing according to the options.
  */
-export const flattenSequence = <TEl>(options: SequenceTraversal<TEl>) => {
+export const flattenSequence = <TEl>(
+	options: SequenceTraversal<TEl>,
+): TEl[] => {
 	if (options.signal !== undefined)
 		return flattenSequenceSignal(options);
 	else

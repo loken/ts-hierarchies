@@ -10,7 +10,7 @@ export const searchSequence = <TEl>(options: {
 	first:  TEl | undefined;
 	next:   NextElement<TEl>;
 	search: Predicate<TEl>;
-}): TEl | undefined => {
+}): TEl | void => {
 	let current = options.first;
 	while (current !== undefined) {
 		if (options.search(current))

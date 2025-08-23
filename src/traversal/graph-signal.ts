@@ -21,26 +21,26 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 	//#endregion
 
 	//#region IGraphSignal
-	public get depth() {
+	public get depth(): number {
 		return this.#depth;
 	}
 
-	public get count() {
+	public get count(): number {
 		return this.#count;
 	}
 
-	public next(nodes: Some<TNode>) {
+	public next(nodes: Some<TNode>): void {
 		const count = this.#nodes.attach(nodes);
 
 		if (this.#isDepthFirst && count > 0)
 			this.#branchCount.push(count);
 	}
 
-	public skip() {
+	public skip(): void {
 		this.#skipped = true;
 	}
 
-	public end() {
+	public end(): void {
 		this.#nodes.clear();
 	}
 	//endregion

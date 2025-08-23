@@ -21,7 +21,7 @@ export const flattenGraphSignal = <TNode>(
 		detectCycles?: boolean,
 		type?:         TraversalType
 	},
-) => {
+): TNode[] => {
 	const result: TNode[] = [];
 	const signal = new GraphSignal<TNode>(options);
 	const signalFn = options.signal;
@@ -48,7 +48,7 @@ export const flattenGraphNext = <TNode>(
 		type?:         TraversalType,
 		detectCycles?: boolean,
 	},
-) => {
+): TNode[] => {
 	const result: TNode[] = [];
 	const visited = options.detectCycles ? new Set<TNode>() : undefined;
 	const store = options.type === 'depth-first'

@@ -55,7 +55,7 @@ counts.forEach(count => {
 	describe(`search sequence of ${ count } elements`, () => {
 		const items = range(1, count);
 		const searchId = count / 2;
-		const search = (n: number) => n === searchId;
+		const search = (n: number): boolean => n === searchId;
 
 		bench('searchSequence', () => {
 			const iterator = iterateSome(items);

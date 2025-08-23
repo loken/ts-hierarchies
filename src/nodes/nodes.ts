@@ -1,4 +1,4 @@
-import { isSomeItem, mapArgs, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
+import { isSomeItem, type ItemOfList, type MapArgs, mapArgs, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
 
 import { traverseGraph } from '../traversal/graph-traverse.js';
 import type { TraversalType } from '../traversal/graph.types.js';
@@ -27,7 +27,7 @@ export class Nodes {
 	 * @returns One node when you pass one item and a fixed length tuple of nodes when you pass multiple items.
 	 * @throws Must provide at least one argument.
 	 */
-	public static create<Items extends any[]>(...items: Items) {
+	public static create<Items extends any[]>(...items: Items): MapArgs<Items, HCNode<ItemOfList<Items>>, true, false> {
 		return mapArgs(items, item => new HCNode(item), true, false);
 	}
 
@@ -38,7 +38,7 @@ export class Nodes {
 	 * @returns An array of nodes containing the items.
 	 * @throws Must provide at least one argument.
 	 */
-	public static createSome<Item>(items: Some<Item>) {
+	public static createSome<Item>(items: Some<Item>): HCNode<Item>[] {
 		return someToArray(items).map(item => new HCNode(item));
 	}
 
@@ -100,7 +100,7 @@ export class Nodes {
 	public static fromChildItems<Item>(
 		roots: Some<Item>,
 		children: GetChildren<Item>,
-	) {
+	): HCNode<Item>[] {
 		return nodesFromChildItems(roots, children);
 	}
 
@@ -116,7 +116,7 @@ export class Nodes {
 	public static fromParentItems<Item>(
 		leaves: Some<Item>,
 		parent: GetParent<Item>,
-	) {
+	): HCNode<Item>[] {
 		return nodesFromParentItems(leaves, parent);
 	}
 
@@ -282,7 +282,7 @@ export class Nodes {
 		search: NodePredicate<Item>,
 		includeSelf = false,
 		type: TraversalType = 'breadth-first',
-	): HCNode<Item> | undefined {
+	): HCNode<Item> | void {
 		return searchGraph({
 			roots: HCNode.getRoots(roots, includeSelf),
 			next:  node => node.children,
@@ -311,7 +311,7 @@ export class Nodes {
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
 		includeSelf = false,
-	): HCNode<Item> | undefined {
+	): HCNode<Item> | void {
 		if (isSomeItem(roots))
 			return roots.findAncestor(search, includeSelf);
 
