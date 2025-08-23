@@ -771,14 +771,14 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param hierarchy The hierarchy to clone.
 	 * @returns A new `Hierarchy<Item, Id>` with the same structure and items but new nodes.
 	 */
-	public static clone<Item, Id>(hierarchy: Hierarchy<Item, Id>): Hierarchy<Item, Id> {
+	public clone(): Hierarchy<Item, Id> {
 		const roots = Nodes.fromChildMapWithItems(
-			hierarchy.nodeItems,
-			hierarchy.identify,
-			hierarchy.toChildMap(),
+			this.nodeItems,
+			this.identify,
+			this.toChildMap(),
 		);
 
-		return new Hierarchy<Item, Id>(hierarchy.identify).attachRoot(roots);
+		return new Hierarchy<Item, Id>(this.identify).attachRoot(roots);
 	}
 
 	/**
@@ -789,8 +789,8 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param hierarchy The hierarchy to clone.
 	 * @returns A new `Hierarchy<Id>` with the same structure but new nodes.
 	 */
-	public static cloneIds<Item, Id>(hierarchy: Hierarchy<Item, Id>): Hierarchy<Id> {
-		const roots = Nodes.fromChildMap(hierarchy.toChildMap());
+	public cloneIds(): Hierarchy<Id> {
+		const roots = Nodes.fromChildMap(this.toChildMap());
 
 		return Hierarchies.createForIds<Id>().attachRoot(roots);
 	}

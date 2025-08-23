@@ -2,7 +2,6 @@ import { MultiMap } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import { type Relation } from '../relations/relation.types.js';
-import { Hierarchy } from './hierarchy.js';
 import { Hierarchies } from './hierarchies.js';
 
 const childMap = new MultiMap();
@@ -183,7 +182,7 @@ test('Hierarchy.clone() with item hierarchy preserves items', () => {
 	const originalWithItems = Hierarchies.fromChildMapWithItems(complexItems, item => item.id, childMap);
 
 	// Clone it
-	const cloneWithItems = Hierarchy.clone(originalWithItems);
+	const cloneWithItems = originalWithItems.clone();
 
 	// Verify all items are preserved
 	expect(cloneWithItems.nodeItems).toEqual(originalWithItems.nodeItems);
@@ -209,7 +208,7 @@ test('Hierarchy.cloneIds() creates ID hierarchy from item hierarchy', () => {
 	]);
 
 	// Clone to ID hierarchy
-	const idClone = Hierarchy.cloneIds(originalWithItems);
+	const idClone = originalWithItems.cloneIds();
 
 	// Verify structure is identical
 	expect(idClone.toChildMap()).toEqual(originalWithItems.toChildMap());
