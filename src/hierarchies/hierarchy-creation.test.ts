@@ -33,61 +33,49 @@ const items = [
 	{ id: 'B13' },
 ];
 
-test('Hierarchies.createWithIds(relations)', () => {
-	const hc = Hierarchies.createWithIds(relations);
+test('Hierarchies.fromRelations(relations)', () => {
+	const hc = Hierarchies.fromRelations(relations);
 
 	const actual = hc.toChildMap();
 
 	expect(actual).toEqual(childMap);
 });
 
-test('Hierarchies.createWithIds(childMap)', () => {
-	const hc = Hierarchies.createWithIds(childMap);
+test('Hierarchies.fromRelationsWithItems() from items and relations', () => {
+	const hc = Hierarchies.fromRelationsWithItems(items, item => item.id, relations);
 
 	const actual = hc.toChildMap();
 
 	expect(actual).toEqual(childMap);
 });
 
-test('Hierarchies.createWithIds(otherHierarchy)', () => {
-	const otherHierarchy = Hierarchies.createWithIds(childMap);
-
-	const itemHc = Hierarchies.createWithItems({
-		items,
-		identify: item => item.id,
-		spec:     otherHierarchy,
-	});
-
-	const actual = itemHc.toRelations();
-
-	expect(actual).toEqual(relations);
-});
-
-test('Hierarchies.createWithItems() from items and relations', () => {
-	const hc = Hierarchies.createWithItems({
-		items,
-		identify: item => item.id,
-		spec:     relations,
-	});
+test('Hierarchies.fromChildMap(childMap)', () => {
+	const hc = Hierarchies.fromChildMap(childMap);
 
 	const actual = hc.toChildMap();
 
 	expect(actual).toEqual(childMap);
 });
 
-test('Hierarchies.createWithItems() from items and a child-map', () => {
-	const hc = Hierarchies.createWithItems({
-		items,
-		identify: item => item.id,
-		spec:     childMap,
-	});
+test('Hierarchies.fromChildMapWithItems() from items and a child-map', () => {
+	const hc = Hierarchies.fromChildMapWithItems(items, item => item.id, childMap);
 
 	const actual = hc.toRelations();
 
 	expect(actual).toEqual(relations);
 });
 
-test('Hierarchies.createWithItems() from items with children', () => {
+test('Hierarchies.fromHierarchyWithItems(otherHierarchy)', () => {
+	const otherHierarchy = Hierarchies.fromChildMap(childMap);
+
+	const itemHc = Hierarchies.fromHierarchyWithItems(items, item => item.id, otherHierarchy);
+
+	const actual = itemHc.toRelations();
+
+	expect(actual).toEqual(relations);
+});
+
+test('Hierarchies.fromChildItems() from items with children', () => {
 	interface ItemWithChildren {
 		id:        string,
 		children?: ItemWithChildren[],
@@ -116,18 +104,22 @@ test('Hierarchies.createWithItems() from items with children', () => {
 		},
 	];
 
-	const hc = Hierarchies.createWithItems({
-		items:    itemsWithChildren,
-		identify: item => item.id,
-		children: item => item.children,
-	});
+	const hc = Hierarchies.fromChildItems(itemsWithChildren, item => item.id, item => item.children);
 
 	const actual = hc.toRelations();
 
 	expect(actual).toEqual(relations);
 });
 
-test('Hierarchies.createWithItems() from items with parents', () => {
+test('Hierarchies.fromChildIds() from items with child-id delegate', () => {
+	const hc = Hierarchies.fromChildIds(items, item => item.id, item => childMap.get(item.id) ? [ ...childMap.get(item.id)! ] : undefined);
+
+	const actual = hc.toRelations();
+
+	expect(actual).toEqual(relations);
+});
+
+test('Hierarchies.fromParentItems() from items with parents', () => {
 	interface ItemWithParent {
 		id:      string,
 		parent?: ItemWithParent,
@@ -149,25 +141,31 @@ test('Hierarchies.createWithItems() from items with parents', () => {
 	}
 
 	/* Ensure we can pass it all of the items. */
-	const hcFromAll = Hierarchies.createWithItems({
-		items:    [ ...itemsWithParents.values() ],
-		identify: item => item.id,
-		parent:   item => item.parent,
-	});
+	const hcFromAll = Hierarchies.fromParentItems([ ...itemsWithParents.values() ], item => item.id, item => item.parent);
 
 	const actualFromAll = hcFromAll.toRelations();
 	expect(actualFromAll).toEqual(relations);
 
 
 	/* Ensure we can pass it the leaf items only. */
-	const hcFromLeaves = Hierarchies.createWithItems({
-		items:    hcFromAll.findItems(node => node.isLeaf),
-		identify: item => item.id,
-		parent:   item => item.parent,
-	});
+	const hcFromLeaves = Hierarchies.fromParentItems(hcFromAll.findItems(node => node.isLeaf), item => item.id, item => item.parent);
 
 	const actualFromLeaves = hcFromLeaves.toRelations();
 	expect(actualFromLeaves).toEqual(relations);
+});
+
+test('Hierarchies.fromParentIds() from items with parent-id delegate', () => {
+	const parentByChild = new Map<string, string>();
+	for (const [ parentId, childId ] of relations) {
+		if (childId)
+			parentByChild.set(childId, parentId);
+	}
+
+	const hc = Hierarchies.fromParentIds(items, item => item.id, item => parentByChild.get(item.id));
+
+	const actual = hc.toRelations();
+
+	expect(actual).toEqual(relations);
 });
 
 test('Hierarchy.clone() with item hierarchy preserves items', () => {
@@ -182,11 +180,7 @@ test('Hierarchy.clone() with item hierarchy preserves items', () => {
 	const childMap = new MultiMap<string>();
 	childMap.add('A', [ 'A1', 'A2' ]);
 
-	const originalWithItems = Hierarchies.createWithItems({
-		items:    complexItems,
-		identify: item => item.id,
-		spec:     childMap,
-	});
+	const originalWithItems = Hierarchies.fromChildMapWithItems(complexItems, item => item.id, childMap);
 
 	// Clone it
 	const cloneWithItems = Hierarchy.clone(originalWithItems);
@@ -209,14 +203,10 @@ test('Hierarchy.cloneIds() creates ID hierarchy from item hierarchy', () => {
 		{ id: 'B', name: 'Root B' },
 	];
 
-	const originalWithItems = Hierarchies.createWithItems({
-		items:    originalItems,
-		identify: item => item.id,
-		spec:     [
-			[ 'A', 'A1' ],
-			[ 'A', 'A2' ],
-		],
-	});
+	const originalWithItems = Hierarchies.fromRelationsWithItems(originalItems, item => item.id, [
+		[ 'A', 'A1' ],
+		[ 'A', 'A2' ],
+	]);
 
 	// Clone to ID hierarchy
 	const idClone = Hierarchy.cloneIds(originalWithItems);

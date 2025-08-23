@@ -1,7 +1,7 @@
 import { MultiMap, type MultiMapSeparators, splitBy } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
-import { nodesFromItemsWithChildMap, nodesFromItemsWithChildren, nodesFromItemsWithParents } from './nodes-from-items.js';
+import { nodesFromChildMapWithItems, nodesFromChildItems, nodesFromParentItems } from './nodes-from-items.js';
 import { nodesToChildMap } from './nodes-to.js';
 
 
@@ -21,10 +21,10 @@ const inputRoots = [ 'A', 'B', 'C' ];
 const inputMap = MultiMap.parse<string>(input);
 
 
-test('nodesFromItemsWithChildMap', () => {
+test('nodesFromChildMapWithItems', () => {
 	const items = splitBy('A,B,C,A1,A2,B1,A11,A12,B12').map(id => ({ id }));
 
-	const roots = nodesFromItemsWithChildMap(items, item => item.id, inputMap);
+	const roots = nodesFromChildMapWithItems(items, item => item.id, inputMap);
 
 	expect(inputRoots).toEqual(roots.map(node => node.item.id));
 
@@ -34,10 +34,10 @@ test('nodesFromItemsWithChildMap', () => {
 });
 
 
-test('nodesFromItemsWithChildMap ignores items that are not in the child map', () => {
+test('nodesFromChildMapWithItems ignores items that are not in the child map', () => {
 	const items = splitBy('A,B,C,A1,A2,B1,A11,A12,B12,IGNORED').map(id => ({ id }));
 
-	const roots = nodesFromItemsWithChildMap(items, item => item.id, inputMap);
+	const roots = nodesFromChildMapWithItems(items, item => item.id, inputMap);
 
 	expect(inputRoots).toEqual(roots.map(node => node.item.id));
 
@@ -47,7 +47,7 @@ test('nodesFromItemsWithChildMap ignores items that are not in the child map', (
 });
 
 
-test('nodesFromItemsWithChildren()', () => {
+test('nodesFromChildItems()', () => {
 	interface ItemWithChildren {
 		id:        string,
 		children?: ItemWithChildren[],
@@ -82,7 +82,7 @@ test('nodesFromItemsWithChildren()', () => {
 		},
 	];
 
-	const roots = nodesFromItemsWithChildren(itemsWithChildren, item => item.children);
+	const roots = nodesFromChildItems(itemsWithChildren, item => item.children);
 
 	expect(inputRoots).toEqual(roots.map(node => node.item.id));
 
@@ -92,7 +92,7 @@ test('nodesFromItemsWithChildren()', () => {
 });
 
 
-test('nodesFromItemsWithParents()', () => {
+test('nodesFromParentItems()', () => {
 	interface ItemWithParent {
 		id:      string,
 		parent?: ItemWithParent,
@@ -114,14 +114,14 @@ test('nodesFromItemsWithParents()', () => {
 
 	/* Ensure we can pass it all of the items. */
 	const allItems = [ ...itemsWithParents.values() ];
-	const rootsFromAll = nodesFromItemsWithParents(allItems, item => item.parent);
+	const rootsFromAll = nodesFromParentItems(allItems, item => item.parent);
 
 	const actualFromAll = nodesToChildMap(rootsFromAll, item => item.id);
 	expect(actualFromAll).toEqual(inputMap);
 
 	/* Ensure we can pass it the leaf items only. */
 	const leafItems = [ ...itemsWithParents.values().filter(item => !inputMap.get(item.id)?.size) ];
-	const rootsFromLeaves = nodesFromItemsWithParents(leafItems, item => item.parent);
+	const rootsFromLeaves = nodesFromParentItems(leafItems, item => item.parent);
 
 	const actualFromLeaves = nodesToChildMap(rootsFromLeaves, item => item.id);
 	expect(actualFromLeaves).toEqual(inputMap);

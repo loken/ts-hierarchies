@@ -32,11 +32,7 @@ const items = [
 	{ id: 'G22', Description: 'Two' },
 ];
 
-const source = Hierarchies.createWithItems({
-	items,
-	identify: item => item.id,
-	spec:     childMap,
-});
+const source = Hierarchies.fromChildMapWithItems(items, (item) => item.id, childMap);
 
 
 test('search with a predicate returns matches, ancestors and descendants by default', () => {
@@ -54,6 +50,7 @@ test('search with a predicate returns matches, ancestors and descendants by defa
 	expect(actual).toEqual(expected);
 });
 
+
 test('search IDs returns matches, ancestors and descendants by default', () => {
 	const result = source.search([ 'G2' ]);
 
@@ -64,7 +61,6 @@ test('search IDs returns matches, ancestors and descendants by default', () => {
 
 	expect(actual).toEqual(expected);
 });
-
 
 test('search IDs can return matches only', () => {
 	const result = source.search([ 'A', 'G', 'G2' ], {

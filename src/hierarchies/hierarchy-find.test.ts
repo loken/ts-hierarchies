@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 import { Hierarchies } from './hierarchies.js';
 
 // Test data setup
-const hierarchy = Hierarchies.createWithIds(MultiMap.parse(`
+const hierarchy = Hierarchies.fromChildMap(MultiMap.parse(`
 A:A1,A2
 A1:A11,A12
 A2:A21
@@ -17,13 +17,13 @@ B1:B11,B12
 test('find() with existing IDs returns matching nodes', () => {
 	const foundNodes = hierarchy.find([ 'A', 'B' ]);
 	expect(foundNodes).toHaveLength(2);
-	expect(foundNodes.map(n => n.item)).toEqual([ 'A', 'B' ]);
+	expect(foundNodes.map((n) => n.item)).toEqual([ 'A', 'B' ]);
 });
 
 test('find() with mix of existing and non-existing IDs returns only existing', () => {
 	const foundNodes = hierarchy.find([ 'A', 'NonExistent', 'B' ]);
 	expect(foundNodes).toHaveLength(2);
-	expect(foundNodes.map(n => n.item)).toEqual([ 'A', 'B' ]);
+	expect(foundNodes.map((n) => n.item)).toEqual([ 'A', 'B' ]);
 });
 
 test('find() with all non-existing IDs returns empty array', () => {

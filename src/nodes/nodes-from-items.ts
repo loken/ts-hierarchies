@@ -6,7 +6,7 @@ import type { GetChildren, GetParent } from '../utilities/related-items.ts';
 
 
 /** @internalexport */
-export const nodesFromItemsWithChildMap = <Item, Id>(
+export const nodesFromChildMapWithItems = <Item, Id>(
 	items: Some<Item>,
 	identify: Identify<Item, Id>,
 	childMap: MultiMap<Id>,
@@ -44,7 +44,7 @@ export const nodesFromItemsWithChildMap = <Item, Id>(
 
 
 /** @internalexport */
-export const nodesFromItemsWithChildren = <Item>(
+export const nodesFromChildItems = <Item>(
 	roots: Some<Item>,
 	children: GetChildren<Item>,
 ) => {
@@ -68,7 +68,7 @@ export const nodesFromItemsWithChildren = <Item>(
 
 
 /** @internalexport */
-export const nodesFromItemsWithParents = <Item>(
+export const nodesFromParentItems = <Item>(
 	leaves: Some<Item>,
 	parent: GetParent<Item>,
 ) => {

@@ -4,7 +4,7 @@ import { assert, expect, test } from 'vitest';
 import { Hierarchies } from './hierarchies.js';
 
 
-const testHierarchy = Hierarchies.createWithIds(MultiMap.parse(`
+const testHierarchy = Hierarchies.fromChildMap(MultiMap.parse(`
 A:A1,A2
 A1:A11,A12
 A2:A21
@@ -60,7 +60,7 @@ test('hierarchy.get() non-existent ID throws with helpful message', () => {
 test('hierarchy.getSome() returns existing nodes', () => {
 	const nodes = testHierarchy.getSome([ 'A', 'B' ]);
 	expect(nodes).toHaveLength(2);
-	expect(nodes.map(n => n.item)).toEqual([ 'A', 'B' ]);
+	expect(nodes.map((n) => n.item)).toEqual([ 'A', 'B' ]);
 });
 
 test('hierarchy.getSome() throws for non-existent ID', () => {

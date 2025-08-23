@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 import { Hierarchies } from './hierarchies.js';
 
 
-const hc = Hierarchies.createWithIds(MultiMap.parse(`
+const hc = Hierarchies.fromChildMap(MultiMap.parse(`
 A:A1,A2
 A1:A11,A12
 A2:A21

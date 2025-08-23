@@ -15,7 +15,7 @@ import { searchSequence, searchSequenceMany } from '../traversal/sequence-search
 import { nodesToAncestorMap, nodesToChildMap, nodesToDescendantMap, nodesToRelations } from './nodes-to.js';
 import { relationsToNodes } from '../relations/relations-to.js';
 import { childMapToNodes } from '../maps/maps-to.js';
-import { nodesFromItemsWithChildMap, nodesFromItemsWithChildren, nodesFromItemsWithParents } from './nodes-from-items.js';
+import { nodesFromChildMapWithItems, nodesFromChildItems, nodesFromParentItems } from './nodes-from-items.js';
 
 export class Nodes {
 
@@ -55,29 +55,6 @@ export class Nodes {
 	}
 
 	/**
-	 * Build nodes of IDs linked as described by the provided `relations`.
-	 *
-	 * @template Id The type of IDs.
-	 * @param relations The relations describing the hierarchy structure.
-	 * @returns The root nodes.
-	 */
-	public static fromRelations<Id>(relations: Some<Relation<Id>>): HCNode<Id>[] {
-		return relationsToNodes(relations);
-	}
-
-	/**
-	 * Build nodes of IDs recursively from the property keys.
-	 *
-	 * @param source The object describing the relations.
-	 * @param include Optional predicate used for determining whether a property should be included as an ID.
-	 * @returns The root nodes.
-	 */
-	public static fromPropertyIds(source: object, include?: (prop: string, val: any) => boolean): HCNode<string>[] {
-		return childMapToNodes(ChildMap.fromPropertyIds(source, include));
-	}
-
-
-	/**
 	 * Build nodes of `items` linked as described by the provided `childMap`.
 	 *
 	 * Will exclude any `items` that are not mentioned in the `childMap`.
@@ -91,13 +68,25 @@ export class Nodes {
 	 * @throws {Error} When a parent or child ID referenced in the `childMap`
 	 * is not found in the provided `items`.
 	 */
-	public static fromItemsWithChildMap<Item, Id>(
+	public static fromChildMapWithItems<Item, Id>(
 		items: Some<Item>,
 		identify: Identify<Item, Id>,
 		childMap: MultiMap<Id>,
 	): HCNode<Item>[] {
-		return nodesFromItemsWithChildMap(items, identify, childMap);
+		return nodesFromChildMapWithItems(items, identify, childMap);
 	}
+
+	/**
+	 * Build nodes of IDs linked as described by the provided `relations`.
+	 *
+	 * @template Id The type of IDs.
+	 * @param relations The relations describing the hierarchy structure.
+	 * @returns The root nodes.
+	 */
+	public static fromRelations<Id>(relations: Some<Relation<Id>>): HCNode<Id>[] {
+		return relationsToNodes(relations);
+	}
+
 
 	/**
 	 * Build nodes of `Item`s linked as described by the provided `roots` and `children` delegate.
@@ -108,11 +97,11 @@ export class Nodes {
 	 * @param children The delegate for getting the child items from a parent item.
 	 * @returns The root nodes.
 	 */
-	public static fromItemsWithChildren<Item>(
+	public static fromChildItems<Item>(
 		roots: Some<Item>,
 		children: GetChildren<Item>,
 	) {
-		return nodesFromItemsWithChildren(roots, children);
+		return nodesFromChildItems(roots, children);
 	}
 
 	/**
@@ -124,11 +113,23 @@ export class Nodes {
 	 * @param parent The delegate for getting the parent of an item.
 	 * @returns The root nodes.
 	 */
-	public static fromItemsWithParents<Item>(
+	public static fromParentItems<Item>(
 		leaves: Some<Item>,
 		parent: GetParent<Item>,
 	) {
-		return nodesFromItemsWithParents(leaves, parent);
+		return nodesFromParentItems(leaves, parent);
+	}
+
+
+	/**
+	 * Build nodes of IDs recursively from the property keys.
+	 *
+	 * @param source The object describing the relations.
+	 * @param include Optional predicate used for determining whether a property should be included as an ID.
+	 * @returns The root nodes.
+	 */
+	public static fromPropertyIds(source: object, include?: (prop: string, val: any) => boolean): HCNode<string>[] {
+		return childMapToNodes(ChildMap.fromPropertyIds(source, include));
 	}
 	//#endregion
 

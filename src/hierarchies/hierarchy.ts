@@ -745,11 +745,7 @@ export class Hierarchy<Item, Id = Item> {
 			}
 		}
 
-		return Hierarchies.createWithItems({
-			items:    [ ...items.values() ],
-			identify: this.#identify,
-			spec:     childMap,
-		});
+		return Hierarchies.fromChildMapWithItems([ ...items.values() ], this.#identify, childMap);
 	}
 
 
@@ -776,7 +772,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @returns A new `Hierarchy<Item, Id>` with the same structure and items but new nodes.
 	 */
 	public static clone<Item, Id>(hierarchy: Hierarchy<Item, Id>): Hierarchy<Item, Id> {
-		const roots = Nodes.fromItemsWithChildMap(
+		const roots = Nodes.fromChildMapWithItems(
 			hierarchy.nodeItems,
 			hierarchy.identify,
 			hierarchy.toChildMap(),
