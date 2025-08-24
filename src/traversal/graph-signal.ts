@@ -18,6 +18,9 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 	#depthCount = 0;
 	#count = 0;
 	#skipped = false;
+	#yielded = false;
+	#pruned = false;
+	#nextSet = false;
 	//#endregion
 
 	//#region IGraphSignal
@@ -30,17 +33,41 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 	}
 
 	public next(nodes: Some<TNode>): void {
+		// Mutually exclusive with prune on the same node
+		if (this.#pruned)
+			throw new Error(`Cannot call next() after prune(). prune and next are mutually exclusive for the same node.`);
+
 		const count = this.#nodes.attach(nodes);
 
 		if (this.#isDepthFirst && count > 0)
 			this.#branchCount.push(count);
+
+		this.#nextSet = count > 0;
 	}
 
 	public skip(): void {
+		// Mutually exclusive with yield on the same node
+		if (this.#yielded)
+			throw new Error(`Cannot call skip() after yield(). yield and skip are mutually exclusive for the same node.`);
+
 		this.#skipped = true;
 	}
 
-	public end(): void {
+	public yield(): void {
+		if (this.#skipped)
+			throw new Error(`Cannot call yield() after skip(). yield and skip are mutually exclusive for the same node.`);
+
+		this.#yielded = true; // idempotent
+	}
+
+	public prune(): void {
+		if (this.#nextSet)
+			throw new Error(`Cannot call prune() after next(). prune and next are mutually exclusive for the same node.`);
+
+		this.#pruned = true; // idempotent
+	}
+
+	public stop(): void {
 		this.#nodes.clear();
 	}
 	//endregion
@@ -109,6 +136,9 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 			return res;
 
 		this.#skipped = false;
+		this.#yielded = false;
+		this.#pruned = false;
+		this.#nextSet = false;
 
 		if (this.#isDepthFirst) {
 			this.#depth = this.#branchCount.count - 1;

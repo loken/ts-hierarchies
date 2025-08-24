@@ -101,7 +101,7 @@ test('traverseGraph (signal) with skip and end yields wanted node', () => {
 			// We want to stop traversal once we find the item we want
 			// and to skip every other item.
 			if (node.item == expected)
-				signal.end();
+				signal.stop();
 			else
 				signal.skip();
 		},
@@ -180,4 +180,36 @@ test('traverseGraph (signal, depth-first) provides correct depth', () => {
 	});
 
 	iterateAll(actual);
+});
+
+test('traverseGraph (signal) throws when calling yield then skip', () => {
+	const fn = (): void => {
+		const it = traverseGraph({
+			roots:  intRoot,
+			signal: (_n, s) => {
+				s.yield();
+				s.skip();
+			},
+		});
+
+		iterateAll(it);
+	};
+
+	expect(fn).toThrowError(/yield and skip are mutually exclusive/i);
+});
+
+test('traverseGraph (signal) throws when calling prune then next', () => {
+	const fn = (): void => {
+		const it = traverseGraph({
+			roots:  intRoot,
+			signal: (n, s) => {
+				s.prune();
+				s.next(n.children);
+			},
+		});
+
+		iterateAll(it);
+	};
+
+	expect(fn).toThrowError(/prune and next are mutually exclusive/i);
 });

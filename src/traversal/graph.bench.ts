@@ -129,7 +129,7 @@ counts.forEach(count => {
 				roots,
 				signal: (n, s) => {
 					if (search(n)) {
-						s.end();
+						s.stop();
 					}
 					else {
 						s.skip();
@@ -146,7 +146,7 @@ counts.forEach(count => {
 				roots,
 				signal: (n, s) => {
 					if (search(n)) {
-						s.end();
+						s.stop();
 					}
 					else {
 						s.skip();

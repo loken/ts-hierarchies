@@ -141,3 +141,41 @@ test('traverseSequence (signal) with undefined first element yields nothing', ()
 
 	expect(actual.toArray()).to.be.empty;
 });
+
+test('traverseSequence (signal) throws when calling yield then skip', () => {
+	const seq = traverseRange(1, 2);
+	const fn = (): void => {
+		const it = traverseSequence({
+			first:  seq.next(),
+			signal: (_el, s) => {
+				s.yield();
+				s.skip();
+			},
+		});
+
+		// Force evaluation
+		it.toArray();
+	};
+
+	expect(fn).toThrowError(/yield and skip are mutually exclusive/i);
+});
+
+test('traverseSequence (signal) throws when calling prune then next', () => {
+	const seq = traverseRange(1, 3);
+	const fn = (): void => {
+		const it = traverseSequence({
+			first:  seq.next(),
+			signal: (_el, s) => {
+				s.prune();
+				const n = seq.next();
+				if (!n.done)
+					s.next(n);
+			},
+		});
+
+		// Force evaluation
+		it.toArray();
+	};
+
+	expect(fn).toThrowError(/prune and next are mutually exclusive/i);
+});

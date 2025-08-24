@@ -47,7 +47,7 @@ const clonedHierarchy = hierarchy1.clone();
 - Build hierarchies from items, relations, or child maps with simple factory methods
 - Deterministic sibling order and stable traversal (preserves source order)
 - Fast breadth- or depth first traversal with optional cycle detection
-- Advanced traversal with a `signal` delegate for pruning/early stop
+- Advanced traversal with a `signal` delegate (prune/skip/stop)
 - Powerful search: find by predicate or produce pruned hierarchies (matches/ancestors/descendants)
 - Convenient mapping: convert between relations, child maps, nodes and text
 - Serialization helpers for fixtures, tests and persistence
@@ -337,7 +337,7 @@ traverseGraph({
     next:  node => node.children,
 });
 
-// Advanced traversal with signal controller (prune/skip/early stop)
+// Advanced traversal with signal controller (next/skip/stop)
 traverseGraph({
     roots:  rootNode,
     signal: (node, signal) => {
@@ -349,11 +349,12 @@ traverseGraph({
             signal.skip();
         // If you reach "x", stop the traversal
         if (node.item.id === 'x')
-            signal.end();
+            signal.stop();
     },
 });
 // Also provides options for detectCycles and traversal type.
 ```
+> **Tip**: Defaults are "yield this node" and "don't traverse children." Use `next()` to traverse and `skip()` to exclude. `yield()` and `prune()` are optional no-ops to be explicit and aid with code flow.
 
 #### Sequence traversal
 
@@ -378,6 +379,7 @@ const elements = traverseSequence({
     },
 });
 ```
+> **Tip**: `yield()` and `prune()` exists here like for `traverseGraph()`.
 
 
 ## Performance

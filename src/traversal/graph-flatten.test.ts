@@ -100,7 +100,7 @@ test('flattenGraph (signal) with skip and end yields wanted node', () => {
 			// We want to stop traversal once we find the item we want
 			// and to skip every other item.
 			if (node.item == expected)
-				signal.end();
+				signal.stop();
 			else
 				signal.skip();
 		},

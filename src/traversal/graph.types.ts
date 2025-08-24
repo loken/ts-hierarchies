@@ -50,8 +50,8 @@ export type SignalNodes<TNode> = (node: TNode, signal: IGraphSignal<TNode>) => v
 
 
 /**
- * Use this to signal to the traversal what's `next`,
- * what to `skip` and whether to `end`.
+ * Use this to signal to the traversal what's `next`, what to `skip`,
+ * whether to explicitly `yield`, whether to `prune` children, and whether to `stop`.
  */
 export interface IGraphSignal<TNode> {
 	/** Depth of the current root relative to the traversal roots. */
@@ -62,6 +62,12 @@ export interface IGraphSignal<TNode> {
 	/** Call this when traversal should continue to a sub sequence of child roots. */
 	next(nodes: Some<TNode>): void;
 	/**
+	 * Explicitly mark that the current node should be yielded (included in the output).
+	 * By default nodes are yielded unless {@link skip} is called; use this for clarity in complex callbacks.
+	 * Mutually exclusive with {@link skip} for the same node.
+	 */
+	yield(): void;
+	/**
 	 * Call this when you want to signal that the current root should be skipped,
 	 * meaning it will not be part of the output.
 	 *
@@ -70,10 +76,16 @@ export interface IGraphSignal<TNode> {
 	 */
 	skip(): void;
 	/**
-	 * Call this when all traversal should end immediately.
+	 * Prune the current branch by not traversing any children for this node.
+	 * Functionally equivalent to not calling {@link next}.
+	 * Mutually exclusive with {@link next} for the same node.
+	 */
+	prune(): void;
+	/**
+	 * Call this when all traversal should stop immediately.
 	 *
 	 * Ending traversal of a particular branch is controlled by not calling
 	 * `next` for that branch.
 	 */
-	end(): void;
+	stop(): void;
 }

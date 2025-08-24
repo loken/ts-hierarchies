@@ -343,7 +343,7 @@ export class Nodes {
 		return undefined;
 	}
 
-	/** Find the first ancestor node matching the `search`. */
+	/** Find the ancestor nodes matching the `search`. */
 	public static findAncestors<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,

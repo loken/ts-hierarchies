@@ -236,7 +236,7 @@ test('Compile README snippets', () => {
 				signal.skip();
 			// If you reach "x", stop the traversal
 			if (node.item.id === 'x')
-				signal.end();
+				signal.stop();
 		},
 	});
 	// Also provides options for detectCycles and traversal type.
