@@ -1,14 +1,14 @@
-import { LinearQueue, LinearStack, type Some } from '@loken/utilities';
+import { LinearQueue, LinearStack, someToIterable } from '@loken/utilities';
 
 import { GraphSignal } from './graph-signal.js';
-import { type GraphTraversal, type NextNodes, type SignalNodes, type TraversalType } from './graph.types.js';
+import { traversalOptions, type IGraphSignal, type TraversalControl, type TraversalNext, type TraversalSignal } from './graph.types.js';
 
 
 /**
  * Generate a sequence of nodes by traversing the provided `roots` according to the options.
  */
 export const traverseGraph = <TNode>(
-	options: GraphTraversal<TNode>,
+	options: TraversalControl<TNode>,
 ): Generator<TNode, void, undefined> => {
 	if (options.signal !== undefined)
 		return traverseGraphSignal(options);
@@ -18,15 +18,25 @@ export const traverseGraph = <TNode>(
 
 /** @internalexport */
 export function* traverseGraphSignal<TNode>(
-	options: {
-		roots:         Some<TNode>,
-		signal:        SignalNodes<TNode>,
-		type?:         TraversalType
-		detectCycles?: boolean,
-	},
+	options: TraversalSignal<TNode>,
 ): Generator<TNode, void, unknown> {
+	options.traversal = traversalOptions(options.traversal, { includeSelf: true });
+
+	// Ensure GraphSignal sees the same traversal options we decided on here
 	const signal = new GraphSignal<TNode>(options);
 	const signalFn = options.signal;
+
+	// Handle includeSelf === false by pre-seeding children of roots without yielding/counting roots
+	if (!options.traversal.includeSelf) {
+		const seedProxy = Object.create(signal, {
+			skip:  { value: () => { /* no-op during seeding */ }, writable: false },
+			yield: { value: () => { /* no-op during seeding */ }, writable: false },
+		}) as IGraphSignal<TNode>;
+
+		for (const root of someToIterable(options.roots))
+			signalFn(root, seedProxy);
+	}
+
 	let res = signal.tryGetNext();
 	while (res[1]) {
 		signalFn(res[0], signal);
@@ -43,19 +53,27 @@ export function* traverseGraphSignal<TNode>(
 
 /** @internalexport */
 export function* traverseGraphNext<TNode>(
-	options: {
-		roots:         Some<TNode>,
-		next:          NextNodes<TNode>,
-		type?:         TraversalType,
-		detectCycles?: boolean,
-	},
+	options: TraversalNext<TNode>,
 ): Generator<NonNullable<TNode>, void, unknown> {
-	const visited = options.detectCycles ? new Set<TNode>() : undefined;
-	const store = options.type === 'depth-first'
+	const nextFn = options.next;
+	options.traversal = traversalOptions(options.traversal, { includeSelf: true });
+
+	const reverse = options.traversal.siblingOrder === 'reverse';
+	const visited = options.traversal.detectCycles ? new Set<TNode>() : undefined;
+	const store = options.traversal.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
-	store.attach(options.roots);
-	const nextFn = options.next;
+
+	if (options.traversal.includeSelf) {
+		store.attach(options.roots, reverse);
+	}
+	else {
+		for (const root of someToIterable(options.roots)) {
+			const children = nextFn(root);
+			if (children)
+				store.attach(children, reverse);
+		}
+	}
 
 	while (store.count > 0) {
 		const node = store.detach()!;
@@ -68,8 +86,7 @@ export function* traverseGraphNext<TNode>(
 		yield node;
 
 		const children = nextFn(node);
-
 		if (children)
-			store.attach(children);
+			store.attach(children, reverse);
 	}
 }

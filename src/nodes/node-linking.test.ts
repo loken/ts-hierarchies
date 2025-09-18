@@ -59,12 +59,12 @@ test('node.dismantle(false) unlinks everything under the node.', () => {
 	expect(other).to.satisfy((nodes: HCNode<number>[]) => nodes.every(n => n.isLinked));
 });
 
-test('node.dismantle(true) unlinks everything, including the ancestry and its branches.', () => {
+test('node.dismantle(\'with-self\') unlinks everything, including the ancestry and its branches.', () => {
 	const branchA = Nodes.create('A').attach([ Nodes.create('a1'), Nodes.create('a2'), Nodes.create('a3').attach(Nodes.create('a31')) ]);
 	const branchB = Nodes.create('A').attach([ Nodes.create('b1'), Nodes.create('b2').attach(Nodes.create('b21')) ]);
 	const root = Nodes.create('root').attach([ branchA, branchB ]);
 
-	const nodes = root.getDescendants(true);
+	const nodes = root.getDescendants('with-self');
 
 	expect(nodes.length).to.equal(10);
 

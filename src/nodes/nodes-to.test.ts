@@ -87,12 +87,12 @@ test('nodesToRelations', () => {
 });
 
 test('nodesToRelations -> relationsToNodes round-trip', () => {
-	const relations = nodesToRelations(roots);
+	const relations      = nodesToRelations(roots);
 	const roundTripRoots = relationsToNodes(relations);
 
 	// Verify structure is preserved by comparing descendant items
-	const originalItems = Nodes.getDescendants(roots, true).map(n => n.item).sort();
-	const roundTripItems = Nodes.getDescendants(roundTripRoots, true).map(n => n.item).sort();
+	const originalItems  = Nodes.getDescendants(roots,          'with-self').map(n => n.item).sort();
+	const roundTripItems = Nodes.getDescendants(roundTripRoots, 'with-self').map(n => n.item).sort();
 
 	expect(roundTripItems).toEqual(originalItems);
 });

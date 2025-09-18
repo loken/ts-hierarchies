@@ -31,8 +31,8 @@ test('hc.getDescendantIds() returns descendants', () => {
 	expect(descendants).toEqual([ 'A1', 'A2', 'A11', 'A12', 'A21' ]);
 });
 
-test('hc.getDescendantIds() with includeSelf returns descendants including the target ID', () => {
-	const descendants = hc.getDescendantIds('A1', true);
+test('hc.getDescendantIds() with with-self returns descendants including the target ID', () => {
+	const descendants = hc.getDescendantIds('A1', 'with-self');
 
 	expect(descendants).toEqual([ 'A1', 'A11', 'A12' ]);
 });

@@ -23,9 +23,9 @@ const hierarchy2 = Hierarchies.fromRelationsWithItems(items, i => i.id, [
 ]);
 
 // Retrieve and project descendants or ancestors.
-const getNodes = hierarchy1.getDescendants('a', true);
-const getItems = hierarchy1.getDescendantItems('a', true);
-const getIds   = hierarchy1.getDescendantIds('a', true);
+const getNodes = hierarchy1.getDescendants('a', 'with-self');
+const getItems = hierarchy1.getDescendantItems('a', 'with-self');
+const getIds   = hierarchy1.getDescendantIds('a', 'with-self');
 
 // Find matches by predicate
 const foundNodes = hierarchy1.find(n => n.item.name === 'a');
@@ -322,7 +322,7 @@ When you need fine-grained control or are working directly with nodes, use these
 #### Node retrieval
 
 ```typescript
-branchNodes[0].getDescendants(true, 'depth-first');
+branchNodes[0].getDescendants('depth-first-with-self');
 branchNodes[0].getAncestors(true);
 ```
 

@@ -108,9 +108,9 @@ test('findDescendantId() with non-existent ID search returns undefined', () => {
 	expect(descendantId).toBeUndefined();
 });
 
-test('findDescendantId() with includeSelf finds starting node', () => {
+test('findDescendantId() with-self finds starting node', () => {
 	// Search for A starting from A with includeSelf
-	const descendantId = hierarchy.findDescendantId([ 'A' ], 'A', true);
+	const descendantId = hierarchy.findDescendantId([ 'A' ], 'A', 'with-self');
 	expect(descendantId).toBe('A');
 });
 

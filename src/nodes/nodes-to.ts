@@ -4,6 +4,7 @@ import { flattenGraphNext } from '../traversal/graph-flatten.ts';
 import type { Identify } from '../utilities/identify.ts';
 import { nodeToIdProjection } from './node-conversion.ts';
 import type { HCNode } from './node.ts';
+import { traversalOptions } from '../traversal/graph.types.ts';
 
 
 /** @internalexport */
@@ -28,6 +29,7 @@ export const nodesToChildMap = <Item, Id = Item>(
 	const nodes = flattenGraphNext({
 		roots,
 		next: node => node.children.filter(n => n.isInternal),
+		...traversalOptions(),
 	});
 
 	for (const node of nodes) {
@@ -140,6 +142,7 @@ export const nodesToRelations = <Item, Id = Item>(
 
 			return children.filter(child => child.isInternal);
 		},
+		...traversalOptions(),
 	});
 
 	return relations;

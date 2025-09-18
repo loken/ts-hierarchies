@@ -8,6 +8,7 @@ export default [
 			'@typescript-eslint/consistent-generic-constructors': [ 'warn', 'constructor' ],
 			'@typescript-eslint/explicit-function-return-type':   [ 'error' ],
 			'@stylistic/comma-dangle':                            [ 'warn', 'always-multiline' ],
+			'@stylistic/indent':                                  [ 'warn', 'tab', { 'SwitchCase': 1 } ],
 			'@stylistic/max-len':                                 [
 				'warn',
 				{

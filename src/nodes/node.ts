@@ -2,9 +2,9 @@ import { isSomeItem, type Some, someToArray } from '@loken/utilities';
 
 import { traverseGraphNext } from '../traversal/graph-traverse.js';
 import { traverseSequence } from '../traversal/sequence-traverse.js';
-import type { TraversalType } from '../traversal/graph.types.js';
+import { traversalOptions, type TraversalParam } from '../traversal/graph.types.js';
 import type { DeBrand, NodePredicate } from './node.types.js';
-import { flattenGraph } from '../traversal/graph-flatten.js';
+import { flattenGraphNext } from '../traversal/graph-flatten.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
 import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
 import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
@@ -187,7 +187,7 @@ export class HCNode<Item> {
 			parent.dismantle(true);
 		}
 
-		for (const descendant of this.getDescendants(false))
+		for (const descendant of this.getDescendants())
 			descendant.detachSelf();
 
 		return this;
@@ -245,17 +245,17 @@ export class HCNode<Item> {
 	}
 
 	/** Get descendant nodes by traversing according to the options. */
-	public getDescendants(includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[] {
-		return flattenGraph({
-			roots: this.#getRoots(includeSelf),
-			next:  node => node.#children,
-			type,
+	public getDescendants(traversal?: TraversalParam): HCNode<Item>[] {
+		return flattenGraphNext({
+			roots:     this as HCNode<Item>,
+			next:      node => node.#children,
+			traversal: traversalOptions(traversal, { includeSelf: false }),
 		});
 	}
 
 	/** Get descendant items by traversing according to the options. */
-	public getDescendantItems(includeSelf = false, type: TraversalType = 'breadth-first'): Item[] {
-		return this.getDescendants(includeSelf, type).map(node => node.item);
+	public getDescendantItems(traversal?: TraversalParam): Item[] {
+		return this.getDescendants(traversal).map(node => node.item);
 	}
 
 
@@ -278,22 +278,22 @@ export class HCNode<Item> {
 	}
 
 	/** Find the first descendant node matching the `search`. */
-	public findDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item> | void {
+	public findDescendant(search: NodePredicate<Item>, traversal?: TraversalParam): HCNode<Item> | void {
 		return  searchGraph({
-			roots: this.#getRoots(includeSelf),
+			roots: this as HCNode<Item>,
 			next:  node => node.#children,
 			search,
-			type,
+			traversal,
 		});
 	}
 
 	/** Find the descendant nodes matching the `search`. */
-	public findDescendants(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[] {
+	public findDescendants(search: NodePredicate<Item>, traversal?: TraversalParam): HCNode<Item>[] {
 		return  searchGraphMany({
-			roots: this.#getRoots(includeSelf),
+			roots: this as HCNode<Item>,
 			next:  node => node.#children,
 			search,
-			type,
+			traversal,
 		});
 	}
 
@@ -304,8 +304,8 @@ export class HCNode<Item> {
 	}
 
 	/** Does a descendant node matching the `search` exist? */
-	public hasDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): boolean {
-		return this.findDescendant(search, includeSelf, type) !== undefined;
+	public hasDescendant(search: NodePredicate<Item>, traversal?: TraversalParam): boolean {
+		return this.findDescendant(search, traversal) !== undefined;
 	}
 	//#endregion
 
@@ -319,25 +319,16 @@ export class HCNode<Item> {
 	}
 
 	/** Generate a sequence of descendant nodes by traversing according to the options. */
-	public traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first'): Generator<HCNode<Item>> {
+	public traverseDescendants(traversal?: TraversalParam): Generator<HCNode<Item>> {
 		return traverseGraphNext({
-			roots: this.#getRoots(includeSelf),
+			roots: this as HCNode<Item>,
 			next:  node => node.#children,
-			type,
+			traversal,
 		});
 	}
 	//#endregion
 
 	//#region helpers
-	/**
-	 * Get nodes to use as roots.
-	 *
-	 * Note: This must be a private method as it could otherwise be exploited to modify the `#children`.
-	 */
-	#getRoots(includeSelf = false): Some<HCNode<Item>> {
-		return includeSelf ? this : (this.#children ?? []);
-	}
-
 	/**
 	 * Get nodes to use as roots.
 	 */

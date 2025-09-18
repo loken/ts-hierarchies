@@ -35,8 +35,8 @@ describe('hasDescendant', () => {
 		expect(actual).toBe(false);
 	});
 
-	test('works with includeSelf=true', () => {
-		const actual = Nodes.hasDescendant(nodeA, n => n.item === 'A', true);
+	test('works with-self', () => {
+		const actual = Nodes.hasDescendant(nodeA, n => n.item === 'A', 'with-self');
 		expect(actual).toBe(true);
 	});
 });
@@ -100,14 +100,14 @@ describe('getDescendants', () => {
 		expect(items).toEqual([ 'A1', 'A2', 'A11', 'A12' ]);
 	});
 
-	test('gets all descendants with includeSelf=true', () => {
-		const actual = Nodes.getDescendants(nodeA, true);
+	test('gets all descendants with-self', () => {
+		const actual = Nodes.getDescendants(nodeA, 'with-self');
 		const items = actual.map(n => n.item);
 		expect(items).toEqual([ 'A', 'A1', 'A2', 'A11', 'A12' ]);
 	});
 
 	test('supports depth-first traversal', () => {
-		const actual = Nodes.getDescendants(nodeA, false, 'depth-first');
+		const actual = Nodes.getDescendants(nodeA, 'depth-first');
 		const items = actual.map(n => n.item);
 		expect(items).toEqual([ 'A2', 'A1', 'A12', 'A11' ]);
 	});
@@ -119,8 +119,8 @@ describe('findDescendant', () => {
 		expect(actual?.item).toBe('A1');
 	});
 
-	test('finds first descendant with includeSelf=true', () => {
-		const actual = Nodes.findDescendant(nodeA, n => n.item === 'A', true);
+	test('finds first descendant with-self', () => {
+		const actual = Nodes.findDescendant(nodeA, n => n.item === 'A', 'with-self');
 		expect(actual?.item).toBe('A');
 	});
 
@@ -131,11 +131,11 @@ describe('findDescendant', () => {
 
 	test('supports depth-first and breadth-first traversal', () => {
 		// Breadth-first traversal: A1, A2, B1, A11, A12, B12 => A11
-		const breadthFirst = Nodes.findDescendant(roots, n => n.item === 'A11' || n.item === 'B12', false, 'breadth-first');
+		const breadthFirst = Nodes.findDescendant(roots, n => n.item === 'A11' || n.item === 'B12', 'breadth-first');
 		expect(breadthFirst?.item).toBe('A11');
 
 		// Depth-first traversal: B1, B12, A2, A1, A12, A11 => B12
-		const depthFirst = Nodes.findDescendant(roots, n => n.item === 'A11' || n.item === 'B12', false, 'depth-first');
+		const depthFirst = Nodes.findDescendant(roots, n => n.item === 'A11' || n.item === 'B12', 'depth-first');
 		expect(depthFirst?.item).toBe('B12');
 	});
 });
@@ -147,8 +147,8 @@ describe('findDescendants', () => {
 		expect(items).toEqual([ 'A1', 'A11', 'A12' ]);
 	});
 
-	test('finds all descendants with includeSelf=true', () => {
-		const actual = Nodes.findDescendants(nodeA, n => n.item.startsWith('A'), true);
+	test('finds all descendants with-self', () => {
+		const actual = Nodes.findDescendants(nodeA, n => n.item.startsWith('A'), 'with-self');
 		const items = actual.map(n => n.item).sort();
 		expect(items).toEqual([ 'A', 'A1', 'A11', 'A12', 'A2' ]);
 	});
@@ -224,8 +224,8 @@ describe('traverseDescendants', () => {
 		expect(items).toEqual([ 'A1', 'A2', 'A11', 'A12' ]);
 	});
 
-	test('works with includeSelf=true', () => {
-		const actual = Nodes.traverseDescendants(nodeA, true);
+	test('works with-self', () => {
+		const actual = Nodes.traverseDescendants(nodeA, 'with-self');
 		const items = [ ...actual ].map(n => n.item);
 		expect(items).toEqual([ 'A', 'A1', 'A2', 'A11', 'A12' ]);
 	});

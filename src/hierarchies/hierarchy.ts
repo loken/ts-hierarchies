@@ -8,7 +8,7 @@ import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../relations/relation.types.js';
 import { Hierarchies } from './hierarchies.js';
 import { nodesToChildMap, nodesToDescendantMap, nodesToAncestorMap, nodesToRelations } from '../nodes/nodes-to.js';
-import type { TraversalType } from '../traversal/graph.types.js';
+import { type TraversalParam } from '../traversal/graph.types.js';
 
 
 /** Contains the `id`, `item` and `node` for a `HCNode` in a `Hierarchy`. */
@@ -207,7 +207,7 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param nodes Nodes to detach.
 	 */
 	public detach(nodes: Some<HCNode<Item>>): this {
-		for (const node of Nodes.getDescendants(nodes, true)) {
+		for (const node of Nodes.getDescendants(nodes, 'with-self')) {
 			const id = this.#identify(node.item);
 			this.#debrand.get(id)!();
 			this.#debrand.delete(id);
@@ -224,7 +224,7 @@ export class Hierarchy<Item, Id = Item> {
 	}
 
 	#addNodes(nodes: Some<HCNode<Item>>, asRoot = false): void {
-		for (const node of Nodes.getDescendants(nodes, true)) {
+		for (const node of Nodes.getDescendants(nodes, 'with-self')) {
 			const id = this.#identify(node.item);
 			this.#debrand.set(id, node.brand(this));
 			this.#nodes.set(id, node);
@@ -290,12 +290,12 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param includeSelf Whether to include the starting nodes in the result.
 	 * @returns An array of descendant nodes in breadth-first order.
 	 */
-	public getDescendants(ids: Some<Id>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[] {
+	public getDescendants(ids: Some<Id>, traversal?: TraversalParam): HCNode<Item>[] {
 		const roots = this.getSome(ids);
 		if (roots.length === 0)
 			return [];
 
-		return Nodes.getDescendants(roots, includeSelf, type);
+		return Nodes.getDescendants(roots, traversal);
 	}
 
 	/**
@@ -304,66 +304,66 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param includeSelf Whether to include the starting nodes in the result.
 	 * @returns An array of descendant items in breadth-first order.
 	 */
-	public getDescendantItems(ids: Some<Id>, includeSelf = false, type: TraversalType = 'breadth-first'): Item[] {
-		return this.getDescendants(ids, includeSelf, type).map(n => n.item);
+	public getDescendantItems(ids: Some<Id>, traversal?: TraversalParam): Item[] {
+		return this.getDescendants(ids, traversal).map(n => n.item);
 	}
 
 	/**
 	 * Get the IDs from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 * @param ids The IDs of nodes to start traversal from.
-	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @param traversal Traversal options or shorthand.
 	 * @returns An array of descendant IDs in breadth-first order.
 	 */
-	public getDescendantIds(ids: Some<Id>, includeSelf = false, type: TraversalType = 'breadth-first'): Id[] {
-		return this.getDescendants(ids, includeSelf, type).map(n => this.#identify(n.item));
+	public getDescendantIds(ids: Some<Id>, traversal?: TraversalParam): Id[] {
+		return this.getDescendants(ids, traversal).map(n => this.#identify(n.item));
 	}
 
 	/**
 	 * Get the entries from the chain of descendant nodes starting with the nodes for the items matching the `ids`.
 	 * @param ids The IDs of nodes to start traversal from.
-	 * @param includeSelf Whether to include the starting nodes in the result.
+	 * @param traversal Traversal options or shorthand.
 	 * @returns An array of descendant entries in breadth-first order.
 	 */
-	public getDescendantEntries(ids: Some<Id>, includeSelf = false, type: TraversalType = 'breadth-first'): HierarchyEntry<Item, Id>[] {
-		return this.getDescendants(ids, includeSelf, type).map(node => {
+	public getDescendantEntries(ids: Some<Id>, traversal?: TraversalParam): HierarchyEntry<Item, Id>[] {
+		return this.getDescendants(ids, traversal).map(node => {
 			return [ this.#identify(node.item), node.item, node ];
 		});
 	}
 
 	/**
 	 * Get the chain of descendant nodes starting with the hierarchy `roots`.
-	 * @param includeSelf Whether to include the root nodes in the result.
+	 * @param traversal Traversal options or shorthand.
 	 * @returns An array of descendant nodes in breadth-first order.
 	 */
-	public getAllDescendants(includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[] {
-		return Nodes.getDescendants(this.roots, includeSelf, type);
+	public getAllDescendants(traversal?: TraversalParam): HCNode<Item>[] {
+		return Nodes.getDescendants(this.roots, traversal);
 	}
 
 	/**
 	 * Get the items from the chain of descendant nodes starting with the hierarchy `roots`.
-	 * @param includeSelf Whether to include the root nodes in the result.
+	 * @param traversal Traversal options or shorthand.
 	 * @returns An array of descendant items in breadth-first order.
 	 */
-	public getAllDescendantItems(includeSelf = false, type: TraversalType = 'breadth-first'): Item[] {
-		return Nodes.getDescendants(this.roots, includeSelf, type).map(n => n.item);
+	public getAllDescendantItems(traversal?: TraversalParam): Item[] {
+		return Nodes.getDescendants(this.roots, traversal).map(n => n.item);
 	}
 
 	/**
 	 * Get the IDs from the chain of descendant nodes starting with the hierarchy `roots`.
-	 * @param includeSelf Whether to include the root nodes in the result.
+	 * @param traversal Traversal options or shorthand.
 	 * @returns An array of descendant IDs in breadth-first order.
 	 */
-	public getAllDescendantIds(includeSelf = false, type: TraversalType = 'breadth-first'): Id[] {
-		return Nodes.getDescendants(this.roots, includeSelf, type).map(n => this.#identify(n.item));
+	public getAllDescendantIds(traversal?: TraversalParam): Id[] {
+		return Nodes.getDescendants(this.roots, traversal).map(n => this.#identify(n.item));
 	}
 
 	/**
 	 * Get the entries from the chain of descendant nodes starting with the hierarchy `roots`.
-	 * @param includeSelf Whether to include the root nodes in the result.
+	 * @param traversal Traversal options or shorthand.
 	 * @returns An array of descendant entries in breadth-first order.
 	 */
-	public getAllDescendantEntries(includeSelf = false, type: TraversalType = 'breadth-first'): HierarchyEntry<Item, Id>[] {
-		return Nodes.getDescendants(this.roots, includeSelf, type).map(node => {
+	public getAllDescendantEntries(traversal?: TraversalParam): HierarchyEntry<Item, Id>[] {
+		return Nodes.getDescendants(this.roots, traversal).map(node => {
 			return [ this.#identify(node.item), node.item, node ];
 		});
 	}
@@ -390,10 +390,10 @@ export class Hierarchy<Item, Id = Item> {
 	 * @param includeSelf Whether to include the starting nodes in the search.
 	 * @returns True if any descendant matches the search criteria.
 	 */
-	public hasDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): boolean {
+	public hasDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): boolean {
 		const roots = this.getSome(ids);
 
-		return Nodes.hasDescendant(roots, this.normalizeSearch(search), includeSelf, type);
+		return Nodes.hasDescendant(roots, this.normalizeSearch(search), traversal);
 	}
 
 	/**
@@ -536,17 +536,17 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find a node matching the `search` which is a descendant of a node with one of the `ids`.
 	 */
-	public findDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item> | void {
+	public findDescendant(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): HCNode<Item> | void {
 		const roots = this.getSome(ids);
 
-		return Nodes.findDescendant(roots, this.normalizeSearch(search), includeSelf, type);
+		return Nodes.findDescendant(roots, this.normalizeSearch(search), traversal);
 	}
 
 	/**
 	 * Find an item matching the `search` which is a descendant of a node with one of the `ids`.
 	 */
-	public findDescendantItem(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): Item | undefined {
-		const descendant = this.findDescendant(ids, search, includeSelf, type);
+	public findDescendantItem(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): Item | undefined {
+		const descendant = this.findDescendant(ids, search, traversal);
 
 		return descendant?.item;
 	}
@@ -554,8 +554,8 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find an ID matching the `search` which is a descendant of a node with one of the `ids`.
 	 */
-	public findDescendantId(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): Id | undefined {
-		const descendant = this.findDescendant(ids, search, includeSelf, type);
+	public findDescendantId(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): Id | undefined {
+		const descendant = this.findDescendant(ids, search, traversal);
 
 		return descendant ? this.#identify(descendant.item) : undefined;
 	}
@@ -563,8 +563,8 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find an entry matching the `search` which is a descendant of a node with one of the `ids`.
 	 */
-	public findDescendantEntry(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HierarchyEntry<Item, Id> | undefined {
-		const descendant = this.findDescendant(ids, search, includeSelf, type);
+	public findDescendantEntry(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): HierarchyEntry<Item, Id> | undefined {
+		const descendant = this.findDescendant(ids, search, traversal);
 
 		return descendant ? [ this.#identify(descendant.item), descendant.item, descendant ] : undefined;
 	}
@@ -572,31 +572,31 @@ export class Hierarchy<Item, Id = Item> {
 	/**
 	 * Find nodes matching the `search` which are descendants of a node with one of the `ids`.
 	 */
-	public findDescendants(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HCNode<Item>[] {
+	public findDescendants(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): HCNode<Item>[] {
 		const roots = this.getSome(ids);
 
-		return Nodes.findDescendants(roots, this.normalizeSearch(search), includeSelf, type);
+		return Nodes.findDescendants(roots, this.normalizeSearch(search), traversal);
 	}
 
 	/**
 	 * Find items matching the `search` which are descendants of a node with one of the `ids`.
 	 */
-	public findDescendantItems(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): Item[] {
-		return this.findDescendants(ids, search, includeSelf, type).map(n => n.item);
+	public findDescendantItems(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): Item[] {
+		return this.findDescendants(ids, search, traversal).map(n => n.item);
 	}
 
 	/**
 	 * Find IDs matching the `search` which are descendants of a node with one of the `ids`.
 	 */
-	public findDescendantIds(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): Id[] {
-		return this.findDescendants(ids, search, includeSelf, type).map(n => this.#identify(n.item));
+	public findDescendantIds(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): Id[] {
+		return this.findDescendants(ids, search, traversal).map(n => this.#identify(n.item));
 	}
 
 	/**
 	 * Find entries matching the `search` which are descendants of a node with one of the `ids`.
 	 */
-	public findDescendantEntries(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first'): HierarchyEntry<Item, Id>[] {
-		return this.findDescendants(ids, search, includeSelf, type).map(node => {
+	public findDescendantEntries(ids: Some<Id>, search: Some<Id> | NodePredicate<Item>, traversal?: TraversalParam): HierarchyEntry<Item, Id>[] {
+		return this.findDescendants(ids, search, traversal).map(node => {
 			return [ this.#identify(node.item), node.item, node ];
 		});
 	}
@@ -678,6 +678,7 @@ export class Hierarchy<Item, Id = Item> {
 		if (!(include.matches || include.ancestors || include.descendants))
 			throw new Error('At least one facet must be enabled in the include options: matches, ancestors, or descendants.');
 
+		const traversal: TraversalParam | undefined = include.matches ? 'with-self' : undefined;
 		const childMap = new MultiMap<Id>();
 		const items = new Map<Id, Item>();
 
@@ -695,7 +696,7 @@ export class Hierarchy<Item, Id = Item> {
 			}
 
 			if (include.descendants) {
-				for (const [ descendantId, descendantItem, descendant ] of this.getDescendantEntries(id, include.matches)) {
+				for (const [ descendantId, descendantItem, descendant ] of this.getDescendantEntries(id, traversal)) {
 					if (!items.has(descendantId)) {
 						items.set(descendantId, descendantItem);
 

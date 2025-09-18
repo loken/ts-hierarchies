@@ -1,6 +1,11 @@
-import { LinearQueue, type Some, LinearStack, type Predicate } from '@loken/utilities';
-import type { NextNodes, TraversalType } from './graph.types.ts';
+import { LinearQueue, LinearStack, type Predicate } from '@loken/utilities';
+import { traversalOptions, type TraversalNext } from './graph.types.ts';
 
+
+export interface SearchGraph<TNode> extends TraversalNext<TNode> {
+	/** The predicate function used to test each node during the search. */
+	search: Predicate<TNode>,
+}
 
 /**
  * Search a graph of nodes by traversing the provided `roots` according to the options.
@@ -8,16 +13,11 @@ import type { NextNodes, TraversalType } from './graph.types.ts';
  * The search will stop when the first node matching the `search` predicate is found.
  */
 export const searchGraph = <TNode>(
-	options: {
-		roots:         Some<TNode>,
-		next:          NextNodes<TNode>,
-		search:        Predicate<TNode>,
-		type?:         TraversalType,
-		detectCycles?: boolean,
-	},
+	options: SearchGraph<TNode>,
 ): TNode | void => {
-	const visited = options.detectCycles ? new Set<TNode>() : undefined;
-	const store = options.type === 'depth-first'
+	const traversal = traversalOptions(options.traversal);
+	const visited = traversal.detectCycles ? new Set<TNode>() : undefined;
+	const store = traversal.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
 	store.attach(options.roots);
@@ -46,17 +46,12 @@ export const searchGraph = <TNode>(
  * The search is exhaustive and will return all nodes matching the `search` predicate.
  */
 export const searchGraphMany = <TNode>(
-	options: {
-		roots:         Some<TNode>,
-		next:          NextNodes<TNode>,
-		search:        Predicate<TNode>,
-		type?:         TraversalType,
-		detectCycles?: boolean,
-	},
+	options: SearchGraph<TNode>,
 ): TNode[] => {
+	const traversal = traversalOptions(options.traversal);
 	const result: TNode[] = [];
-	const visited = options.detectCycles ? new Set<TNode>() : undefined;
-	const store = options.type === 'depth-first'
+	const visited = traversal.detectCycles ? new Set<TNode>() : undefined;
+	const store = traversal.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
 	store.attach(options.roots);

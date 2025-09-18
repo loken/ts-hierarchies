@@ -1,14 +1,14 @@
 import { isSomeItem, type ItemOfList, type MapArgs, mapArgs, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
 
-import { traverseGraph } from '../traversal/graph-traverse.js';
-import type { TraversalType } from '../traversal/graph.types.js';
+import { traverseGraphNext } from '../traversal/graph-traverse.js';
+import { traversalOptions, type TraversalParam } from '../traversal/graph.types.js';
 import { ChildMap } from '../maps/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
 import type { Relation } from '../relations/relation.types.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
-import { flattenGraph } from '../traversal/graph-flatten.js';
+import { flattenGraphNext } from '../traversal/graph-flatten.js';
 import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
 import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
@@ -210,9 +210,9 @@ export class Nodes {
 	public static hasDescendant<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		includeSelf = false, type: TraversalType = 'breadth-first',
+		traversal?: TraversalParam,
 	): boolean {
-		return this.findDescendant(roots, search, includeSelf, type) !== undefined;
+		return this.findDescendant(roots, search, traversal) !== undefined;
 	}
 
 	/** Does an ancestor node matching the `search` exist? */
@@ -226,16 +226,15 @@ export class Nodes {
 	//#endregion
 
 	//#region Retrieval (get*)
-	/** Get descendant nodes by traversing according to the options. */
+	/** Get descendant nodes by traversing according to the traversal options. */
 	public static getDescendants<Item>(
 		roots: Some<HCNode<Item>>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
+		traversal?: TraversalParam,
 	): HCNode<Item>[] {
-		return flattenGraph({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.children,
-			type,
+		return flattenGraphNext({
+			roots,
+			next:      node => node.children,
+			traversal: traversalOptions(traversal, { includeSelf: false }),
 		});
 	}
 
@@ -280,14 +279,13 @@ export class Nodes {
 	public static findDescendant<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
+		traversal?: TraversalParam,
 	): HCNode<Item> | void {
 		return searchGraph({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.children,
+			roots,
+			next: node => node.children,
 			search,
-			type,
+			traversal,
 		});
 	}
 
@@ -295,14 +293,13 @@ export class Nodes {
 	public static findDescendants<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
+		traversal?: TraversalParam,
 	): HCNode<Item>[] {
 		return searchGraphMany({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.children,
+			roots,
+			next: node => node.children,
 			search,
-			type,
+			traversal,
 		});
 	}
 
@@ -407,17 +404,15 @@ export class Nodes {
 	//#endregion
 
 	//#region Traversal (traverse*)
-	/** Generate a sequence of descendant nodes by traversing according to the options. */
+	/** Generate a sequence of descendant nodes by traversing according to the traversal options. */
 	public static traverseDescendants<Item>(
 		roots: Some<HCNode<Item>>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
+		traversal?: TraversalParam,
 	): Generator<HCNode<Item>, void, undefined> {
-		return traverseGraph({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.children,
-			type,
-		});
+		const options = traversalOptions(traversal);
+		options.includeSelf ??= false;
+
+		return traverseGraphNext({ roots, next: node => node.children, traversal: options });
 	}
 	//#endregion
 
