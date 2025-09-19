@@ -3,7 +3,6 @@ import type { Identify } from '../utilities/identify.ts';
 import { HCNode } from './node.ts';
 import { flattenGraphNext } from '../traversal/graph-flatten.ts';
 import type { GetChildren, GetParent } from '../utilities/related-items.ts';
-import { traversalOptions } from '../traversal/graph.types.ts';
 
 
 /** @internalexport */
@@ -62,7 +61,6 @@ export const nodesFromChildItems = <Item>(
 				return childNodes;
 			}
 		},
-		...traversalOptions(),
 	});
 
 	return rootNodes;
