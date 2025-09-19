@@ -323,7 +323,7 @@ When you need fine-grained control or are working directly with nodes, use these
 
 ```typescript
 branchNodes[0].getDescendants('depth-first-with-self');
-branchNodes[0].getAncestors(true);
+branchNodes[0].getAncestors('with-self');
 ```
 
 #### Graph traversal

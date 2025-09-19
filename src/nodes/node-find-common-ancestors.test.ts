@@ -56,9 +56,9 @@ describe('Nodes.findCommonAncestor', () => {
 		expect(Nodes.findCommonAncestor([ nonExistent1, nonExistent2 ])).toBeUndefined();
 	});
 
-	test('findCommonAncestor() with includeSelf finds ancestor including target nodes', () => {
-		// A1 and A11 with includeSelf should return A1 (since A1 is ancestor of A11 and includeSelf includes A1)
-		expect(Nodes.findCommonAncestor([ nodeA1, nodeA11 ], true)).toBe(nodeA1);
+	test('findCommonAncestor() with-self finds ancestor including target nodes', () => {
+		// A1 and A11 with-self should return A1 (since A1 is ancestor of A11 and includeSelf includes A1)
+		expect(Nodes.findCommonAncestor([ nodeA1, nodeA11 ], 'with-self')).toBe(nodeA1);
 	});
 });
 
@@ -78,8 +78,8 @@ describe('Nodes.findCommonAncestors', () => {
 		expect(ancestors).empty;
 	});
 
-	test('findCommonAncestors() with include self returns queried root item', () => {
-		const ancestors = Nodes.findCommonAncestors([ nodeRoot ], true);
+	test('findCommonAncestors() with-self returns queried root item', () => {
+		const ancestors = Nodes.findCommonAncestors([ nodeRoot ], 'with-self');
 		expect(ancestors).toEqual([ nodeRoot ]);
 	});
 

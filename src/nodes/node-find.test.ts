@@ -52,8 +52,8 @@ describe('hasAncestor', () => {
 		expect(actual).toBe(false);
 	});
 
-	test('works with includeSelf=true', () => {
-		const actual = Nodes.hasAncestor(nodeA11, n => n.item === 'A11', true);
+	test('works with-self', () => {
+		const actual = Nodes.hasAncestor(nodeA11, n => n.item === 'A11', 'with-self');
 		expect(actual).toBe(true);
 	});
 });
@@ -65,8 +65,8 @@ describe('getAncestors', () => {
 		expect(items).toEqual([ 'A1', 'A' ]);
 	});
 
-	test('gets all unique ancestors with includeSelf=true', () => {
-		const actual = Nodes.getAncestors(nodeA11, true);
+	test('gets all unique ancestors with-self', () => {
+		const actual = Nodes.getAncestors(nodeA11, 'with-self');
 		const items = actual.map(n => n.item);
 		expect(items).toEqual([ 'A11', 'A1', 'A' ]);
 	});
@@ -165,8 +165,8 @@ describe('findAncestor', () => {
 		expect(actual?.item).toBe('A1');
 	});
 
-	test('finds first ancestor with includeSelf=true', () => {
-		const actual = Nodes.findAncestor(nodeA11, n => n.item === 'A11', true);
+	test('finds first ancestor with-self', () => {
+		const actual = Nodes.findAncestor(nodeA11, n => n.item === 'A11', 'with-self');
 		expect(actual?.item).toBe('A11');
 	});
 
@@ -193,8 +193,8 @@ describe('findAncestors', () => {
 		expect(items).toEqual([ 'A', 'A1' ]);
 	});
 
-	test('finds all ancestors with includeSelf=true', () => {
-		const actual = Nodes.findAncestors(nodeA11, n => n.item.startsWith('A'), true);
+	test('finds all ancestors with-self', () => {
+		const actual = Nodes.findAncestors(nodeA11, n => n.item.startsWith('A'), 'with-self');
 		const items = actual.map(n => n.item).sort();
 		expect(items).toEqual([ 'A', 'A1', 'A11' ]);
 	});
@@ -205,7 +205,7 @@ describe('findAncestors', () => {
 	});
 
 	test('handles multiple starting nodes with deduplication', () => {
-		const actual = Nodes.findAncestors([ nodeA11, nodeA12, nodeB1 ], n => [ 'A', 'A1', 'B' ].includes(n.item), true);
+		const actual = Nodes.findAncestors([ nodeA11, nodeA12, nodeB1 ], n => [ 'A', 'A1', 'B' ].includes(n.item), 'with-self');
 		const items = actual.map(n => n.item).sort();
 		expect(items).toEqual([ 'A', 'A1', 'B' ]);
 	});

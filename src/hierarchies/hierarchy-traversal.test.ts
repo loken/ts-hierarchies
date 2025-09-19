@@ -18,8 +18,8 @@ test('hc.getAncestorIds() returns ancestry in order', () => {
 	expect(ancestors).toEqual([ 'A1', 'A' ]);
 });
 
-test('hc.getAncestorIds() with includeSelf returns ancestors including the target ID', () => {
-	const ancestors = hc.getAncestorIds('A12', true);
+test('hc.getAncestorIds() with-self returns ancestors including the target ID', () => {
+	const ancestors = hc.getAncestorIds('A12', 'with-self');
 
 	expect(ancestors).toEqual([ 'A12', 'A1', 'A' ]);
 });

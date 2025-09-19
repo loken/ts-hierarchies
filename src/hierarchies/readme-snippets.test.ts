@@ -213,7 +213,7 @@ test('Compile README snippets', () => {
 
 	// #region Node retrieval
 	branchNodes[0].getDescendants('depth-first-with-self');
-	branchNodes[0].getAncestors(true);
+	branchNodes[0].getAncestors('with-self');
 	// #endregion
 
 

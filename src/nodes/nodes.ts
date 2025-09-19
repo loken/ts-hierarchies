@@ -219,9 +219,9 @@ export class Nodes {
 	public static hasAncestor<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		includeSelf = false,
+		traversal?: 'with-self',
 	): boolean {
-		return this.findAncestor(roots, search, includeSelf) !== undefined;
+		return this.findAncestor(roots, search, traversal) !== undefined;
 	}
 	//#endregion
 
@@ -241,16 +241,16 @@ export class Nodes {
 	/** Get unique ancestor nodes. */
 	public static getAncestors<Item>(
 		nodes: Some<HCNode<Item>>,
-		includeSelf = false,
+		traversal?: 'with-self',
 	): HCNode<Item>[] {
 		if (isSomeItem(nodes))
-			return nodes.getAncestors(includeSelf);
+			return nodes.getAncestors(traversal);
 
 		const seen = new Set<HCNode<Item>>();
 		const ancestors: HCNode<Item>[] = [];
 
 		for (const node of someToIterable(nodes)) {
-			const first = includeSelf ? node : node.parent;
+			const first = traversal === 'with-self' ? node : node.parent;
 			if (!first || seen.has(first))
 				continue;
 
@@ -307,15 +307,15 @@ export class Nodes {
 	public static findAncestor<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		includeSelf = false,
+		traversal?: 'with-self',
 	): HCNode<Item> | void {
 		if (isSomeItem(roots))
-			return roots.findAncestor(search, includeSelf);
+			return roots.findAncestor(search, traversal);
 
 		const seen = new Set<HCNode<Item>>();
 
 		for (const root of roots) {
-			const first = includeSelf ? root : root.parent;
+			const first = traversal === 'with-self' ? root : root.parent;
 			if (!first || seen.has(first))
 				continue;
 
@@ -344,16 +344,16 @@ export class Nodes {
 	public static findAncestors<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		includeSelf = false,
+		traversal?: 'with-self',
 	): HCNode<Item>[] {
 		if (isSomeItem(roots))
-			return roots.findAncestors(search, includeSelf);
+			return roots.findAncestors(search, traversal);
 
 		const seen = new Set<HCNode<Item>>();
 		const ancestors: HCNode<Item>[] = [];
 
 		for (const root of roots) {
-			const first = includeSelf ? root : root.parent;
+			const first = traversal === 'with-self' ? root : root.parent;
 			if (!first || seen.has(first))
 				continue;
 
@@ -378,23 +378,23 @@ export class Nodes {
 	}
 
 	/** Find the common ancestor node which is the closest to the `nodes`. */
-	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, includeSelf = false): HCNode<Item> | undefined {
-		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
+	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, traversal?: 'with-self'): HCNode<Item> | undefined {
+		const commonAncestors = this.findCommonAncestorSet(nodes, traversal);
 
 		return commonAncestors?.values().next().value;
 	}
 
 	/** Find the ancestor nodes common to the `nodes`. */
-	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, includeSelf = false): HCNode<Item>[] | undefined {
-		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
+	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, traversal?: 'with-self'): HCNode<Item>[] | undefined {
+		const commonAncestors = this.findCommonAncestorSet(nodes, traversal);
 
 		return commonAncestors ? [ ...commonAncestors ] : undefined;
 	}
 
 	/** Find the set of ancestor nodes common to the `nodes`. */
-	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, includeSelf = false): Set<HCNode<Item>> | undefined {
+	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, traversal?: 'with-self'): Set<HCNode<Item>> | undefined {
 		const commonAncestors = someToArray(nodes).reduce((acc, curr) => {
-			const ancestors = new Set(curr.getAncestors(includeSelf));
+			const ancestors = new Set(curr.getAncestors(traversal));
 
 			return !acc ? ancestors : acc.intersection(ancestors);
 		}, undefined as Set<HCNode<Item>> | undefined);
@@ -409,10 +409,11 @@ export class Nodes {
 		roots: Some<HCNode<Item>>,
 		traversal?: TraversalParam,
 	): Generator<HCNode<Item>, void, undefined> {
-		const options = traversalOptions(traversal);
-		options.includeSelf ??= false;
-
-		return traverseGraphNext({ roots, next: node => node.children, traversal: options });
+		return traverseGraphNext({
+			roots,
+			next:      node => node.children,
+			traversal: traversalOptions(traversal, { includeSelf: false }),
+		});
 	}
 	//#endregion
 
