@@ -26,9 +26,9 @@ test('flattenGraph (next, breadth-first) yields in correct order', () => {
 	const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
 	const actual = flattenGraph({
-		roots:     intRoot,
-		traversal: 'breadth-first',
-		next:      n => n.children,
+		roots:   intRoot,
+		descend: 'breadth-first',
+		next:    n => n.children,
 	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
@@ -38,9 +38,9 @@ test('flattenGraph (next, depth-first) yields in correct order', () => {
 	const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
 
 	const actual = flattenGraph({
-		roots:     intRoot,
-		traversal: 'depth-first',
-		next:      n => n.children,
+		roots:   intRoot,
+		descend: 'depth-first',
+		next:    n => n.children,
 	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
@@ -50,9 +50,9 @@ test('flattenGraph (signal, breadth-first) yields in correct order', () => {
 	const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
 	const actual = flattenGraph({
-		roots:     intRoot,
-		traversal: 'breadth-first',
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: 'breadth-first',
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
@@ -62,9 +62,9 @@ test('flattenGraph (signal, depth-first) yields in correct order', () => {
 	const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
 
 	const actual = flattenGraph({
-		roots:     intRoot,
-		traversal: 'depth-first',
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: 'depth-first',
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
@@ -122,8 +122,8 @@ test('flattenGraph (next) on circular graph breaks on visited', () => {
 	last.attach(first);
 
 	const actual = flattenGraph({
-		roots:     first,
-		traversal: {
+		roots:   first,
+		descend: {
 			includeSelf:  true,
 			detectCycles: true,
 		},
@@ -145,8 +145,8 @@ test('flattenGraph (signal) on circular graph breaks on visited', () => {
 	last.attach(first);
 
 	const actual = flattenGraph({
-		roots:     first,
-		traversal: {
+		roots:   first,
+		descend: {
 			detectCycles: true,
 		},
 		signal: (node, signal) => {
@@ -160,9 +160,9 @@ test('flattenGraph (signal) on circular graph breaks on visited', () => {
 
 test('flattenGraph (signal, breadth-first) provides correct depth', () => {
 	flattenGraph({
-		traversal: 'breadth-first',
-		roots:     strRoots,
-		signal:    (node, signal) => {
+		descend: 'breadth-first',
+		roots:   strRoots,
+		signal:  (node, signal) => {
 			signal.next(node.children);
 
 			expect(node.item.length - 1).toEqual(signal.depth);
@@ -172,9 +172,9 @@ test('flattenGraph (signal, breadth-first) provides correct depth', () => {
 
 test('flattenGraph (signal, depth-first) provides correct depth', () => {
 	flattenGraph({
-		traversal: 'depth-first',
-		roots:     strRoots,
-		signal:    (node, signal) => {
+		descend: 'depth-first',
+		roots:   strRoots,
+		signal:  (node, signal) => {
 			signal.next(node.children);
 
 			expect(node.item.length - 1).toEqual(signal.depth);
@@ -186,9 +186,9 @@ test('flattenGraph (signal, includeSelf=false, breadth-first) yields only descen
 	const expected = [ 1, 2, 3, 11, 12, 31, 32, 121 ];
 
 	const actual = flattenGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'breadth-first' },
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'breadth-first' },
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
@@ -198,9 +198,9 @@ test('flattenGraph (signal, includeSelf=false, depth-first) yields only descenda
 	const expected = [ 3, 32, 31, 2, 1, 12, 121, 11 ];
 
 	const actual = flattenGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'depth-first' },
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'depth-first' },
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
@@ -210,9 +210,9 @@ test('flattenGraph (signal, includeSelf=false, breadth-first, reverse) yields on
 	const expected = [ 3, 2, 1, 32, 31, 12, 11, 121 ];
 
 	const actual = flattenGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'breadth-first', siblingOrder: 'reverse' },
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'breadth-first', siblingOrder: 'reverse' },
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
@@ -222,9 +222,9 @@ test('flattenGraph (signal, includeSelf=false, depth-first, reverse) yields only
 	const expected = [ 1, 11, 12, 121, 2, 3, 31, 32 ];
 
 	const actual = flattenGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'depth-first', siblingOrder: 'reverse' },
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'depth-first', siblingOrder: 'reverse' },
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);

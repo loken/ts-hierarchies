@@ -209,9 +209,13 @@ const matchingItemHc = Hierarchies.fromHierarchyWithItems(items, i => i.id, matc
 
 Query and traverse hierarchies using the high-level `Hierarchy<Item, Id>` API.
 
-- `get*` methods will throw if you pass an ID which does not exist in the hierarchy. If you don't know, use `find*` instead!
-- For methods traversing ancestors or descendants, you can provide an optional `includeSelf` flag to specify whether the provided IDs should be included in the retrieval or search.
-- For methods traversing descendants you may also specify `depth-first` if you don't want the default `breadth-first` traversal type.
+- `get*` methods throw if a requested ID is missing. If you don't know, use `find*` instead!
+- Traversal option shorthands:
+    - Descendants: `Descend` = `'with-self' | 'without-self' | 'breadth-first-with-self' | 'breadth-first-without-self' | 'depth-first-with-self' | 'depth-first-without-self'`.
+    - Ancestors: `Ascend` = `'with-self' | 'without-self'`.
+- Defaults:
+    - High-level helpers that name descendants/ancestors (e.g. `getDescendants`, `findAncestors`) default to excluding the starting ID(s) (`'without-self'`).
+    - Generic graph helpers (`traverseGraph`, `searchGraph`) default to including provided roots (`'with-self'`).
 
 ### Get by ID
 

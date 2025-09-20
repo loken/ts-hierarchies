@@ -1,5 +1,5 @@
 import { type Some } from '@loken/utilities';
-import type { TraversalParam } from './graph-traversal-options.js';
+import type { Descend } from './traversal-options.js';
 
 /** Describes how to get the the next nodes from a node visited while traversing a graph. */
 export type NextNodes<TNode> = (node: TNode) => TNode[] | Set<TNode> | undefined | void;
@@ -13,7 +13,7 @@ export interface TraversalRoots<TNode> {
 	roots: Some<TNode>;
 
 	/** Optional traversal options or shorthands. */
-	traversal?: TraversalParam;
+	descend?: Descend;
 }
 
 export interface TraversalNext<TNode> extends TraversalRoots<TNode> {

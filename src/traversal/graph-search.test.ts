@@ -15,10 +15,10 @@ const intRoot = Nodes.create(0).attach([
 
 test('searchGraph (next, breadth-first) finds first leaf (2)', () => {
 	const match = searchGraph({
-		roots:     intRoot,
-		traversal: 'breadth-first',
-		next:      n => n.children,
-		search:    n => n.isLeaf,
+		roots:   intRoot,
+		descend: 'breadth-first',
+		next:    n => n.children,
+		search:  n => n.isLeaf,
 	});
 
 	expect(match?.item).toEqual(2);
@@ -26,10 +26,10 @@ test('searchGraph (next, breadth-first) finds first leaf (2)', () => {
 
 test('searchGraph (next, depth-first) finds first leaf (32)', () => {
 	const match = searchGraph({
-		roots:     intRoot,
-		traversal: 'depth-first',
-		next:      n => n.children,
-		search:    n => n.isLeaf,
+		roots:   intRoot,
+		descend: 'depth-first',
+		next:    n => n.children,
+		search:  n => n.isLeaf,
 	});
 
 	expect(match?.item).toEqual(32);
@@ -37,10 +37,10 @@ test('searchGraph (next, depth-first) finds first leaf (32)', () => {
 
 test('searchGraphMany (next, breadth-first) finds all leaves in order', () => {
 	const matches = searchGraphMany({
-		roots:     intRoot,
-		traversal: 'breadth-first',
-		next:      n => n.children,
-		search:    n => n.isLeaf,
+		roots:   intRoot,
+		descend: 'breadth-first',
+		next:    n => n.children,
+		search:  n => n.isLeaf,
 	}).map(n => n.item);
 
 	const expected = [ 2, 11, 31, 32, 121 ];
@@ -49,10 +49,10 @@ test('searchGraphMany (next, breadth-first) finds all leaves in order', () => {
 
 test('searchGraphMany (next, depth-first) finds all leaves in order', () => {
 	const matches = searchGraphMany({
-		roots:     intRoot,
-		traversal: 'depth-first',
-		next:      n => n.children,
-		search:    n => n.isLeaf,
+		roots:   intRoot,
+		descend: 'depth-first',
+		next:    n => n.children,
+		search:  n => n.isLeaf,
 	}).map(n => n.item);
 
 	const expected = [ 32, 31, 2, 121, 11 ];
@@ -61,10 +61,10 @@ test('searchGraphMany (next, depth-first) finds all leaves in order', () => {
 
 test('searchGraph (next, includeSelf=false) skips root when matching root', () => {
 	const match = searchGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false },
-		next:      n => n.children,
-		search:    n => n.item === 0, // root only
+		roots:   intRoot,
+		descend: { includeSelf: false },
+		next:    n => n.children,
+		search:  n => n.item === 0, // root only
 	});
 
 	expect(match).toBeUndefined();
@@ -72,10 +72,10 @@ test('searchGraph (next, includeSelf=false) skips root when matching root', () =
 
 test('searchGraph (next, includeSelf=false) finds descendant', () => {
 	const match = searchGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'breadth-first' },
-		next:      n => n.children,
-		search:    n => n.item === 2, // first leaf child after skipping root
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'breadth-first' },
+		next:    n => n.children,
+		search:  n => n.item === 2, // first leaf child after skipping root
 	});
 
 	expect(match?.item).toEqual(2);
@@ -83,10 +83,10 @@ test('searchGraph (next, includeSelf=false) finds descendant', () => {
 
 test('searchGraphMany (next, includeSelf=false) excludes root even if matching predicate', () => {
 	const matches = searchGraphMany({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'breadth-first' },
-		next:      n => n.children,
-		search:    () => true,
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'breadth-first' },
+		next:    n => n.children,
+		search:  () => true,
 	}).map(n => n.item);
 
 	// Root 0 should not be present
@@ -108,8 +108,8 @@ test('searchGraph (next) on circular graph with detectCycles finds target', () =
 	last.attach(first);
 
 	const match = searchGraph({
-		roots:     first,
-		traversal: {
+		roots:   first,
+		descend: {
 			detectCycles: true,
 		},
 		next:   node => node.children,
@@ -131,8 +131,8 @@ test('searchGraphMany (next) on circular graph with detectCycles returns all', (
 	last.attach(first);
 
 	const matches = searchGraphMany({
-		roots:     first,
-		traversal: {
+		roots:   first,
+		descend: {
 			detectCycles: true,
 		},
 		next:   node => node.children,
@@ -144,10 +144,10 @@ test('searchGraphMany (next) on circular graph with detectCycles returns all', (
 
 test('searchGraphMany (next reverse) orders siblings in reverse', () => {
 	const matches = searchGraphMany({
-		roots:     intRoot,
-		traversal: { siblingOrder: 'reverse' },
-		next:      n => n.children,
-		search:    () => true,
+		roots:   intRoot,
+		descend: { siblingOrder: 'reverse' },
+		next:    n => n.children,
+		search:  () => true,
 	}).map(n => n.item);
 
 	const expected = [ 0, 3, 2, 1, 32, 31, 12, 11, 121 ];
@@ -156,10 +156,10 @@ test('searchGraphMany (next reverse) orders siblings in reverse', () => {
 
 test('searchGraphMany (next reverse, includeSelf=false) excludes root and reverses siblings', () => {
 	const matches = searchGraphMany({
-		roots:     intRoot,
-		traversal: { includeSelf: false, siblingOrder: 'reverse' },
-		next:      n => n.children,
-		search:    () => true,
+		roots:   intRoot,
+		descend: { includeSelf: false, siblingOrder: 'reverse' },
+		next:    n => n.children,
+		search:  () => true,
 	}).map(n => n.item);
 
 	const expected = [ 3, 2, 1, 32, 31, 12, 11, 121 ];

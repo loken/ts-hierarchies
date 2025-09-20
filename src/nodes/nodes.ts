@@ -1,7 +1,7 @@
 import { isSomeItem, type ItemOfList, type MapArgs, mapArgs, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
 
 import { traverseGraphNext } from '../traversal/graph-traverse.js';
-import { type TraversalParam, traversalOptions } from '../traversal/graph-traversal-options.js';
+import { type Ascend, type Descend, normalizeDescend } from '../traversal/traversal-options.js';
 import { ChildMap } from '../maps/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
@@ -210,18 +210,18 @@ export class Nodes {
 	public static hasDescendant<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		traversal?: TraversalParam,
+		descend?: Descend,
 	): boolean {
-		return this.findDescendant(roots, search, traversal) !== undefined;
+		return this.findDescendant(roots, search, descend) !== undefined;
 	}
 
 	/** Does an ancestor node matching the `search` exist? */
 	public static hasAncestor<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		traversal?: 'with-self',
+		ascend?: Ascend,
 	): boolean {
-		return this.findAncestor(roots, search, traversal) !== undefined;
+		return this.findAncestor(roots, search, ascend) !== undefined;
 	}
 	//#endregion
 
@@ -229,28 +229,28 @@ export class Nodes {
 	/** Get descendant nodes by traversing according to the traversal options. */
 	public static getDescendants<Item>(
 		roots: Some<HCNode<Item>>,
-		traversal?: TraversalParam,
+		descend?: Descend,
 	): HCNode<Item>[] {
 		return flattenGraphNext({
 			roots,
-			next:      node => node.children,
-			traversal: traversalOptions(traversal, { includeSelf: false }),
+			next:    node => node.children,
+			descend: normalizeDescend(descend, { includeSelf: false }),
 		});
 	}
 
 	/** Get unique ancestor nodes. */
 	public static getAncestors<Item>(
 		nodes: Some<HCNode<Item>>,
-		traversal?: 'with-self',
+		ascend?: Ascend,
 	): HCNode<Item>[] {
 		if (isSomeItem(nodes))
-			return nodes.getAncestors(traversal);
+			return nodes.getAncestors(ascend);
 
 		const seen = new Set<HCNode<Item>>();
 		const ancestors: HCNode<Item>[] = [];
 
 		for (const node of someToIterable(nodes)) {
-			const first = traversal === 'with-self' ? node : node.parent;
+			const first = ascend === 'with-self' ? node : node.parent;
 			if (!first || seen.has(first))
 				continue;
 
@@ -279,13 +279,13 @@ export class Nodes {
 	public static findDescendant<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		traversal?: TraversalParam,
+		descend?: Descend,
 	): HCNode<Item> | void {
 		return searchGraph({
 			roots,
-			next: node => node.children,
+			next:    node => node.children,
 			search,
-			traversal,
+			descend: descend,
 		});
 	}
 
@@ -293,13 +293,13 @@ export class Nodes {
 	public static findDescendants<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		traversal?: TraversalParam,
+		descend?: Descend,
 	): HCNode<Item>[] {
 		return searchGraphMany({
 			roots,
-			next: node => node.children,
+			next:    node => node.children,
 			search,
-			traversal,
+			descend: descend,
 		});
 	}
 
@@ -307,15 +307,15 @@ export class Nodes {
 	public static findAncestor<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		traversal?: 'with-self',
+		ascend?: Ascend,
 	): HCNode<Item> | void {
 		if (isSomeItem(roots))
-			return roots.findAncestor(search, traversal);
+			return roots.findAncestor(search, ascend);
 
 		const seen = new Set<HCNode<Item>>();
 
 		for (const root of roots) {
-			const first = traversal === 'with-self' ? root : root.parent;
+			const first = ascend === 'with-self' ? root : root.parent;
 			if (!first || seen.has(first))
 				continue;
 
@@ -344,16 +344,16 @@ export class Nodes {
 	public static findAncestors<Item>(
 		roots: Some<HCNode<Item>>,
 		search: NodePredicate<Item>,
-		traversal?: 'with-self',
+		ascend?: Ascend,
 	): HCNode<Item>[] {
 		if (isSomeItem(roots))
-			return roots.findAncestors(search, traversal);
+			return roots.findAncestors(search, ascend);
 
 		const seen = new Set<HCNode<Item>>();
 		const ancestors: HCNode<Item>[] = [];
 
 		for (const root of roots) {
-			const first = traversal === 'with-self' ? root : root.parent;
+			const first = ascend === 'with-self' ? root : root.parent;
 			if (!first || seen.has(first))
 				continue;
 
@@ -378,23 +378,23 @@ export class Nodes {
 	}
 
 	/** Find the common ancestor node which is the closest to the `nodes`. */
-	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, traversal?: 'with-self'): HCNode<Item> | undefined {
-		const commonAncestors = this.findCommonAncestorSet(nodes, traversal);
+	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, ascend?: Ascend): HCNode<Item> | undefined {
+		const commonAncestors = this.findCommonAncestorSet(nodes, ascend);
 
 		return commonAncestors?.values().next().value;
 	}
 
 	/** Find the ancestor nodes common to the `nodes`. */
-	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, traversal?: 'with-self'): HCNode<Item>[] | undefined {
-		const commonAncestors = this.findCommonAncestorSet(nodes, traversal);
+	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, ascend?: Ascend): HCNode<Item>[] | undefined {
+		const commonAncestors = this.findCommonAncestorSet(nodes, ascend);
 
 		return commonAncestors ? [ ...commonAncestors ] : undefined;
 	}
 
 	/** Find the set of ancestor nodes common to the `nodes`. */
-	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, traversal?: 'with-self'): Set<HCNode<Item>> | undefined {
+	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, ascend?: Ascend): Set<HCNode<Item>> | undefined {
 		const commonAncestors = someToArray(nodes).reduce((acc, curr) => {
-			const ancestors = new Set(curr.getAncestors(traversal));
+			const ancestors = new Set(curr.getAncestors(ascend));
 
 			return !acc ? ancestors : acc.intersection(ancestors);
 		}, undefined as Set<HCNode<Item>> | undefined);
@@ -407,12 +407,12 @@ export class Nodes {
 	/** Generate a sequence of descendant nodes by traversing according to the traversal options. */
 	public static traverseDescendants<Item>(
 		roots: Some<HCNode<Item>>,
-		traversal?: TraversalParam,
+		descend?: Descend,
 	): Generator<HCNode<Item>, void, undefined> {
 		return traverseGraphNext({
 			roots,
-			next:      node => node.children,
-			traversal: traversalOptions(traversal, { includeSelf: false }),
+			next:    node => node.children,
+			descend: normalizeDescend(descend, { includeSelf: false }),
 		});
 	}
 	//#endregion

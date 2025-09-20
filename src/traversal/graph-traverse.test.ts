@@ -27,9 +27,9 @@ test('traverseGraph (next, breadth-first) yields in correct order', () => {
 	const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
 	const actual = traverseGraph({
-		roots:     intRoot,
-		traversal: 'breadth-first',
-		next:      n => n.children,
+		roots:   intRoot,
+		descend: 'breadth-first',
+		next:    n => n.children,
 	}).map(n => n.item).toArray();
 
 	expect(actual).toEqual(expected);
@@ -39,9 +39,9 @@ test('traverseGraph (next, depth-first) yields in correct order', () => {
 	const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
 
 	const actual = traverseGraph({
-		roots:     intRoot,
-		traversal: 'depth-first',
-		next:      n => n.children,
+		roots:   intRoot,
+		descend: 'depth-first',
+		next:    n => n.children,
 	}).map(n => n.item).toArray();
 
 	expect(actual).toEqual(expected);
@@ -51,9 +51,9 @@ test('traverseGraph (signal, breadth-first) yields in correct order', () => {
 	const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
 	const actual = traverseGraph({
-		roots:     intRoot,
-		traversal: 'breadth-first',
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: 'breadth-first',
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item).toArray();
 
 	expect(actual).toEqual(expected);
@@ -63,9 +63,9 @@ test('traverseGraph (signal, depth-first) yields in correct order', () => {
 	const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
 
 	const actual = traverseGraph({
-		roots:     intRoot,
-		traversal: 'depth-first',
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: 'depth-first',
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item).toArray();
 
 	expect(actual).toEqual(expected);
@@ -123,8 +123,8 @@ test('traverseGraph (next) on circular graph breaks on visited', () => {
 	last.attach(first);
 
 	const actual = traverseGraph({
-		roots:     first,
-		traversal: {
+		roots:   first,
+		descend: {
 			includeSelf:  true,
 			detectCycles: true,
 		},
@@ -146,8 +146,8 @@ test('traverseGraph (signal) on circular graph breaks on visited', () => {
 	last.attach(first);
 
 	const actual = traverseGraph({
-		roots:     first,
-		traversal: {
+		roots:   first,
+		descend: {
 			detectCycles: true,
 		},
 		signal: (node, signal) => {
@@ -161,9 +161,9 @@ test('traverseGraph (signal) on circular graph breaks on visited', () => {
 
 test('traverseGraph (signal, breadth-first) provides correct depth', () => {
 	const actual = traverseGraph({
-		roots:     strRoots,
-		traversal: 'breadth-first',
-		signal:    (node, signal) => {
+		roots:   strRoots,
+		descend: 'breadth-first',
+		signal:  (node, signal) => {
 			signal.next(node.children);
 
 			expect(node.item.length - 1).toEqual(signal.depth);
@@ -175,9 +175,9 @@ test('traverseGraph (signal, breadth-first) provides correct depth', () => {
 
 test('traverseGraph (signal, depth-first) provides correct depth', () => {
 	const actual = traverseGraph({
-		roots:     strRoots,
-		traversal: 'depth-first',
-		signal:    (node, signal) => {
+		roots:   strRoots,
+		descend: 'depth-first',
+		signal:  (node, signal) => {
 			signal.next(node.children);
 
 			expect(node.item.length - 1).toEqual(signal.depth);
@@ -223,9 +223,9 @@ test('traverseGraph (signal, includeSelf=false, breadth-first) yields only desce
 	const expected = [ 1, 2, 3, 11, 12, 31, 32, 121 ]; // same as normal breadth-first without the original root 0
 
 	const actual = traverseGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'breadth-first' },
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'breadth-first' },
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item).toArray();
 
 	expect(actual).toEqual(expected);
@@ -235,9 +235,9 @@ test('traverseGraph (signal, includeSelf=false, depth-first) yields only descend
 	const expected = [ 3, 32, 31, 2, 1, 12, 121, 11 ];
 
 	const actual = traverseGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'depth-first' },
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'depth-first' },
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item).toArray();
 
 	expect(actual).toEqual(expected);
@@ -247,9 +247,9 @@ test('traverseGraph (signal, includeSelf=false, breadth-first, reverse) yields o
 	const expected = [ 3, 2, 1, 32, 31, 12, 11, 121 ];
 
 	const actual = traverseGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'breadth-first', siblingOrder: 'reverse' },
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'breadth-first', siblingOrder: 'reverse' },
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item).toArray();
 
 	expect(actual).toEqual(expected);
@@ -259,9 +259,9 @@ test('traverseGraph (signal, includeSelf=false, depth-first, reverse) yields onl
 	const expected = [ 1, 11, 12, 121, 2, 3, 31, 32 ];
 
 	const actual = traverseGraph({
-		roots:     intRoot,
-		traversal: { includeSelf: false, type: 'depth-first', siblingOrder: 'reverse' },
-		signal:    (n, s) => s.next(n.children),
+		roots:   intRoot,
+		descend: { includeSelf: false, type: 'depth-first', siblingOrder: 'reverse' },
+		signal:  (n, s) => s.next(n.children),
 	}).map(n => n.item).toArray();
 
 	expect(actual).toEqual(expected);

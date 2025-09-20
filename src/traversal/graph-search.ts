@@ -1,6 +1,6 @@
 import { LinearQueue, LinearStack, someToIterable, type Predicate } from '@loken/utilities';
 import { type TraversalNext } from './graph.types.js';
-import { traversalOptions } from './graph-traversal-options.js';
+import { normalizeDescend } from './traversal-options.js';
 
 
 export interface SearchGraph<TNode> extends TraversalNext<TNode> {
@@ -14,15 +14,15 @@ export interface SearchGraph<TNode> extends TraversalNext<TNode> {
  * The search will stop when the first node matching the `search` predicate is found.
  */
 export const searchGraph = <TNode>(options: SearchGraph<TNode>): TNode | void => {
-	const traversal = traversalOptions(options.traversal, { includeSelf: true });
 	const nextFn = options.next;
-	const reverse = traversal.siblingOrder === 'reverse';
-	const visited = traversal.detectCycles ? new Set<TNode>() : undefined;
-	const store = traversal.type === 'depth-first'
+	const descend = normalizeDescend(options.descend, { includeSelf: true });
+	const reverse = descend.siblingOrder === 'reverse';
+	const visited = descend.detectCycles ? new Set<TNode>() : undefined;
+	const store = descend.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
 
-	if (traversal.includeSelf) {
+	if (descend.includeSelf) {
 		store.attach(options.roots, reverse);
 	}
 	else {
@@ -56,16 +56,16 @@ export const searchGraph = <TNode>(options: SearchGraph<TNode>): TNode | void =>
  * The search is exhaustive and will return all nodes matching the `search` predicate.
  */
 export const searchGraphMany = <TNode>(options: SearchGraph<TNode>): TNode[] => {
-	const traversal = traversalOptions(options.traversal, { includeSelf: true });
 	const result: TNode[] = [];
 	const nextFn = options.next;
-	const reverse = traversal.siblingOrder === 'reverse';
-	const visited = traversal.detectCycles ? new Set<TNode>() : undefined;
-	const store = traversal.type === 'depth-first'
+	const descend = normalizeDescend(options.descend, { includeSelf: true });
+	const reverse = descend.siblingOrder === 'reverse';
+	const visited = descend.detectCycles ? new Set<TNode>() : undefined;
+	const store = descend.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
 
-	if (traversal.includeSelf) {
+	if (descend.includeSelf) {
 		store.attach(options.roots, reverse);
 	}
 	else {

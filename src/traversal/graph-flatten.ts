@@ -2,7 +2,7 @@ import { LinearStack, LinearQueue, someToIterable } from '@loken/utilities';
 
 import { GraphSignal, GraphSignalSeeding } from './graph-signal.js';
 import { type TraversalSignal, type TraversalControl, type TraversalNext } from './graph.types.js';
-import { traversalOptions } from './graph-traversal-options.js';
+import { normalizeDescend } from './traversal-options.js';
 
 
 /**
@@ -18,19 +18,19 @@ export const flattenGraph = <TNode>(options: TraversalControl<TNode>): TNode[] =
 /** @internalexport */
 export const flattenGraphSignal = <TNode>(options: TraversalSignal<TNode>): TNode[] => {
 	const result: TNode[] = [];
-	const traversal = traversalOptions(options.traversal, { includeSelf: true });
 	const signalFn = options.signal;
+	const descend = normalizeDescend(options.descend, { includeSelf: true });
 	let signal: GraphSignal<TNode>;
 
-	if (!traversal.includeSelf) {
+	if (!descend.includeSelf) {
 		const seeding = new GraphSignalSeeding<TNode>();
 		for (const root of someToIterable(options.roots))
 			signalFn(root, seeding);
 
-		signal = new GraphSignal<TNode>({ roots: seeding.roots, traversal });
+		signal = new GraphSignal<TNode>({ roots: seeding.roots, descend });
 	}
 	else {
-		signal = new GraphSignal<TNode>({ roots: options.roots, traversal });
+		signal = new GraphSignal<TNode>({ roots: options.roots, descend });
 	}
 
 	let res = signal.tryGetNext();
@@ -54,15 +54,15 @@ export const flattenGraphNext = <TNode>(
 ): TNode[] => {
 	const result: TNode[] = [];
 	const nextFn = options.next;
-	const traversal = traversalOptions(options.traversal, { includeSelf: true });
+	const descend = normalizeDescend(options.descend, { includeSelf: true });
 
-	const reverse = traversal.siblingOrder === 'reverse';
-	const visited = traversal.detectCycles ? new Set<TNode>() : undefined;
-	const store = traversal.type === 'depth-first'
+	const reverse = descend.siblingOrder === 'reverse';
+	const visited = descend.detectCycles ? new Set<TNode>() : undefined;
+	const store = descend.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
 
-	if (traversal.includeSelf) {
+	if (descend.includeSelf) {
 		store.attach(options.roots, reverse);
 	}
 	else {

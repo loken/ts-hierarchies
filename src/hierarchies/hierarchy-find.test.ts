@@ -73,7 +73,7 @@ test('findAncestorId() with non-existent ID search returns undefined', () => {
 });
 
 test('findAncestorId() with-self finds starting node', () => {
-	// Search for A1 starting from A1 with includeSelf
+	// Search for A1 starting from A1 'with-self' to include the starting node
 	const ancestorId = hierarchy.findAncestorId([ 'A1' ], 'A1', 'with-self');
 	expect(ancestorId).toBe('A1');
 });
@@ -109,7 +109,7 @@ test('findDescendantId() with non-existent ID search returns undefined', () => {
 });
 
 test('findDescendantId() with-self finds starting node', () => {
-	// Search for A starting from A with includeSelf
+	// Search for A starting from A using 'with-self' to include the starting node
 	const descendantId = hierarchy.findDescendantId([ 'A' ], 'A', 'with-self');
 	expect(descendantId).toBe('A');
 });

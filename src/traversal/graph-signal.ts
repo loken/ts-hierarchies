@@ -1,7 +1,7 @@
 import { type ILinear, LinearQueue, LinearStack, type Some, Stack, type TryResult, someToIterable } from '@loken/utilities';
 
 import { type IGraphSignal, type TraversalRoots } from './graph.types.js';
-import { traversalOptions } from './graph-traversal-options.js';
+import { normalizeDescend } from './traversal-options.js';
 
 
 /**
@@ -84,14 +84,14 @@ export class GraphSignal<TNode> implements IGraphSignal<TNode> {
 	//#region internal
 	/** Initialize traversal state. Optionally accepts a preloaded store for seeded roots. */
 	constructor(options: TraversalRoots<TNode>) {
-		const traversal = traversalOptions(options.traversal);
+		const descend = normalizeDescend(options.descend);
 
-		this.#reverseSiblingOrder = traversal.siblingOrder === 'reverse';
+		this.#reverseSiblingOrder = descend.siblingOrder === 'reverse';
 
-		if (traversal.detectCycles ?? false)
+		if (descend.detectCycles ?? false)
 			this.#visited = new Set<TNode>();
 
-		this.#isDepthFirst = traversal.type === 'depth-first';
+		this.#isDepthFirst = descend.type === 'depth-first';
 
 		this.#nodes = this.#isDepthFirst
 			? new LinearStack<TNode>()

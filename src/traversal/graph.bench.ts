@@ -44,32 +44,32 @@ counts.forEach(count => {
 		bench('bf traverseGraphNext', () => {
 			iterateAll(traverseGraphNext({
 				roots,
-				next:      (node) => node.children,
-				traversal: 'breadth-first',
+				next:    (node) => node.children,
+				descend: 'breadth-first',
 			}));
 		});
 
 		bench('df traverseGraphNext', () => {
 			iterateAll(traverseGraphNext({
 				roots,
-				next:      (node) => node.children,
-				traversal: 'depth-first',
+				next:    (node) => node.children,
+				descend: 'depth-first',
 			}));
 		});
 
 		bench('bf traverseGraphSignal', () => {
 			iterateAll(traverseGraphSignal({
 				roots,
-				signal:    (n, s) => s.next(n.children),
-				traversal: 'breadth-first',
+				signal:  (n, s) => s.next(n.children),
+				descend: 'breadth-first',
 			}));
 		});
 
 		bench('df traverseGraphSignal', () => {
 			iterateAll(traverseGraphSignal({
 				roots,
-				signal:    (n, s) => s.next(n.children),
-				traversal: 'depth-first',
+				signal:  (n, s) => s.next(n.children),
+				descend: 'depth-first',
 			}));
 		});
 
@@ -77,32 +77,32 @@ counts.forEach(count => {
 		bench('bf flattenGraphNext', () => {
 			flattenGraphNext({
 				roots,
-				next:      (node) => node.children,
-				traversal: 'depth-first',
+				next:    (node) => node.children,
+				descend: 'depth-first',
 			});
 		});
 
 		bench('df flattenGraphNext', () => {
 			flattenGraphNext({
 				roots,
-				next:      (node) => node.children,
-				traversal: 'breadth-first',
+				next:    (node) => node.children,
+				descend: 'breadth-first',
 			});
 		});
 
 		bench('bf flattenGraphSignal', () => {
 			flattenGraphSignal({
 				roots,
-				signal:    (n, s) => s.next(n.children),
-				traversal: 'breadth-first',
+				signal:  (n, s) => s.next(n.children),
+				descend: 'breadth-first',
 			});
 		});
 
 		bench('df flattenGraphSignal', () => {
 			flattenGraphSignal({
 				roots,
-				signal:    (n, s) => s.next(n.children),
-				traversal: 'depth-first',
+				signal:  (n, s) => s.next(n.children),
+				descend: 'depth-first',
 			});
 		});
 	});
