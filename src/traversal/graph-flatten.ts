@@ -1,11 +1,12 @@
 import { LinearStack, LinearQueue, someToIterable } from '@loken/utilities';
 
-import { GraphSignal } from './graph-signal.ts';
-import { type IGraphSignal, type TraversalSignal, type TraversalControl, type TraversalNext, traversalOptions } from './graph.types.ts';
+import { GraphSignal, GraphSignalSeeding } from './graph-signal.js';
+import { type TraversalSignal, type TraversalControl, type TraversalNext } from './graph.types.js';
+import { traversalOptions } from './graph-traversal-options.js';
 
 
 /**
- * Flatten a graph of nodes by traversing the provided `roots` according to the options.
+ * Flatten a graph of nodes by traversing the given `roots` according to the options.
  */
 export const flattenGraph = <TNode>(options: TraversalControl<TNode>): TNode[] => {
 	if (options.signal !== undefined)
@@ -15,24 +16,21 @@ export const flattenGraph = <TNode>(options: TraversalControl<TNode>): TNode[] =
 };
 
 /** @internalexport */
-export const flattenGraphSignal = <TNode>(
-	options: TraversalSignal<TNode>,
-): TNode[] => {
+export const flattenGraphSignal = <TNode>(options: TraversalSignal<TNode>): TNode[] => {
 	const result: TNode[] = [];
-	options.traversal = traversalOptions(options.traversal, { includeSelf: true });
-
-	const signal = new GraphSignal<TNode>(options);
+	const traversal = traversalOptions(options.traversal, { includeSelf: true });
 	const signalFn = options.signal;
+	let signal: GraphSignal<TNode>;
 
-	// Handle includeSelf === false by pre-seeding children of roots without yielding/counting roots
-	if (!options.traversal.includeSelf) {
-		const seedProxy = Object.create(signal, {
-			skip:  { value: () => { /* no-op during seeding */ }, writable: false },
-			yield: { value: () => { /* no-op during seeding */ }, writable: false },
-		}) as IGraphSignal<TNode>;
-
+	if (!traversal.includeSelf) {
+		const seeding = new GraphSignalSeeding<TNode>();
 		for (const root of someToIterable(options.roots))
-			signalFn(root, seedProxy);
+			signalFn(root, seeding);
+
+		signal = new GraphSignal<TNode>({ roots: seeding.roots, traversal });
+	}
+	else {
+		signal = new GraphSignal<TNode>({ roots: options.roots, traversal });
 	}
 
 	let res = signal.tryGetNext();
@@ -56,15 +54,15 @@ export const flattenGraphNext = <TNode>(
 ): TNode[] => {
 	const result: TNode[] = [];
 	const nextFn = options.next;
-	options.traversal = traversalOptions(options.traversal, { includeSelf: true });
+	const traversal = traversalOptions(options.traversal, { includeSelf: true });
 
-	const reverse = options.traversal.siblingOrder === 'reverse';
-	const visited = options.traversal.detectCycles ? new Set<TNode>() : undefined;
-	const store = options.traversal.type === 'depth-first'
+	const reverse = traversal.siblingOrder === 'reverse';
+	const visited = traversal.detectCycles ? new Set<TNode>() : undefined;
+	const store = traversal.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
 
-	if (options.traversal.includeSelf) {
+	if (traversal.includeSelf) {
 		store.attach(options.roots, reverse);
 	}
 	else {
@@ -86,9 +84,8 @@ export const flattenGraphNext = <TNode>(
 		result.push(node);
 
 		const children = nextFn(node);
-
 		if (children)
-			store.attach(children);
+			store.attach(children, reverse);
 	}
 
 	return result;

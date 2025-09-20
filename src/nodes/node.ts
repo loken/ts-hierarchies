@@ -2,7 +2,7 @@ import { type Some, someToArray } from '@loken/utilities';
 
 import { traverseGraphNext } from '../traversal/graph-traverse.js';
 import { traverseSequence } from '../traversal/sequence-traverse.js';
-import { traversalOptions, type TraversalParam } from '../traversal/graph.types.js';
+import { type TraversalParam, traversalOptions } from '../traversal/graph-traversal-options.js';
 import type { DeBrand, NodePredicate } from './node.types.js';
 import { flattenGraphNext } from '../traversal/graph-flatten.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';

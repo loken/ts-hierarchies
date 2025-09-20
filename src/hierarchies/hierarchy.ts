@@ -8,7 +8,7 @@ import type { Identify } from '../utilities/identify.js';
 import type { Relation } from '../relations/relation.types.js';
 import { Hierarchies } from './hierarchies.js';
 import { nodesToChildMap, nodesToDescendantMap, nodesToAncestorMap, nodesToRelations } from '../nodes/nodes-to.js';
-import { type TraversalParam } from '../traversal/graph.types.js';
+import { type TraversalParam } from '../traversal/graph-traversal-options.js';
 
 
 /** Contains the `id`, `item` and `node` for a `HCNode` in a `Hierarchy`. */

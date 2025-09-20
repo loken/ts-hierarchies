@@ -218,3 +218,51 @@ test('traverseGraph (signal) throws when calling prune then next', () => {
 
 	expect(fn).toThrowError(/prune and next are mutually exclusive/i);
 });
+
+test('traverseGraph (signal, includeSelf=false, breadth-first) yields only descendants', () => {
+	const expected = [ 1, 2, 3, 11, 12, 31, 32, 121 ]; // same as normal breadth-first without the original root 0
+
+	const actual = traverseGraph({
+		roots:     intRoot,
+		traversal: { includeSelf: false, type: 'breadth-first' },
+		signal:    (n, s) => s.next(n.children),
+	}).map(n => n.item).toArray();
+
+	expect(actual).toEqual(expected);
+});
+
+test('traverseGraph (signal, includeSelf=false, depth-first) yields only descendants respecting order', () => {
+	const expected = [ 3, 32, 31, 2, 1, 12, 121, 11 ];
+
+	const actual = traverseGraph({
+		roots:     intRoot,
+		traversal: { includeSelf: false, type: 'depth-first' },
+		signal:    (n, s) => s.next(n.children),
+	}).map(n => n.item).toArray();
+
+	expect(actual).toEqual(expected);
+});
+
+test('traverseGraph (signal, includeSelf=false, breadth-first, reverse) yields only descendants in reverse sibling order', () => {
+	const expected = [ 3, 2, 1, 32, 31, 12, 11, 121 ];
+
+	const actual = traverseGraph({
+		roots:     intRoot,
+		traversal: { includeSelf: false, type: 'breadth-first', siblingOrder: 'reverse' },
+		signal:    (n, s) => s.next(n.children),
+	}).map(n => n.item).toArray();
+
+	expect(actual).toEqual(expected);
+});
+
+test('traverseGraph (signal, includeSelf=false, depth-first, reverse) yields only descendants in reverse sibling order', () => {
+	const expected = [ 1, 11, 12, 121, 2, 3, 31, 32 ];
+
+	const actual = traverseGraph({
+		roots:     intRoot,
+		traversal: { includeSelf: false, type: 'depth-first', siblingOrder: 'reverse' },
+		signal:    (n, s) => s.next(n.children),
+	}).map(n => n.item).toArray();
+
+	expect(actual).toEqual(expected);
+});

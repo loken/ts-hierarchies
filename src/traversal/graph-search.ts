@@ -1,5 +1,6 @@
-import { LinearQueue, LinearStack, type Predicate } from '@loken/utilities';
-import { traversalOptions, type TraversalNext } from './graph.types.ts';
+import { LinearQueue, LinearStack, someToIterable, type Predicate } from '@loken/utilities';
+import { type TraversalNext } from './graph.types.js';
+import { traversalOptions } from './graph-traversal-options.js';
 
 
 export interface SearchGraph<TNode> extends TraversalNext<TNode> {
@@ -12,16 +13,25 @@ export interface SearchGraph<TNode> extends TraversalNext<TNode> {
  *
  * The search will stop when the first node matching the `search` predicate is found.
  */
-export const searchGraph = <TNode>(
-	options: SearchGraph<TNode>,
-): TNode | void => {
-	const traversal = traversalOptions(options.traversal);
+export const searchGraph = <TNode>(options: SearchGraph<TNode>): TNode | void => {
+	const traversal = traversalOptions(options.traversal, { includeSelf: true });
+	const nextFn = options.next;
+	const reverse = traversal.siblingOrder === 'reverse';
 	const visited = traversal.detectCycles ? new Set<TNode>() : undefined;
 	const store = traversal.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
-	store.attach(options.roots);
-	const nextFn = options.next;
+
+	if (traversal.includeSelf) {
+		store.attach(options.roots, reverse);
+	}
+	else {
+		for (const root of someToIterable(options.roots)) {
+			const children = nextFn(root);
+			if (children)
+				store.attach(children, reverse);
+		}
+	}
 
 	while (store.count > 0) {
 		const node = store.detach()!;
@@ -36,7 +46,7 @@ export const searchGraph = <TNode>(
 
 		const children = nextFn(node);
 		if (children)
-			store.attach(children);
+			store.attach(children, reverse);
 	}
 };
 
@@ -45,17 +55,26 @@ export const searchGraph = <TNode>(
  *
  * The search is exhaustive and will return all nodes matching the `search` predicate.
  */
-export const searchGraphMany = <TNode>(
-	options: SearchGraph<TNode>,
-): TNode[] => {
-	const traversal = traversalOptions(options.traversal);
+export const searchGraphMany = <TNode>(options: SearchGraph<TNode>): TNode[] => {
+	const traversal = traversalOptions(options.traversal, { includeSelf: true });
 	const result: TNode[] = [];
+	const nextFn = options.next;
+	const reverse = traversal.siblingOrder === 'reverse';
 	const visited = traversal.detectCycles ? new Set<TNode>() : undefined;
 	const store = traversal.type === 'depth-first'
 		? new LinearStack<TNode>()
 		: new LinearQueue<TNode>();
-	store.attach(options.roots);
-	const nextFn = options.next;
+
+	if (traversal.includeSelf) {
+		store.attach(options.roots, reverse);
+	}
+	else {
+		for (const root of someToIterable(options.roots)) {
+			const children = nextFn(root);
+			if (children)
+				store.attach(children, reverse);
+		}
+	}
 
 	while (store.count > 0) {
 		const node = store.detach()!;
@@ -69,9 +88,8 @@ export const searchGraphMany = <TNode>(
 			result.push(node);
 
 		const children = nextFn(node);
-
 		if (children)
-			store.attach(children);
+			store.attach(children, reverse);
 	}
 
 	return result;

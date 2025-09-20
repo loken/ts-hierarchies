@@ -1,7 +1,7 @@
 import { isSomeItem, type ItemOfList, type MapArgs, mapArgs, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
 
 import { traverseGraphNext } from '../traversal/graph-traverse.js';
-import { traversalOptions, type TraversalParam } from '../traversal/graph.types.js';
+import { type TraversalParam, traversalOptions } from '../traversal/graph-traversal-options.js';
 import { ChildMap } from '../maps/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
