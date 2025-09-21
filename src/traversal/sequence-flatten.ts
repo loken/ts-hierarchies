@@ -1,20 +1,22 @@
-import { SequenceSignal } from './sequence-signal.ts';
-import type { NextElement, SequenceTraversal, SignalElement } from './sequence.types.ts';
+import { SequenceSignal } from './sequence-signal.js';
+import type { NextElement, SequenceTraversal, SignalElement } from './sequence.types.js';
 
 
 /**
  * Flatten a sequence of elements starting with the `first` element and traversing according to the options.
  */
-export const flattenSequence = <TEl>(options: SequenceTraversal<TEl>) => {
+export const flattenSequence = <TEl>(
+	options: SequenceTraversal<TEl>,
+): TEl[] => {
 	if (options.signal !== undefined)
-		return flattenSignalSequence(options);
+		return flattenSequenceSignal(options);
 	else
-		return flattenFullSequence(options);
+		return flattenSequenceNext(options);
 };
 
 
 /** @internalexport */
-export const flattenSignalSequence = <TEl>(options: {
+export const flattenSequenceSignal = <TEl>(options: {
 	first:  TEl | undefined;
 	signal: SignalElement<TEl>;
 }): TEl[] => {
@@ -37,7 +39,7 @@ export const flattenSignalSequence = <TEl>(options: {
 };
 
 /** @internalexport */
-export const flattenFullSequence = <TEl>(options: {
+export const flattenSequenceNext = <TEl>(options: {
 	first: TEl | undefined;
 	next:  NextElement<TEl>;
 }): TEl[] => {

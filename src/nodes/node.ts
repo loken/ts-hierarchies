@@ -1,11 +1,10 @@
-import { isSomeItem, type Some, someToArray } from '@loken/utilities';
+import { type Some, someToArray } from '@loken/utilities';
 
-import { traverseFullGraph } from '../traversal/graph-traverse.js';
+import { traverseGraphNext } from '../traversal/graph-traverse.js';
 import { traverseSequence } from '../traversal/sequence-traverse.js';
-import type { TraversalType } from '../traversal/graph.types.js';
+import { type Ascend, type Descend, normalizeDescend } from '../traversal/traversal-options.js';
 import type { DeBrand, NodePredicate } from './node.types.js';
-import { nodesToItems } from './node-conversion.js';
-import { flattenGraph } from '../traversal/graph-flatten.js';
+import { flattenGraphNext } from '../traversal/graph-flatten.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
 import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
 import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
@@ -25,9 +24,10 @@ export class HCNode<Item> {
 	}
 
 	//#region backing fields
-	#item:      Item;
-	#parent?:   HCNode<Item>;
-	#children?: Set<HCNode<Item>>;
+	#item:        Item;
+	#parent?:     HCNode<Item>;
+	#children?:   Set<HCNode<Item>>;
+	#childCache?: readonly HCNode<Item>[];
 
 	/** The brand is used to lock the node to a specific owner. */
 	#brand?: any;
@@ -35,26 +35,25 @@ export class HCNode<Item> {
 
 	//#region predicates
 	/** A node is a "root" when there is no `parent`. */
-	public get isRoot() {
+	public get isRoot(): boolean {
 		return this.#parent === undefined;
 	}
 
 	/** A node is a "leaf" when there are no `children`. */
-	public get isLeaf() {
+	public get isLeaf(): boolean {
 		return this.#children === undefined || this.#children.size === 0;
 	}
 
 	/** A node is "internal" when it has `children`, meaning it's either "internal" or a "leaf". */
-	public get isInternal() {
+	public get isInternal(): boolean {
 		return !this.isLeaf;
 	}
 
 	/**
-	 * A node is "linked" when it is neither a root nor a child.
-	 *
-	 * A node is "linked" when it has a parent or at least one child.
+	 * A node is "linked" when it has a parent or at least one child,
+	 * which means it's not both a root and a leaf.
 	 */
-	public get isLinked() {
+	public get isLinked(): boolean {
 		return !this.isRoot || !this.isLeaf;
 	}
 
@@ -118,6 +117,8 @@ export class HCNode<Item> {
 			child.#parent = this;
 		}
 
+		this.#childCache = undefined;
+
 		return this;
 	}
 
@@ -142,6 +143,8 @@ export class HCNode<Item> {
 		if (this.isLeaf)
 			this.#children = undefined;
 
+		this.#childCache = undefined;
+
 		return this;
 	}
 
@@ -161,6 +164,7 @@ export class HCNode<Item> {
 		if (this.#parent!.isLeaf)
 			this.#parent!.#children = undefined;
 
+		this.#parent!.#childCache = undefined;
 		this.#parent = undefined;
 
 		return this;
@@ -183,7 +187,7 @@ export class HCNode<Item> {
 			parent.dismantle(true);
 		}
 
-		for (const descendant of this.getDescendants(false))
+		for (const descendant of this.getDescendants())
 			descendant.detachSelf();
 
 		return this;
@@ -192,154 +196,135 @@ export class HCNode<Item> {
 
 	//#region accessors
 	/** The item is the subject/content of the node. */
-	public get item() {
+	public get item(): Item {
 		return this.#item;
 	}
 
 	/** Get the parent node, if any. */
-	public getParent() {
+	public get parent(): HCNode<Item> | undefined {
 		return this.#parent;
 	}
 
 	/** Get the parent item, if any. */
-	public getParentItem() {
+	public get parentItem(): Item | undefined {
 		return this.#parent?.item;
 	}
 
-	/** Get all child nodes. */
-	public getChildren() {
-		return this.#children ? [ ...this.#children ] : [];
+	/**
+	 * Get all child nodes.
+	 *
+	 * @remarks
+	 * The returned array is frozen and must not be mutated. Do not push, pop, or modify its contents.
+	 * This is for performance and security: always treat the result as immutable.
+	 */
+	public get children(): HCNode<Item>[] {
+		if (!this.#childCache) {
+			const arr = this.#children ? Array.from(this.#children) : [];
+			this.#childCache = Object.freeze(arr);
+		}
+
+		return this.#childCache as HCNode<Item>[];
 	}
 
 	/** Get all child items. */
-	public getChildItems() {
-		return this.#children ? nodesToItems(this.#children.values()) : [];
+	public get childItems(): Item[] {
+		return this.#children ? Array.from(this.#children, node => node.item) : [];
 	}
 
 	/** Get ancestor nodes by traversing according to the options. */
-	public getAncestors(includeSelf = false) {
+	public getAncestors(ascend?: Ascend): HCNode<Item>[] {
 		return flattenSequence({
-			first: includeSelf ? this : this.#parent,
-			next:  node => node?.getParent(),
+			first: ascend === 'with-self' ? this : this.#parent,
+			next:  node => node?.parent,
 		});
 	}
 
 	/** Get ancestor items by traversing according to the options. */
-	public getAncestorItems(includeSelf = false) {
-		return this.getAncestors(includeSelf).map(node => node.item);
+	public getAncestorItems(ascend?: Ascend): Item[] {
+		return this.getAncestors(ascend).map(node => node.item);
 	}
 
 	/** Get descendant nodes by traversing according to the options. */
-	public getDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
-		return flattenGraph({
-			roots: this.#getRoots(includeSelf),
-			next:  node => node.#children,
-			type,
+	public getDescendants(descend?: Descend): HCNode<Item>[] {
+		return flattenGraphNext({
+			roots:   this as HCNode<Item>,
+			next:    node => node.#children,
+			descend: normalizeDescend(descend, { includeSelf: false }),
 		});
 	}
 
 	/** Get descendant items by traversing according to the options. */
-	public getDescendantItems(includeSelf = false, type: TraversalType = 'breadth-first') {
-		return this.getDescendants(includeSelf, type).map(node => node.item);
+	public getDescendantItems(descend?: Descend): Item[] {
+		return this.getDescendants(descend).map(node => node.item);
 	}
 
 
 	/** Find the first ancestor node matching the `search`. */
-	public findAncestor(search: NodePredicate<Item>, includeSelf = false) {
+	public findAncestor(search: NodePredicate<Item>, ascend?: Ascend): HCNode<Item> | void {
 		return searchSequence({
-			first: includeSelf ? this : this.#parent,
-			next:  node => node.getParent(),
+			first: ascend === 'with-self' ? this : this.#parent,
+			next:  node => node.parent,
 			search,
 		});
 	}
 
 	/** Find the ancestor nodes matching the `search`. */
-	public findAncestors(search: NodePredicate<Item>, includeSelf = false) {
+	public findAncestors(search: NodePredicate<Item>, ascend?: Ascend): HCNode<Item>[] {
 		return searchSequenceMany({
-			first: includeSelf ? this : this.#parent,
-			next:  node => node.getParent(),
+			first: ascend === 'with-self' ? this : this.#parent,
+			next:  node => node.parent,
 			search,
 		});
 	}
 
 	/** Find the first descendant node matching the `search`. */
-	public findDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+	public findDescendant(search: NodePredicate<Item>, descend?: Descend): HCNode<Item> | void {
 		return  searchGraph({
-			roots: this.#getRoots(includeSelf),
-			next:  node => node.#children,
+			roots:   this as HCNode<Item>,
+			next:    node => node.#children,
 			search,
-			type,
+			descend: descend,
 		});
 	}
 
 	/** Find the descendant nodes matching the `search`. */
-	public findDescendants(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
+	public findDescendants(search: NodePredicate<Item>, descend?: Descend): HCNode<Item>[] {
 		return  searchGraphMany({
-			roots: this.#getRoots(includeSelf),
-			next:  node => node.#children,
+			roots:   this as HCNode<Item>,
+			next:    node => node.#children,
 			search,
-			type,
+			descend: descend,
 		});
 	}
 
 
 	/** Does an ancestor node matching the `search` exist? */
-	public hasAncestor(search: NodePredicate<Item>, includeSelf = false) {
-		return this.findAncestor(search, includeSelf) !== undefined;
+	public hasAncestor(search: NodePredicate<Item>, ascend?: Ascend): boolean {
+		return this.findAncestor(search, ascend) !== undefined;
 	}
 
 	/** Does a descendant node matching the `search` exist? */
-	public hasDescendant(search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		return this.findDescendant(search, includeSelf, type) !== undefined;
+	public hasDescendant(search: NodePredicate<Item>, descend?: Descend): boolean {
+		return this.findDescendant(search, descend) !== undefined;
 	}
 	//#endregion
 
 	//#region traversal
 	/** Generate a sequence of ancestor nodes by traversing according to the options. */
-	public traverseAncestors(includeSelf = false) {
+	public traverseAncestors(ascend?: Ascend): Generator<HCNode<Item>> {
 		return traverseSequence({
-			first: includeSelf ? this : this.#parent,
-			next:  node => node?.getParent(),
+			first: ascend === 'with-self' ? this : this.#parent,
+			next:  node => node?.parent,
 		});
 	}
 
 	/** Generate a sequence of descendant nodes by traversing according to the options. */
-	public traverseDescendants(includeSelf = false, type: TraversalType = 'breadth-first') {
-		return traverseFullGraph({
-			roots: this.#getRoots(includeSelf),
-			next:  node => node.#children,
-			type,
+	public traverseDescendants(descend?: Descend): Generator<HCNode<Item>> {
+		return traverseGraphNext({
+			roots:   this as HCNode<Item>,
+			next:    node => node.#children,
+			descend: descend,
 		});
-	}
-	//#endregion
-
-	//#region helpers
-	/**
-	 * Get nodes to use as roots.
-	 *
-	 * Note: This must be a private method as it could otherwise be exploited to modify the `#children`.
-	 */
-	#getRoots(includeSelf = false): Some<HCNode<Item>> {
-		return includeSelf ? this : (this.#children ?? []);
-	}
-
-	/**
-	 * Get nodes to use as roots.
-	 */
-	public static getRoots<Item>(roots: Some<HCNode<Item>>, includeSelf = false): Some<HCNode<Item>> {
-		if (includeSelf)
-			return roots;
-
-		if (isSomeItem(roots))
-			return roots.#children ? [ ...roots.#children ] : [];
-
-		const children: HCNode<Item>[] = [];
-		for (const root of roots) {
-			if (root.#children)
-				children.push(...root.#children);
-		}
-
-		return children;
 	}
 	//#endregion
 

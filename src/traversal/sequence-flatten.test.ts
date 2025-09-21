@@ -1,17 +1,17 @@
 import { range, traverseRange } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
-import { traverseSequence } from './sequence-traverse.js';
+import { flattenSequence } from './sequence-flatten.js';
 
 
 // We're using a generator for these tests, but a sequence can be
 // anything which has a next value, such as a linked list.
 
-test('traverseSequence (next) yields in order', () => {
+test('flattenSequence (next) yields in order', () => {
 	const expected = range(0, 5);
 	const sequence = traverseRange(0, 5);
 
-	const actual = traverseSequence({
+	const actual = flattenSequence({
 		first: sequence.next().value,
 		next:  () => {
 			const next = sequence.next();
@@ -20,14 +20,14 @@ test('traverseSequence (next) yields in order', () => {
 		},
 	});
 
-	expect(actual.toArray()).toEqual(expected);
+	expect(actual).toEqual(expected);
 });
 
-test('traverseSequence (signal) with skip yields in correct values', () => {
+test('flattenSequence (signal) with skip yields in correct values', () => {
 	const expected = [ 2 ];
 	const sequence = traverseRange(1, 4);
 
-	const actual = traverseSequence({
+	const actual = flattenSequence({
 		first:  sequence.next(),
 		signal: (element, signal) => {
 			// Skip odd numbers.
@@ -46,19 +46,19 @@ test('traverseSequence (signal) with skip yields in correct values', () => {
 		},
 	});
 
-	const actualItems = actual.map(el => el.value!).toArray();
+	const actualItems = actual.map(el => el.value!);
 
 	expect(actualItems).toEqual(expected);
 });
 
-test('traverseSequence (signal) with skip provides correct index and count', () => {
+test('flattenSequence (signal) with skip provides correct index and count', () => {
 	// We set it up so that index and value matches
 	// and so that we exclude odd values from the result.
 	const sequence = traverseRange(0, 5);
 	const expected = [ 0, 2, 4 ];
 	const expectedCounts = [ 0, 1, 1, 2, 2 ];
 
-	const actual = traverseSequence({
+	const actual = flattenSequence({
 		first:  sequence.next(),
 		signal: (element, signal) => {
 			const expectedCount = expectedCounts[signal.index];
@@ -75,37 +75,37 @@ test('traverseSequence (signal) with skip provides correct index and count', () 
 		},
 	});
 
-	const actualValues = actual.map(el => el.value!).toArray();
+	const actualValues = actual.map(el => el.value!);
 
 	expect(actualValues).toEqual(expected);
 });
 
-test('traverseSequence (next) with empty sequence yields nothing', () => {
-	const actual = traverseSequence({
+test('flattenSequence (next) with empty sequence yields nothing', () => {
+	const actual = flattenSequence({
 		first: undefined,
 		next:  () => undefined,
 	});
 
-	expect(actual.toArray()).toEqual([]);
+	expect(actual).toEqual([]);
 });
 
-test('traverseSequence (next) with single element yields one item', () => {
+test('flattenSequence (next) with single element yields one item', () => {
 	const expected = [ 42 ];
 
-	const actual = traverseSequence({
+	const actual = flattenSequence({
 		first: 42,
 		next:  () => undefined,
 	});
 
-	expect(actual.toArray()).toEqual(expected);
+	expect(actual).toEqual(expected);
 });
 
-test('traverseSequence (signal) with early termination yields wanted element', () => {
+test('flattenSequence (signal) with early termination yields wanted element', () => {
 	// Let's implement a search for a single element by not providing next elements after we find it.
 	const expected = [ 3 ];
 	const sequence = traverseRange(0, 10);
 
-	const actual = traverseSequence({
+	const actual = flattenSequence({
 		first:  sequence.next(),
 		signal: (element, signal) => {
 			// We want to stop traversal once we find the element we want
@@ -125,13 +125,13 @@ test('traverseSequence (signal) with early termination yields wanted element', (
 		},
 	});
 
-	const actualValues = actual.map(el => el.value!).toArray();
+	const actualValues = actual.map(el => el.value!);
 
 	expect(actualValues).toEqual(expected);
 });
 
-test('traverseSequence (signal) with undefined first element yields nothing', () => {
-	const actual = traverseSequence({
+test('flattenSequence (signal) with undefined first element yields nothing', () => {
+	const actual = flattenSequence({
 		first:  undefined,
 		signal: (_element, _signal) => {
 			// This should never be called
@@ -139,43 +139,5 @@ test('traverseSequence (signal) with undefined first element yields nothing', ()
 		},
 	});
 
-	expect(actual.toArray()).to.be.empty;
-});
-
-test('traverseSequence (signal) throws when calling yield then skip', () => {
-	const seq = traverseRange(1, 2);
-	const fn = (): void => {
-		const it = traverseSequence({
-			first:  seq.next(),
-			signal: (_el, s) => {
-				s.yield();
-				s.skip();
-			},
-		});
-
-		// Force evaluation
-		it.toArray();
-	};
-
-	expect(fn).toThrowError(/yield and skip are mutually exclusive/i);
-});
-
-test('traverseSequence (signal) throws when calling prune then next', () => {
-	const seq = traverseRange(1, 3);
-	const fn = (): void => {
-		const it = traverseSequence({
-			first:  seq.next(),
-			signal: (_el, s) => {
-				s.prune();
-				const n = seq.next();
-				if (!n.done)
-					s.next(n);
-			},
-		});
-
-		// Force evaluation
-		it.toArray();
-	};
-
-	expect(fn).toThrowError(/prune and next are mutually exclusive/i);
+	expect(actual).toEqual([]);
 });

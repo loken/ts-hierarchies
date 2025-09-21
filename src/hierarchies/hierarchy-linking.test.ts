@@ -1,7 +1,6 @@
 import { MultiMap } from '@loken/utilities';
 import { assert, expect, test } from 'vitest';
 
-import { nodesToIds } from '../nodes/node-conversion.js';
 import { Nodes } from '../nodes/nodes.js';
 import { Hierarchies } from './hierarchies.js';
 
@@ -17,7 +16,7 @@ test('Can attach nodes from roots down', () => {
 	hc.attach('B1', Nodes.create('B11'));
 
 	expect(hc.roots.length).toEqual(2);
-	expect(nodesToIds(hc.roots)).toEqual([ 'A', 'B' ]);
+	expect(hc.rootIds).toEqual([ 'A', 'B' ]);
 });
 
 test('hc.attach() to non-existent parent throws', () => {
@@ -31,12 +30,12 @@ test('hc.attach() to pre-built root', () => {
 
 	const hc = Hierarchies.createForIds<string>().attachRoot(node);
 
-	expect(nodesToIds(hc.roots)).toEqual([ 'A' ]);
+	expect(hc.rootIds).toEqual([ 'A' ]);
 });
 
 test('hc.attach() to multiple hierarchies throws', () => {
-	const hcA = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
-	const hcB = Hierarchies.createWithIds(MultiMap.parse('B'));
+	const hcA = Hierarchies.fromChildMap(MultiMap.parse(`A:A1,A2`));
+	const hcB = Hierarchies.fromChildMap(MultiMap.parse('B'));
 
 	const [ a, a1 ] = hcA.get('A', 'A1');
 
@@ -47,7 +46,7 @@ test('hc.attach() to multiple hierarchies throws', () => {
 });
 
 test('node.detach() while in a Hierarchy throws because it is branded', () => {
-	const hc = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
+	const hc = Hierarchies.fromChildMap(MultiMap.parse(`A:A1,A2`));
 
 	const [ a, a1 ] = hc.get('A', 'A1');
 
@@ -55,7 +54,7 @@ test('node.detach() while in a Hierarchy throws because it is branded', () => {
 });
 
 test('node.detachSelf() while in a Hierarchy throws because it is branded', () => {
-	const hc = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
+	const hc = Hierarchies.fromChildMap(MultiMap.parse(`A:A1,A2`));
 
 	const [ a1 ] = hc.get('A', 'A1');
 
@@ -63,8 +62,8 @@ test('node.detachSelf() while in a Hierarchy throws because it is branded', () =
 });
 
 test('Move a branch from one hierarchy to another using hc.detach() and hc.attachRoot()', () => {
-	const hcA = Hierarchies.createWithIds(MultiMap.parse(`A:A1,A2`));
-	const hcB = Hierarchies.createWithIds(MultiMap.parse('B'));
+	const hcA = Hierarchies.fromChildMap(MultiMap.parse(`A:A1,A2`));
+	const hcB = Hierarchies.fromChildMap(MultiMap.parse('B'));
 
 	const a1 = hcA.get('A1');
 

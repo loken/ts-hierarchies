@@ -1,9 +1,9 @@
 import { bench, describe, expect } from 'vitest';
 
 import { iterateAll, iterateSome, range } from '@loken/utilities';
-import { traverseFullSequence, traverseSignalSequence } from './sequence-traverse.ts';
-import { flattenFullSequence, flattenSignalSequence } from './sequence-flatten.ts';
-import { searchSequence } from './sequence-search.ts';
+import { traverseSequenceNext, traverseSequenceSignal } from './sequence-traverse.js';
+import { flattenSequenceNext, flattenSequenceSignal } from './sequence-flatten.js';
+import { searchSequence } from './sequence-search.js';
 
 const counts = [ 1_000, 10_000, 100_000 ];
 
@@ -12,37 +12,37 @@ counts.forEach(count => {
 	describe(`traverse sequence of ${ count } elements`, () => {
 		const items = range(1, count);
 
-		bench('traverseFullSequence', () => {
+		bench('traverseSequenceNext', () => {
 			const iterator = iterateSome(items);
 
-			iterateAll(traverseFullSequence({
+			iterateAll(traverseSequenceNext({
 				first: iterator.next().value,
 				next:  _ => iterator.next()?.value,
 			}));
 		});
 
-		bench('traverseSignalSequence', () => {
+		bench('traverseSequenceSignal', () => {
 			const iterator = iterateSome(items);
 
-			iterateAll(traverseSignalSequence({
+			iterateAll(traverseSequenceSignal({
 				first:  iterator.next().value,
 				signal: (_, s) => s.next(iterator.next()?.value),
 			}));
 		});
 
-		bench('flattenFullSequence', () => {
+		bench('flattenSequenceNext', () => {
 			const iterator = iterateSome(items);
 
-			flattenFullSequence({
+			flattenSequenceNext({
 				first: iterator.next().value,
 				next:  _ => iterator.next()?.value,
 			});
 		});
 
-		bench('flattenSignalSequence', () => {
+		bench('flattenSequenceSignal', () => {
 			const iterator = iterateSome(items);
 
-			flattenSignalSequence({
+			flattenSequenceSignal({
 				first:  iterator.next().value,
 				signal: (_, s) => s.next(iterator.next()?.value),
 			});
@@ -55,9 +55,9 @@ counts.forEach(count => {
 	describe(`search sequence of ${ count } elements`, () => {
 		const items = range(1, count);
 		const searchId = count / 2;
-		const search = (n: number) => n === searchId;
+		const search = (n: number): boolean => n === searchId;
 
-		bench('searchGraph', () => {
+		bench('searchSequence', () => {
 			const iterator = iterateSome(items);
 
 			const found = searchSequence({
@@ -69,10 +69,10 @@ counts.forEach(count => {
 			expect(found).toEqual(searchId);
 		});
 
-		bench('traverseSignalSequence', () => {
+		bench('traverseSequenceSignal', () => {
 			const iterator = iterateSome(items);
 
-			const found = traverseSignalSequence({
+			const found = traverseSequenceSignal({
 				first:  iterator.next().value,
 				signal: (n, s) => {
 					if (!search(n)) {
@@ -85,10 +85,10 @@ counts.forEach(count => {
 			expect(found).toEqual(searchId);
 		});
 
-		bench('flattenSignalGraph', () => {
+		bench('flattenSequenceSignal', () => {
 			const iterator = iterateSome(items);
 
-			const found = flattenSignalSequence({
+			const found = flattenSequenceSignal({
 				first:  iterator.next().value,
 				signal: (n, s) => {
 					if (!search(n)) {

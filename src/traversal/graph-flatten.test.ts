@@ -1,8 +1,7 @@
-import { iterateAll } from '@loken/utilities';
 import { expect, test } from 'vitest';
 
 import { Nodes } from '../nodes/nodes.js';
-import { traverseGraph } from './graph-traverse.js';
+import { flattenGraph } from './graph-flatten.js';
 
 
 const intRoot = Nodes.create(0).attach([
@@ -23,58 +22,58 @@ const strRoots = [
 ];
 
 
-test('traverseGraph (next, breadth-first) yields in correct order', () => {
+test('flattenGraph (next, breadth-first) yields in correct order', () => {
 	const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   intRoot,
 		descend: 'breadth-first',
 		next:    n => n.children,
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });
 
-test('traverseGraph (next, depth-first) yields in correct order', () => {
+test('flattenGraph (next, depth-first) yields in correct order', () => {
 	const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   intRoot,
 		descend: 'depth-first',
 		next:    n => n.children,
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });
 
-test('traverseGraph (signal, breadth-first) yields in correct order', () => {
+test('flattenGraph (signal, breadth-first) yields in correct order', () => {
 	const expected = [ 0, 1, 2, 3, 11, 12, 31, 32, 121 ];
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   intRoot,
 		descend: 'breadth-first',
 		signal:  (n, s) => s.next(n.children),
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });
 
-test('traverseGraph (signal, depth-first) yields in correct order', () => {
+test('flattenGraph (signal, depth-first) yields in correct order', () => {
 	const expected = [ 0, 3, 32, 31, 2, 1, 12, 121, 11 ];
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   intRoot,
 		descend: 'depth-first',
 		signal:  (n, s) => s.next(n.children),
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });
 
-test('traverseGraph (signal) with skip yields in correct order', () => {
+test('flattenGraph (signal) with skip yields in correct order', () => {
 	const expected = [ 0, 1, 2, 3, 121 ];
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:  intRoot,
 		signal: (node, signal) => {
 			// Exclude children of 3 which is 31 and 32.
@@ -85,15 +84,15 @@ test('traverseGraph (signal) with skip yields in correct order', () => {
 			if (node.parent?.item === 1)
 				signal.skip();
 		},
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });
 
-test('traverseGraph (signal) with skip and end yields wanted node', () => {
+test('flattenGraph (signal) with skip and end yields wanted node', () => {
 	// Let's implement a search for a single node.
 	const expected = 12;
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:  intRoot,
 		signal: (node, signal) => {
 			signal.next(node.children);
@@ -105,13 +104,13 @@ test('traverseGraph (signal) with skip and end yields wanted node', () => {
 			else
 				signal.skip();
 		},
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual.length).toEqual(1);
 	expect(actual[0]).toEqual(expected);
 });
 
-test('traverseGraph (next) on circular graph breaks on visited', () => {
+test('flattenGraph (next) on circular graph breaks on visited', () => {
 	const last = Nodes.create(4);
 	const first = Nodes.create(1).attach(
 		Nodes.create(2).attach(
@@ -122,19 +121,19 @@ test('traverseGraph (next) on circular graph breaks on visited', () => {
 	// Make it circular!
 	last.attach(first);
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   first,
 		descend: {
 			includeSelf:  true,
 			detectCycles: true,
 		},
 		next: node => node.children,
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual([ 1, 2, 3, 4 ]);
 });
 
-test('traverseGraph (signal) on circular graph breaks on visited', () => {
+test('flattenGraph (signal) on circular graph breaks on visited', () => {
 	const last = Nodes.create(4);
 	const first = Nodes.create(1).attach(
 		Nodes.create(2).attach(
@@ -145,7 +144,7 @@ test('traverseGraph (signal) on circular graph breaks on visited', () => {
 	// Make it circular!
 	last.attach(first);
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   first,
 		descend: {
 			detectCycles: true,
@@ -153,116 +152,80 @@ test('traverseGraph (signal) on circular graph breaks on visited', () => {
 		signal: (node, signal) => {
 			signal.next(node.children);
 		},
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual([ 1, 2, 3, 4 ]);
 });
 
 
-test('traverseGraph (signal, breadth-first) provides correct depth', () => {
-	const actual = traverseGraph({
-		roots:   strRoots,
+test('flattenGraph (signal, breadth-first) provides correct depth', () => {
+	flattenGraph({
 		descend: 'breadth-first',
-		signal:  (node, signal) => {
-			signal.next(node.children);
-
-			expect(node.item.length - 1).toEqual(signal.depth);
-		},
-	});
-
-	iterateAll(actual);
-});
-
-test('traverseGraph (signal, depth-first) provides correct depth', () => {
-	const actual = traverseGraph({
 		roots:   strRoots,
-		descend: 'depth-first',
 		signal:  (node, signal) => {
 			signal.next(node.children);
 
 			expect(node.item.length - 1).toEqual(signal.depth);
 		},
 	});
-
-	iterateAll(actual);
 });
 
-test('traverseGraph (signal) throws when calling yield then skip', () => {
-	const fn = (): void => {
-		const it = traverseGraph({
-			roots:  intRoot,
-			signal: (_n, s) => {
-				s.yield();
-				s.skip();
-			},
-		});
+test('flattenGraph (signal, depth-first) provides correct depth', () => {
+	flattenGraph({
+		descend: 'depth-first',
+		roots:   strRoots,
+		signal:  (node, signal) => {
+			signal.next(node.children);
 
-		iterateAll(it);
-	};
-
-	expect(fn).toThrowError(/yield and skip are mutually exclusive/i);
+			expect(node.item.length - 1).toEqual(signal.depth);
+		},
+	});
 });
 
-test('traverseGraph (signal) throws when calling prune then next', () => {
-	const fn = (): void => {
-		const it = traverseGraph({
-			roots:  intRoot,
-			signal: (n, s) => {
-				s.prune();
-				s.next(n.children);
-			},
-		});
+test('flattenGraph (signal, includeSelf=false, breadth-first) yields only descendants', () => {
+	const expected = [ 1, 2, 3, 11, 12, 31, 32, 121 ];
 
-		iterateAll(it);
-	};
-
-	expect(fn).toThrowError(/prune and next are mutually exclusive/i);
-});
-
-test('traverseGraph (signal, includeSelf=false, breadth-first) yields only descendants', () => {
-	const expected = [ 1, 2, 3, 11, 12, 31, 32, 121 ]; // same as normal breadth-first without the original root 0
-
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   intRoot,
 		descend: { includeSelf: false, type: 'breadth-first' },
 		signal:  (n, s) => s.next(n.children),
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });
 
-test('traverseGraph (signal, includeSelf=false, depth-first) yields only descendants respecting order', () => {
+test('flattenGraph (signal, includeSelf=false, depth-first) yields only descendants respecting order', () => {
 	const expected = [ 3, 32, 31, 2, 1, 12, 121, 11 ];
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   intRoot,
 		descend: { includeSelf: false, type: 'depth-first' },
 		signal:  (n, s) => s.next(n.children),
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });
 
-test('traverseGraph (signal, includeSelf=false, breadth-first, reverse) yields only descendants in reverse sibling order', () => {
+test('flattenGraph (signal, includeSelf=false, breadth-first, reverse) yields only descendants in reverse sibling order', () => {
 	const expected = [ 3, 2, 1, 32, 31, 12, 11, 121 ];
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   intRoot,
 		descend: { includeSelf: false, type: 'breadth-first', siblingOrder: 'reverse' },
 		signal:  (n, s) => s.next(n.children),
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });
 
-test('traverseGraph (signal, includeSelf=false, depth-first, reverse) yields only descendants in reverse sibling order', () => {
+test('flattenGraph (signal, includeSelf=false, depth-first, reverse) yields only descendants in reverse sibling order', () => {
 	const expected = [ 1, 11, 12, 121, 2, 3, 31, 32 ];
 
-	const actual = traverseGraph({
+	const actual = flattenGraph({
 		roots:   intRoot,
 		descend: { includeSelf: false, type: 'depth-first', siblingOrder: 'reverse' },
 		signal:  (n, s) => s.next(n.children),
-	}).map(n => n.item).toArray();
+	}).map(n => n.item);
 
 	expect(actual).toEqual(expected);
 });

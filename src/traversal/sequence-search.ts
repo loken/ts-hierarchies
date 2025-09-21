@@ -1,5 +1,5 @@
 import type { Predicate } from '@loken/utilities';
-import type { NextElement } from './sequence.types.ts';
+import type { NextElement } from './sequence.types.js';
 
 /**
  * Search a sequence of elements by traversing from the `first` element and onwards using the `next` delegate.
@@ -10,7 +10,7 @@ export const searchSequence = <TEl>(options: {
 	first:  TEl | undefined;
 	next:   NextElement<TEl>;
 	search: Predicate<TEl>;
-}): TEl | undefined => {
+}): TEl | void => {
 	let current = options.first;
 	while (current !== undefined) {
 		if (options.search(current))

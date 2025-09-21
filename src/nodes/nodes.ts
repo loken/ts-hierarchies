@@ -1,21 +1,25 @@
-import { isSomeItem, mapArgs, mapGetLazy, MultiMap, Queue, type Some, someToArray, someToIterable } from '@loken/utilities';
+import { isSomeItem, type ItemOfList, type MapArgs, mapArgs, MultiMap, type Some, someToArray, someToIterable } from '@loken/utilities';
 
-import { traverseGraph } from '../traversal/graph-traverse.js';
-import type { TraversalType } from '../traversal/graph.types.js';
-import { ChildMap } from '../utilities/child-map.js';
+import { traverseGraphNext } from '../traversal/graph-traverse.js';
+import { type Ascend, type Descend, normalizeDescend } from '../traversal/traversal-options.js';
+import { ChildMap } from '../maps/child-map.js';
 import type { Identify } from '../utilities/identify.js';
 import type { GetChildren, GetParent } from '../utilities/related-items.js';
-import type { Relation } from '../utilities/relations.js';
+import type { Relation } from '../relations/relation.types.js';
 import { HCNode } from './node.js';
 import type { NodePredicate } from './node.types.js';
-import { nodesToIds, nodeToId } from './node-conversion.js';
-import { flattenFullGraph, flattenGraph } from '../traversal/graph-flatten.js';
+import { flattenGraphNext } from '../traversal/graph-flatten.js';
 import { searchGraph, searchGraphMany } from '../traversal/graph-search.js';
 import { flattenSequence } from '../traversal/sequence-flatten.js';
 import { searchSequence, searchSequenceMany } from '../traversal/sequence-search.js';
+import { nodesToAncestorMap, nodesToChildMap, nodesToDescendantMap, nodesToRelations } from './nodes-to.js';
+import { relationsToNodes } from '../relations/relations-to.js';
+import { childMapToNodes } from '../maps/maps-to.js';
+import { nodesFromChildMapWithItems, nodesFromChildItems, nodesFromParentItems } from './nodes-from-items.js';
 
 export class Nodes {
 
+	//#region Factory methods
 	/**
 	 * Create one or more nodes.
 	 *
@@ -23,7 +27,7 @@ export class Nodes {
 	 * @returns One node when you pass one item and a fixed length tuple of nodes when you pass multiple items.
 	 * @throws Must provide at least one argument.
 	 */
-	public static create<Items extends any[]>(...items: Items) {
+	public static create<Items extends any[]>(...items: Items): MapArgs<Items, HCNode<ItemOfList<Items>>, true, false> {
 		return mapArgs(items, item => new HCNode(item), true, false);
 	}
 
@@ -34,9 +38,10 @@ export class Nodes {
 	 * @returns An array of nodes containing the items.
 	 * @throws Must provide at least one argument.
 	 */
-	public static createSome<Item>(items: Some<Item>) {
+	public static createSome<Item>(items: Some<Item>): HCNode<Item>[] {
 		return someToArray(items).map(item => new HCNode(item));
 	}
+
 
 	/**
 	 * Build nodes of IDs linked as described by the provided `childMap`.
@@ -45,41 +50,8 @@ export class Nodes {
 	 * @param childMap The map describing the relations.
 	 * @returns The root nodes.
 	 */
-	public static assembleIds<Id>(childMap: MultiMap<Id>): HCNode<Id>[] {
-		const nodes = new Map<Id, HCNode<Id>>();
-		const roots: HCNode<Id>[] = [];
-
-		for (const parentId of childMap.keys()) {
-			const parentNode = new HCNode(parentId);
-			nodes.set(parentId, parentNode);
-		}
-
-		for (const [ parentId, childIds ] of childMap.entries()) {
-			const parentNode = nodes.get(parentId)!;
-
-			for (const childId of childIds) {
-				const childNode = mapGetLazy(nodes, childId, () => new HCNode(childId));
-				parentNode.attach(childNode);
-			}
-		}
-
-		for (const node of nodes.values()) {
-			if (node.isRoot)
-				roots.push(node);
-		}
-
-		return roots;
-	}
-
-	/**
-	 * Build nodes of IDs recursively from the property keys.
-	 *
-	 * @param source The object describing the relations.
-	 * @param include Optional predicate used for determining whether a property should be included as an ID.
-	 * @returns The root nodes.
-	 */
-	public static assemblePropertyIds(source: object, include?: (prop: string, val: any) => boolean): HCNode<string>[] {
-		return Nodes.assembleIds(ChildMap.fromPropertyIds(source, include));
+	public static fromChildMap<Id>(childMap: MultiMap<Id>): HCNode<Id>[] {
+		return childMapToNodes(childMap);
 	}
 
 	/**
@@ -93,42 +65,28 @@ export class Nodes {
 	 * @param identify Means of getting an ID for an item.
 	 * @param childMap The map describing the relations.
 	 * @returns The root nodes.
+	 * @throws {Error} When a parent or child ID referenced in the `childMap`
+	 * is not found in the provided `items`.
 	 */
-	public static assembleItems<Item, Id>(
+	public static fromChildMapWithItems<Item, Id>(
 		items: Some<Item>,
 		identify: Identify<Item, Id>,
 		childMap: MultiMap<Id>,
 	): HCNode<Item>[] {
-		const roots: HCNode<Item>[] = [];
-
-		const nodeMap = new Map<Id, HCNode<Item>>();
-		const itemMap = new Map<Id, Item>();
-		const getItem = (id: Id) => {
-			if (!itemMap.has(id))
-				throw new Error(`Could not find item for mapped ID: ${ id }`);
-
-			return itemMap.get(id);
-		};
-
-		for (const item of someToIterable(items))
-			itemMap.set(identify(item), item);
-
-		for (const [ parentId, childIds ] of childMap.entries()) {
-			const parentNode = mapGetLazy(nodeMap, parentId, () => new HCNode(getItem(parentId)));
-
-			for (const childId of childIds) {
-				const childNode = mapGetLazy(nodeMap, childId, () => new HCNode(getItem(childId)));
-				parentNode.attach(childNode);
-			}
-		}
-
-		for (const node of nodeMap.values()) {
-			if (node.isRoot)
-				roots.push(node);
-		}
-
-		return roots;
+		return nodesFromChildMapWithItems(items, identify, childMap);
 	}
+
+	/**
+	 * Build nodes of IDs linked as described by the provided `relations`.
+	 *
+	 * @template Id The type of IDs.
+	 * @param relations The relations describing the hierarchy structure.
+	 * @returns The root nodes.
+	 */
+	public static fromRelations<Id>(relations: Some<Relation<Id>>): HCNode<Id>[] {
+		return relationsToNodes(relations);
+	}
+
 
 	/**
 	 * Build nodes of `Item`s linked as described by the provided `roots` and `children` delegate.
@@ -139,26 +97,11 @@ export class Nodes {
 	 * @param children The delegate for getting the child items from a parent item.
 	 * @returns The root nodes.
 	 */
-	public static assembleItemsWithChildren<Item>(
+	public static fromChildItems<Item>(
 		roots: Some<Item>,
 		children: GetChildren<Item>,
-	) {
-		const rootNodes = Nodes.createSome(roots);
-
-		flattenFullGraph({
-			roots: rootNodes,
-			next:  node => {
-				const childItems = children(node.item);
-				if (childItems?.length) {
-					const childNodes = childItems.map(childItem => new HCNode(childItem));
-					node.attach(childNodes);
-
-					return childNodes;
-				}
-			},
-		});
-
-		return rootNodes;
+	): HCNode<Item>[] {
+		return nodesFromChildItems(roots, children);
 	}
 
 	/**
@@ -170,55 +113,27 @@ export class Nodes {
 	 * @param parent The delegate for getting the parent of an item.
 	 * @returns The root nodes.
 	 */
-	public static assembleItemsWithParents<Item>(
+	public static fromParentItems<Item>(
 		leaves: Some<Item>,
 		parent: GetParent<Item>,
-	) {
-		const nodes = new Map<Item, HCNode<Item>>();
-		const roots: HCNode<Item>[] = [];
-
-		for (const leaf of someToIterable(leaves)) {
-			let current: { item: Item, node: HCNode<Item> } | undefined = {
-				item: leaf,
-				node: getNode(leaf),
-			};
-
-			while (current) {
-				const parentItem = parent(current.item);
-				if (parentItem !== undefined) {
-					const parentSeen = nodes.has(parentItem);
-					const parentNode = getNode(parentItem);
-
-					parentNode.attach(current.node);
-
-					if (parentSeen)
-						break;
-
-					current = {
-						item: parentItem,
-						node: parentNode,
-					};
-				}
-				else {
-					roots.push(current.node);
-					current = undefined;
-				}
-			}
-		}
-
-		return roots;
-
-		function getNode(item: Item) {
-			let node = nodes.get(item);
-			if (!node) {
-				node = new HCNode(item);
-				nodes.set(item, node);
-			}
-
-			return node;
-		}
+	): HCNode<Item>[] {
+		return nodesFromParentItems(leaves, parent);
 	}
 
+
+	/**
+	 * Build nodes of IDs recursively from the property keys.
+	 *
+	 * @param source The object describing the relations.
+	 * @param include Optional predicate used for determining whether a property should be included as an ID.
+	 * @returns The root nodes.
+	 */
+	public static fromPropertyIds(source: object, include?: (prop: string, val: any) => boolean): HCNode<string>[] {
+		return childMapToNodes(ChildMap.fromPropertyIds(source, include));
+	}
+	//#endregion
+
+	//#region Conversion/Mapping
 	/**
 	 * Create a map of ids to child-ids by traversing the graph of the `roots`.
 	 *
@@ -234,30 +149,7 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 		childMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		for (const root of someToIterable(roots)) {
-			const nodeId = nodeToId(root, identify);
-			if (root.isInternal) {
-				const childIds = nodesToIds(root.getChildren(), identify);
-				childMap.add(nodeId, childIds);
-			}
-			else {
-				childMap.getOrAdd(nodeToId(root, identify));
-			}
-		}
-
-		const nodes = flattenFullGraph({
-			roots,
-			next: node => node.getChildren().filter(n => n.isInternal),
-		});
-
-		for (const node of nodes) {
-			const childNodes = node.getChildren();
-			const nodeId = nodeToId(node, identify);
-			const childIds = nodesToIds(childNodes, identify);
-			childMap.add(nodeId, childIds);
-		}
-
-		return childMap;
+		return nodesToChildMap(roots, identify, childMap);
 	}
 
 	/**
@@ -275,31 +167,7 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 		descendantMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		roots = someToArray(roots);
-
-		type Stored = [ node: HCNode<Item>, ancestors: Set<Id>[] ];
-		const store = new Queue<Stored>();
-		store.enqueue(roots.map(node => [ node, [] ] as Stored));
-
-		for (const root of roots)
-			descendantMap.getOrAdd(nodeToId(root, identify));
-
-		while (store.count > 0) {
-			const [ node, ancestors ] = store.dequeue()!;
-			const nodeId = nodeToId(node, identify);
-
-			for (const ancestor of ancestors)
-				ancestor.add(nodeId);
-
-			const children = node.getChildren();
-			if (children?.length) {
-				const nodeDescendants = descendantMap.getOrAdd(nodeId);
-				const childAncestors = [ ...ancestors, nodeDescendants ];
-				store.enqueue(children.map(node => [ node, childAncestors ] as Stored));
-			}
-		}
-
-		return descendantMap;
+		return nodesToDescendantMap(roots, identify, descendantMap);
 	}
 
 	/**
@@ -317,33 +185,7 @@ export class Nodes {
 		identify?: Identify<Item, Id>,
 		ancestorMap = new MultiMap<Id>(),
 	): MultiMap<Id> {
-		roots = someToArray(roots);
-
-		type Stored = [ node: HCNode<Item>, ancestors?: Id[] ];
-		const store = new Queue<Stored>();
-		store.enqueue(roots.map(node => [ node ] as Stored));
-
-		for (const root of roots) {
-			if (root.isLeaf)
-				ancestorMap.getOrAdd(nodeToId(root, identify));
-		}
-
-
-		while (store.count > 0) {
-			const [ node, ancestors ] = store.dequeue()!;
-			const nodeId = nodeToId(node, identify);
-
-			if (ancestors)
-				ancestorMap.add(nodeId, ancestors);
-
-			const children = node.getChildren();
-			if (children?.length) {
-				const childAncestors = ancestors ? [ nodeId, ...ancestors ] : [ nodeId ];
-				store.enqueue(children.map(node => [ node, childAncestors ] as Stored));
-			}
-		}
-
-		return ancestorMap;
+		return nodesToAncestorMap(roots, identify, ancestorMap);
 	}
 
 	/**
@@ -359,48 +201,63 @@ export class Nodes {
 		roots: Some<HCNode<Item>>,
 		identify?: Identify<Item, Id>,
 	): Relation<Id>[] {
-		const relations: Relation<Id>[] = [];
+		return nodesToRelations(roots, identify);
+	}
+	//#endregion
 
-		flattenFullGraph({
-			roots,
-			next: node => {
-				if (node.isLeaf)
-					return;
-
-				const children = node.getChildren();
-				const childIds = nodesToIds(children, identify);
-				const nodeId = nodeToId(node, identify);
-				for (const childId of childIds)
-					relations.push([ nodeId, childId ]);
-
-				return children.filter(child => child.isInternal);
-			},
-		});
-
-		return relations;
+	//#region Predicates (has*)
+	/** Does a descendant node matching the `search` exist? */
+	public static hasDescendant<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		descend?: Descend,
+	): boolean {
+		return this.findDescendant(roots, search, descend) !== undefined;
 	}
 
+	/** Does an ancestor node matching the `search` exist? */
+	public static hasAncestor<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		ascend?: Ascend,
+	): boolean {
+		return this.findAncestor(roots, search, ascend) !== undefined;
+	}
+	//#endregion
+
+	//#region Retrieval (get*)
+	/** Get descendant nodes by traversing according to the traversal options. */
+	public static getDescendants<Item>(
+		roots: Some<HCNode<Item>>,
+		descend?: Descend,
+	): HCNode<Item>[] {
+		return flattenGraphNext({
+			roots,
+			next:    node => node.children,
+			descend: normalizeDescend(descend, { includeSelf: false }),
+		});
+	}
 
 	/** Get unique ancestor nodes. */
 	public static getAncestors<Item>(
 		nodes: Some<HCNode<Item>>,
-		includeSelf = false,
-	) {
+		ascend?: Ascend,
+	): HCNode<Item>[] {
 		if (isSomeItem(nodes))
-			return nodes.getAncestors(includeSelf);
+			return nodes.getAncestors(ascend);
 
 		const seen = new Set<HCNode<Item>>();
 		const ancestors: HCNode<Item>[] = [];
 
 		for (const node of someToIterable(nodes)) {
-			const first = includeSelf ? node : node.getParent();
+			const first = ascend === 'with-self' ? node : node.parent;
 			if (!first || seen.has(first))
 				continue;
 
 			const unseenAncestors = flattenSequence({
 				first,
 				next: node => {
-					const parent = node.getParent();
+					const parent = node.parent;
 					if (!parent || seen.has(parent))
 						return undefined;
 
@@ -415,101 +272,57 @@ export class Nodes {
 
 		return ancestors;
 	}
+	//#endregion
 
-	/** Get ancestor items from unique ancestor nodes. */
-	public static getAncestorItems<Item>(
-		nodes: Some<HCNode<Item>>,
-		includeSelf = false,
-	) {
-		return this.getAncestors(nodes, includeSelf).map(node => node.item);
-	}
-
-
-	/** Get descendant nodes by traversing according to the options. */
-	public static getDescendants<Item>(
+	//#region Search (find*)
+	/** Find the first descendant node matching the `search`. */
+	public static findDescendant<Item>(
 		roots: Some<HCNode<Item>>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
-	) {
-		return flattenGraph({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.getChildren(),
-			type,
+		search: NodePredicate<Item>,
+		descend?: Descend,
+	): HCNode<Item> | void {
+		return searchGraph({
+			roots,
+			next:    node => node.children,
+			search,
+			descend: descend,
 		});
 	}
 
-	/** Get descendant items by traversing according to the options. */
-	public static getDescendantItems<Item>(
+	/** Find the descendant nodes matching the `search`. */
+	public static findDescendants<Item>(
 		roots: Some<HCNode<Item>>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
-	) {
-		return this.getDescendants(roots, includeSelf, type).map(node => node.item);
-	}
-
-	/** Generate a sequence of descendant nodes by traversing according to the options. */
-	public static traverseDescendants<Item>(
-		roots: Some<HCNode<Item>>,
-		includeSelf = false,
-		type: TraversalType = 'breadth-first',
-	) {
-		return traverseGraph({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.getChildren(),
-			type,
+		search: NodePredicate<Item>,
+		descend?: Descend,
+	): HCNode<Item>[] {
+		return searchGraphMany({
+			roots,
+			next:    node => node.children,
+			search,
+			descend: descend,
 		});
 	}
-
-
-	/** Find the common ancestor node which is the closest to the `nodes`. */
-	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
-		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
-
-		return commonAncestors?.values().next().value;
-	}
-
-	/** Find the ancestor nodes common to the `nodes`. */
-	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
-		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
-
-		return commonAncestors ? [ ...commonAncestors ] : undefined;
-	}
-
-	/** Find the ancestor nodes common to the `nodes`. */
-	public static findCommonAncestorItems<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
-		const commonAncestors = this.findCommonAncestorSet(nodes, includeSelf);
-
-		return commonAncestors ? [ ...commonAncestors ].map(n => n.item) : undefined;
-	}
-
-	/** Find the set of ancestor nodes common to the `nodes`. */
-	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, includeSelf = false) {
-		const commonAncestors = someToArray(nodes).reduce((acc, curr) => {
-			const ancestors = new Set(curr.getAncestors(includeSelf));
-
-			return !acc ? ancestors : acc.intersection(ancestors);
-		}, null as Set<HCNode<Item>> | null);
-
-		return commonAncestors;
-	}
-
 
 	/** Find the first ancestor node matching the `search`. */
-	public static findAncestor<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
+	public static findAncestor<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		ascend?: Ascend,
+	): HCNode<Item> | void {
 		if (isSomeItem(roots))
-			return roots.findAncestor(search, includeSelf);
+			return roots.findAncestor(search, ascend);
 
 		const seen = new Set<HCNode<Item>>();
 
 		for (const root of roots) {
-			const first = includeSelf ? root : root.getParent();
+			const first = ascend === 'with-self' ? root : root.parent;
 			if (!first || seen.has(first))
 				continue;
 
 			const found = searchSequence({
 				first,
 				next: node => {
-					const parent = node.getParent();
+					const parent = node.parent;
 					if (!parent || seen.has(parent))
 						return undefined;
 
@@ -527,23 +340,27 @@ export class Nodes {
 		return undefined;
 	}
 
-	/** Find the first ancestor node matching the `search`. */
-	public static findAncestors<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
+	/** Find the ancestor nodes matching the `search`. */
+	public static findAncestors<Item>(
+		roots: Some<HCNode<Item>>,
+		search: NodePredicate<Item>,
+		ascend?: Ascend,
+	): HCNode<Item>[] {
 		if (isSomeItem(roots))
-			return roots.findAncestors(search, includeSelf);
+			return roots.findAncestors(search, ascend);
 
 		const seen = new Set<HCNode<Item>>();
 		const ancestors: HCNode<Item>[] = [];
 
 		for (const root of roots) {
-			const first = includeSelf ? root : root.getParent();
+			const first = ascend === 'with-self' ? root : root.parent;
 			if (!first || seen.has(first))
 				continue;
 
 			const found = searchSequenceMany({
 				first,
 				next: node => {
-					const parent = node.getParent();
+					const parent = node.parent;
 					if (!parent || seen.has(parent))
 						return undefined;
 
@@ -560,35 +377,44 @@ export class Nodes {
 		return ancestors;
 	}
 
-	/** Find the first descendant node matching the `search`. */
-	public static findDescendant<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		return searchGraph({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.getChildren(),
-			search,
-			type,
+	/** Find the common ancestor node which is the closest to the `nodes`. */
+	public static findCommonAncestor<Item>(nodes: Some<HCNode<Item>>, ascend?: Ascend): HCNode<Item> | undefined {
+		const commonAncestors = this.findCommonAncestorSet(nodes, ascend);
+
+		return commonAncestors?.values().next().value;
+	}
+
+	/** Find the ancestor nodes common to the `nodes`. */
+	public static findCommonAncestors<Item>(nodes: Some<HCNode<Item>>, ascend?: Ascend): HCNode<Item>[] | undefined {
+		const commonAncestors = this.findCommonAncestorSet(nodes, ascend);
+
+		return commonAncestors ? [ ...commonAncestors ] : undefined;
+	}
+
+	/** Find the set of ancestor nodes common to the `nodes`. */
+	public static findCommonAncestorSet<Item>(nodes: Some<HCNode<Item>>, ascend?: Ascend): Set<HCNode<Item>> | undefined {
+		const commonAncestors = someToArray(nodes).reduce((acc, curr) => {
+			const ancestors = new Set(curr.getAncestors(ascend));
+
+			return !acc ? ancestors : acc.intersection(ancestors);
+		}, undefined as Set<HCNode<Item>> | undefined);
+
+		return commonAncestors;
+	}
+	//#endregion
+
+	//#region Traversal (traverse*)
+	/** Generate a sequence of descendant nodes by traversing according to the traversal options. */
+	public static traverseDescendants<Item>(
+		roots: Some<HCNode<Item>>,
+		descend?: Descend,
+	): Generator<HCNode<Item>, void, undefined> {
+		return traverseGraphNext({
+			roots,
+			next:    node => node.children,
+			descend: normalizeDescend(descend, { includeSelf: false }),
 		});
 	}
-
-	/** Find the descendant nodes matching the `search`. */
-	public static findDescendants<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		return searchGraphMany({
-			roots: HCNode.getRoots(roots, includeSelf),
-			next:  node => node.getChildren(),
-			search,
-			type,
-		});
-	}
-
-
-	/** Does an ancestor node matching the `search` exist? */
-	public static hasAncestor<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false) {
-		return this.findAncestor(roots, search, includeSelf) !== undefined;
-	}
-
-	/** Does a descendant node matching the `search` exist? */
-	public static hasDescendant<Item>(roots: Some<HCNode<Item>>, search: NodePredicate<Item>, includeSelf = false, type: TraversalType = 'breadth-first') {
-		return this.findDescendant(roots, search, includeSelf, type) !== undefined;
-	}
+	//#endregion
 
 }
