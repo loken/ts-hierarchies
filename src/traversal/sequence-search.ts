@@ -1,5 +1,5 @@
 import type { Predicate } from '@loken/utilities';
-import type { NextElement } from './sequence.types.ts';
+import type { NextElement } from './sequence.types.js';
 
 /**
  * Search a sequence of elements by traversing from the `first` element and onwards using the `next` delegate.

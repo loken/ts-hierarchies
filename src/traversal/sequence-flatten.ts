@@ -1,5 +1,5 @@
-import { SequenceSignal } from './sequence-signal.ts';
-import type { NextElement, SequenceTraversal, SignalElement } from './sequence.types.ts';
+import { SequenceSignal } from './sequence-signal.js';
+import type { NextElement, SequenceTraversal, SignalElement } from './sequence.types.js';
 
 
 /**

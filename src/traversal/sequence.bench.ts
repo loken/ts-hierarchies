@@ -1,9 +1,9 @@
 import { bench, describe, expect } from 'vitest';
 
 import { iterateAll, iterateSome, range } from '@loken/utilities';
-import { traverseSequenceNext, traverseSequenceSignal } from './sequence-traverse.ts';
-import { flattenSequenceNext, flattenSequenceSignal } from './sequence-flatten.ts';
-import { searchSequence } from './sequence-search.ts';
+import { traverseSequenceNext, traverseSequenceSignal } from './sequence-traverse.js';
+import { flattenSequenceNext, flattenSequenceSignal } from './sequence-flatten.js';
+import { searchSequence } from './sequence-search.js';
 
 const counts = [ 1_000, 10_000, 100_000 ];
 

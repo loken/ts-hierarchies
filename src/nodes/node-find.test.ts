@@ -1,5 +1,5 @@
 import { test, expect, describe } from 'vitest';
-import { Nodes } from './nodes.ts';
+import { Nodes } from './nodes.js';
 
 // Create explicit hierarchy for testing:
 // A -> A1 -> A11

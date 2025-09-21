@@ -1,9 +1,9 @@
 import { MultiMap, Queue, someToArray, someToIterable, type Some } from '@loken/utilities';
-import type { Relation } from '../relations/relation.types.ts';
-import { flattenGraphNext } from '../traversal/graph-flatten.ts';
-import type { Identify } from '../utilities/identify.ts';
-import { nodeToIdProjection } from './node-conversion.ts';
-import type { HCNode } from './node.ts';
+import type { Relation } from '../relations/relation.types.js';
+import { flattenGraphNext } from '../traversal/graph-flatten.js';
+import type { Identify } from '../utilities/identify.js';
+import { nodeToIdProjection } from './node-conversion.js';
+import type { HCNode } from './node.js';
 
 
 /** @internalexport */

@@ -1,8 +1,8 @@
 import { type Some, MultiMap, someToArray, someToIterable } from '@loken/utilities';
-import type { Identify } from '../utilities/identify.ts';
-import { HCNode } from './node.ts';
-import { flattenGraphNext } from '../traversal/graph-flatten.ts';
-import type { GetChildren, GetParent } from '../utilities/related-items.ts';
+import type { Identify } from '../utilities/identify.js';
+import { HCNode } from './node.js';
+import { flattenGraphNext } from '../traversal/graph-flatten.js';
+import type { GetChildren, GetParent } from '../utilities/related-items.js';
 
 
 /** @internalexport */

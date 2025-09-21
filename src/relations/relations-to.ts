@@ -1,6 +1,6 @@
 import { MultiMap, type Some, someToIterable } from '@loken/utilities';
-import { HCNode } from '../nodes/node.ts';
-import type { Relation } from './relation.types.ts';
+import { HCNode } from '../nodes/node.js';
+import type { Relation } from './relation.types.js';
 
 
 /** @internalexport */

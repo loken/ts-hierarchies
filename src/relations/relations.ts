@@ -1,10 +1,10 @@
 import { MultiMap, type Some } from '@loken/utilities';
-import { HCNode } from '../nodes/node.ts';
-import type { Identify } from '../utilities/identify.ts';
-import type { Relation } from './relation.types.ts';
-import { relationsToNodes, relationsToChildMap } from './relations-to.ts';
-import { nodesToRelations } from '../nodes/nodes-to.ts';
-import { childMapToRelations } from '../maps/maps-to.ts';
+import { HCNode } from '../nodes/node.js';
+import type { Identify } from '../utilities/identify.js';
+import type { Relation } from './relation.types.js';
+import { relationsToNodes, relationsToChildMap } from './relations-to.js';
+import { nodesToRelations } from '../nodes/nodes-to.js';
+import { childMapToRelations } from '../maps/maps-to.js';
 
 
 export class Relations {

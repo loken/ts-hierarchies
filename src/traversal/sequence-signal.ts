@@ -1,5 +1,5 @@
 import { type TryResult, tryResult } from '@loken/utilities';
-import type { ISequenceSignal } from './sequence.types.ts';
+import type { ISequenceSignal } from './sequence.types.js';
 
 
 /**

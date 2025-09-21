@@ -1,12 +1,12 @@
 import { bench, describe, expect } from 'vitest';
-import { ChildMap } from '../maps/child-map.ts';
-import { Nodes } from '../nodes/nodes.ts';
+import { ChildMap } from '../maps/child-map.js';
+import { Nodes } from '../nodes/nodes.js';
 
-import type { HCNode } from '../nodes/node.ts';
-import { flattenGraphNext, flattenGraphSignal } from './graph-flatten.ts';
+import type { HCNode } from '../nodes/node.js';
+import { flattenGraphNext, flattenGraphSignal } from './graph-flatten.js';
 import { iterateAll } from '@loken/utilities';
-import { traverseGraphNext, traverseGraphSignal } from './graph-traverse.ts';
-import { searchGraph } from './graph-search.ts';
+import { traverseGraphNext, traverseGraphSignal } from './graph-traverse.js';
+import { searchGraph } from './graph-search.js';
 
 
 const counts = [ 1_000, 10_000, 100_000 ];

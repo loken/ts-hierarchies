@@ -1,6 +1,6 @@
 import { mapGetLazy, MultiMap } from '@loken/utilities';
-import type { Relation } from '../relations/relation.types.ts';
-import { HCNode } from '../nodes/node.ts';
+import type { Relation } from '../relations/relation.types.js';
+import { HCNode } from '../nodes/node.js';
 
 
 /** @internalexport */
